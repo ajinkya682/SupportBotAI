@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, Users, Building2, MessageSquare, ArrowUpRight, ArrowDownRight, Globe, Zap, Download, Loader2 } from 'lucide-react';
 import axios from 'axios';
-import { API_URL } from '../../../shared/services/config';
+import { API_URL } from '../../../../shared/services/config';
 import toast from 'react-hot-toast';
 
 const SAOverview = () => {
@@ -16,7 +16,8 @@ const SAOverview = () => {
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
       const { data } = await axios.get(`${API_URL}/super-admin/overview/stats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -33,7 +34,8 @@ const SAOverview = () => {
   const handleDownloadReport = async () => {
     setIsExporting(true);
     try {
-      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
       const response = await axios.get(`${API_URL}/super-admin/export-report`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
@@ -52,6 +54,13 @@ const SAOverview = () => {
       setIsExporting(false);
     }
   };
+
+  const networkStatus = [
+    { region: 'US-East (Virginia)', status: 'Optimal', latency: '24ms', load: '42%' },
+    { region: 'EU-West (Ireland)', status: 'Optimal', latency: '38ms', load: '31%' },
+    { region: 'AP-South (Mumbai)', status: 'Stable', latency: '112ms', load: '58%' },
+    { region: 'Global Edge (CDN)', status: 'Active', latency: '12ms', load: '18%' }
+  ];
 
   const statCards = [
     { label: 'Total Businesses', value: stats?.totalBusinesses || 0, trend: '+5.2%', icon: Building2, color: 'var(--primary)' },

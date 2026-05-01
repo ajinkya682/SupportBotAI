@@ -51,14 +51,20 @@ exports.getBusiness = async (req, res) => {
     try {
         const ownerId = req.user.role === 'agent' ? req.user.ownerId : req.user._id;
         let business = await Business.findOne({ owner: ownerId });
+        
         if (!business && req.user.role !== 'agent') {
-            const apiKey = crypto.randomBytes(16).toString('hex');
             business = await Business.create({
                 owner: req.user._id,
-                name: "My Business",
-                apiKey
+                name: "My Business"
             });
         }
+
+        // Ensure apiKey exists for existing businesses that might have been created without one
+        if (business && !business.apiKey) {
+            business.apiKey = `sb_${crypto.randomBytes(16).toString('hex')}`;
+            await business.save();
+        }
+
         res.json(business);
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -6,7 +6,7 @@ import {
   MessageSquare, Loader2, Calendar
 } from 'lucide-react';
 import axios from 'axios';
-import { API_URL } from '../../../shared/services/config';
+import { API_URL } from '../../../../shared/services/config';
 import toast from 'react-hot-toast';
 
 const SAAgents = () => {
@@ -21,7 +21,8 @@ const SAAgents = () => {
 
   const fetchAgents = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
       const { data } = await axios.get(`${API_URL}/super-admin/agents`, {
         headers: { Authorization: `Bearer ${token}` }
       });

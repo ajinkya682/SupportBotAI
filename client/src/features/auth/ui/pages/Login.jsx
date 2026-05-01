@@ -61,9 +61,11 @@ export default function Login() {
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: (tokenResponse) => {
+      console.log("Google Login Success (Frontend):", tokenResponse);
       dispatch(googleLogin({ accessToken: tokenResponse.access_token }));
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Google Login Error (Frontend):", error);
       toast.error("Google Login Failed");
     },
   });

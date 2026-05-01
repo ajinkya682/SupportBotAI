@@ -6,7 +6,7 @@ import {
   Loader2, Trash2, Megaphone
 } from 'lucide-react';
 import axios from 'axios';
-import { API_URL } from '../../../shared/services/config';
+import { API_URL } from '../../../../shared/services/config';
 import toast from 'react-hot-toast';
 
 const SANotifications = () => {
@@ -29,7 +29,8 @@ const SANotifications = () => {
 
   const fetchHistory = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
       const { data } = await axios.get(`${API_URL}/super-admin/notifications/history`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -43,7 +44,8 @@ const SANotifications = () => {
 
   const fetchBusinesses = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
       const { data } = await axios.get(`${API_URL}/super-admin/businesses`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -59,7 +61,8 @@ const SANotifications = () => {
 
     setIsSending(true);
     try {
-      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
       const endpoint = formData.type === 'broadcast' ? 'broadcast' : 'targeted';
       const { data } = await axios.post(`${API_URL}/super-admin/notifications/${endpoint}`, 
         formData,
