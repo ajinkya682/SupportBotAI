@@ -36,7 +36,7 @@ export default function AdminPanel() {
   if (loading)
     return (
       <div className="admin-loading">
-        <Loader2 className="animate-spin" size={48} />
+        <Loader2 className="animate-spin" size={40} />
         <p>Loading administration console...</p>
       </div>
     );
@@ -45,8 +45,8 @@ export default function AdminPanel() {
     <div className="animate-fade-in admin-container">
       <header className="admin-header">
         <div className="page-title">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div className="admin-icon-wrapper"><Shield size={28} /></div>
+          <div className="admin-title-group">
+            <div className="admin-icon-wrapper"><Shield size={24} /></div>
             <div>
               <h1>Admin Control Panel</h1>
               <p>Global management of users and platform data.</p>
@@ -75,12 +75,14 @@ export default function AdminPanel() {
           <div className="search-wrapper">
             <Search size={18} />
             <input 
-              placeholder="Search users by name or email..." 
+              placeholder="Search users..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="btn btn-secondary"><Filter size={18} /> Advanced Filter</button>
+          <button className="btn btn-secondary filter-btn">
+            <Filter size={18} /> <span className="desktop-only">Advanced Filter</span>
+          </button>
         </div>
 
         <div className="table-wrapper">
@@ -98,9 +100,9 @@ export default function AdminPanel() {
                 <tr>
                   <td colSpan="4" className="empty-row">
                     <div className="empty-state-content">
-                      <Inbox size={48} />
+                      <Inbox size={40} />
                       <h4>No users found</h4>
-                      <p>Adjust your search or check back later for new registrations.</p>
+                      <p>Adjust your search or check back later.</p>
                     </div>
                   </td>
                 </tr>
@@ -134,7 +136,7 @@ export default function AdminPanel() {
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <button className="btn btn-text btn-sm">
-                        Details <ChevronRight size={14} />
+                        <span className="desktop-only">Details</span> <ChevronRight size={14} />
                       </button>
                     </td>
                   </tr>
@@ -146,42 +148,89 @@ export default function AdminPanel() {
       </div>
 
       <style>{`
-        .admin-container { padding-bottom: 60px; }
-        .admin-header { margin-bottom: 40px; }
-        .admin-icon-wrapper { width: 56px; height: 56px; background: var(--inverse-surface); color: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+        .admin-container { padding-bottom: 40px; }
+        @media (min-width: 768px) { .admin-container { padding-bottom: 60px; } }
+
+        .admin-header { margin-bottom: 24px; }
+        @media (min-width: 768px) { .admin-header { margin-bottom: 40px; } }
+
+        .admin-title-group { display: flex; align-items: flex-start; gap: 12px; }
+        @media (min-width: 768px) { .admin-title-group { align-items: center; gap: 16px; } }
+
+        .admin-icon-wrapper { width: 44px; height: 44px; background: var(--inverse-surface); color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        @media (min-width: 768px) { .admin-icon-wrapper { width: 56px; height: 56px; border-radius: 16px; } }
         
-        .admin-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 40px; }
-        .stat-mini { padding: 24px; display: flex; flex-direction: column; gap: 4px; }
-        .stat-mini .label { font-size: 0.75rem; font-weight: 700; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em; }
-        .stat-mini .value { font-size: 1.75rem; font-weight: 800; color: var(--on-surface); }
+        .admin-stats-row { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+        @media (min-width: 768px) { .admin-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 40px; } }
+
+        .stat-mini { padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+        @media (min-width: 768px) { .stat-mini { padding: 24px; } }
+
+        .stat-mini .label { font-size: 0.7rem; font-weight: 700; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em; }
+        @media (min-width: 768px) { .stat-mini .label { font-size: 0.75rem; } }
+
+        .stat-mini .value { font-size: 1.5rem; font-weight: 800; color: var(--on-surface); }
+        @media (min-width: 768px) { .stat-mini .value { font-size: 1.75rem; } }
         
         .user-management-card { padding: 0; overflow: hidden; }
-        .list-controls { padding: 24px; border-bottom: 1px solid var(--outline-variant); display: flex; justify-content: space-between; gap: 16px; }
-        .search-wrapper { flex: 1; display: flex; align-items: center; gap: 12px; background: var(--surface-container-low); padding: 10px 20px; border-radius: 14px; border: 1.5px solid var(--outline-variant); color: var(--outline); }
-        .search-wrapper input { background: transparent; border: none; font-size: 0.95rem; flex: 1; padding: 0; color: var(--on-surface); }
         
-        .table-wrapper { overflow-x: auto; }
-        .admin-table { width: 100%; border-collapse: collapse; }
-        .admin-table th { text-align: left; padding: 16px 24px; background: var(--surface-container-low); color: var(--on-surface-variant); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
-        .admin-table td { padding: 20px 24px; border-bottom: 1px solid var(--outline-variant); vertical-align: middle; }
+        .list-controls { padding: 16px; border-bottom: 1px solid var(--outline-variant); display: flex; justify-content: space-between; gap: 12px; }
+        @media (min-width: 768px) { .list-controls { padding: 24px; gap: 16px; } }
+
+        .search-wrapper { flex: 1; display: flex; align-items: center; gap: 12px; background: var(--surface-container-low); padding: 8px 12px; border-radius: 12px; border: 1.5px solid var(--outline-variant); color: var(--outline); }
+        @media (min-width: 768px) { .search-wrapper { padding: 10px 20px; border-radius: 14px; } }
+
+        .search-wrapper input { background: transparent; border: none; font-size: 0.9rem; flex: 1; padding: 0; color: var(--on-surface); width: 100%; min-width: 0; }
+        @media (min-width: 768px) { .search-wrapper input { font-size: 0.95rem; } }
+        .search-wrapper input:focus { outline: none; }
         
-        .user-info-cell { display: flex; align-items: center; gap: 16px; }
-        .user-avatar-placeholder { width: 44px; height: 44px; border-radius: 12px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; }
-        .user-name { font-weight: 700; color: var(--on-surface); font-size: 1rem; margin-bottom: 2px; }
-        .user-email { font-size: 0.8rem; color: var(--on-surface-variant); display: flex; align-items: center; gap: 6px; }
+        .filter-btn { padding: 8px 12px; }
+        @media (min-width: 768px) { .filter-btn { padding: 10px 16px; } }
+
+        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 600px; }
         
-        .role-badge { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; width: fit-content; }
+        .admin-table th { text-align: left; padding: 12px 16px; background: var(--surface-container-low); color: var(--on-surface-variant); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+        @media (min-width: 768px) { .admin-table th { padding: 16px 24px; font-size: 0.75rem; } }
+
+        .admin-table td { padding: 16px; border-bottom: 1px solid var(--outline-variant); vertical-align: middle; }
+        @media (min-width: 768px) { .admin-table td { padding: 20px 24px; } }
+        
+        .user-info-cell { display: flex; align-items: center; gap: 12px; }
+        @media (min-width: 768px) { .user-info-cell { gap: 16px; } }
+
+        .user-avatar-placeholder { width: 36px; height: 36px; border-radius: 10px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; flex-shrink: 0; }
+        @media (min-width: 768px) { .user-avatar-placeholder { width: 44px; height: 44px; border-radius: 12px; font-size: 1.2rem; } }
+
+        .user-name { font-weight: 700; color: var(--on-surface); font-size: 0.9rem; margin-bottom: 2px; }
+        @media (min-width: 768px) { .user-name { font-size: 1rem; } }
+
+        .user-email { font-size: 0.75rem; color: var(--on-surface-variant); display: flex; align-items: center; gap: 6px; }
+        @media (min-width: 768px) { .user-email { font-size: 0.8rem; } }
+        
+        .role-badge { display: flex; align-items: center; gap: 6px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; width: fit-content; }
+        @media (min-width: 768px) { .role-badge { font-size: 0.7rem; padding: 4px 10px; } }
+
         .role-badge.admin { background: var(--inverse-surface); color: white; }
         .role-badge.owner { background: var(--primary-fixed); color: var(--primary); }
         .role-badge.agent { background: var(--surface-container-high); color: var(--on-surface-variant); }
         
-        .date-cell { font-size: 0.85rem; color: var(--on-surface-variant); display: flex; align-items: center; gap: 8px; font-weight: 500; }
+        .date-cell { font-size: 0.8rem; color: var(--on-surface-variant); display: flex; align-items: center; gap: 6px; font-weight: 500; white-space: nowrap; }
+        @media (min-width: 768px) { .date-cell { font-size: 0.85rem; gap: 8px; } }
         
-        .empty-row { padding: 100px 24px; text-align: center; }
+        .empty-row { padding: 60px 16px; text-align: center; }
+        @media (min-width: 768px) { .empty-row { padding: 100px 24px; } }
+
         .empty-state-content { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--on-surface-variant); }
-        .empty-state-content h4 { margin-top: 20px; color: var(--on-surface); font-size: 1.2rem; }
+        .empty-state-content h4 { margin-top: 16px; color: var(--on-surface); font-size: 1.1rem; margin-bottom: 8px; }
+        .empty-state-content p { font-size: 0.9rem; margin: 0; }
+        @media (min-width: 768px) { .empty-state-content h4 { margin-top: 20px; font-size: 1.2rem; } }
         
-        .admin-loading { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--on-surface-variant); gap: 24px; }
+        .admin-loading { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--on-surface-variant); gap: 16px; }
+        @media (min-width: 768px) { .admin-loading { gap: 24px; } }
+
+        .desktop-only { display: none; }
+        @media (min-width: 768px) { .desktop-only { display: inline; } }
       `}</style>
     </div>
   );

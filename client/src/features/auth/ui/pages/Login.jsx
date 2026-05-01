@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import { login, googleLogin, reset } from "../../state/authSlice";
-import { SUPER_ADMIN_EMAIL } from "../../../../shared/services/config";
 import {
   LogIn,
   Mail,
@@ -74,7 +73,7 @@ export default function Login() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="card auth-card"
+        className="auth-card"
       >
         <div className="auth-header">
           <Link to="/" className="auth-brand">
@@ -82,7 +81,7 @@ export default function Login() {
               <Bot size={28} color="white" />
             </div>
             <span className="brand-text">
-              ANTIGRAVITY <span className="highlight">AI</span>
+              SUPPORTBOT <span className="highlight">AI</span>
             </span>
           </Link>
           <h2>{step === 1 ? "Neural Access" : "Authenticate"}</h2>
@@ -130,7 +129,7 @@ export default function Login() {
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-primary btn-block">
+                <button type="submit" className="btn btn-primary auth-submit-btn">
                   Continue <ArrowRight size={18} />
                 </button>
               </form>
@@ -165,7 +164,7 @@ export default function Login() {
                 </div>
                 <button
                   type="submit"
-                  className="btn btn-primary btn-block"
+                  className="btn btn-primary auth-submit-btn"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -181,7 +180,7 @@ export default function Login() {
 
         <div className="auth-footer">
           <p>
-            New to Antigravity? <Link to="/signup">Initialize Account</Link>
+            New to SupportBotAI? <Link to="/signup">Initialize Account</Link>
           </p>
         </div>
       </motion.div>
@@ -190,17 +189,37 @@ export default function Login() {
         .auth-page {
           min-height: 100vh;
           display: flex;
-          align-items: center;
+          align-items: flex-start; /* Mobile: top aligned */
           justify-content: center;
-          background: var(--surface);
-          padding: 24px;
+          background: var(--surface-container-lowest);
+          padding: 0;
         }
-        
+
         .auth-card {
-          max-width: 440px;
           width: 100%;
-          padding: 48px;
-          box-shadow: var(--shadow-overlay);
+          min-height: 100vh;
+          padding: 48px 24px 32px;
+          background: white;
+          border-radius: 0;
+          display: flex;
+          flex-direction: column;
+          padding-top: calc(48px + env(safe-area-inset-top));
+        }
+
+        @media (min-width: 640px) {
+          .auth-page {
+            align-items: center;
+            background: var(--surface);
+            padding: 24px;
+          }
+          .auth-card {
+            max-width: 440px;
+            min-height: auto;
+            padding: 48px;
+            border-radius: 24px;
+            box-shadow: var(--shadow-overlay);
+            border: 1px solid var(--outline-variant);
+          }
         }
         
         .auth-header {
@@ -234,31 +253,20 @@ export default function Login() {
           letter-spacing: -0.02em;
         }
         
-        .brand-text .highlight {
-          color: var(--primary);
-        }
+        .brand-text .highlight { color: var(--primary); }
         
-        .auth-header h2 {
-          font-size: var(--text-h2);
-          margin-bottom: 8px;
-        }
-        
-        .auth-header p {
-          color: var(--on-surface-variant);
-          font-size: var(--text-body-sm);
-        }
+        .auth-header h2 { font-size: clamp(1.5rem, 5vw, 1.75rem); margin-bottom: 8px; }
+        .auth-header p { color: var(--on-surface-variant); font-size: 0.9rem; line-height: 1.5; }
         
         .google-btn {
           width: 100%;
           background: white;
           border: 1px solid var(--outline-variant);
           margin-bottom: 24px;
+          gap: 12px;
         }
         
-        .google-btn:hover {
-          background-color: var(--surface-container-low);
-          border-color: var(--primary);
-        }
+        .google-btn:hover { background-color: var(--surface-container-low); border-color: var(--primary); }
         
         .divider {
           display: flex;
@@ -271,12 +279,7 @@ export default function Login() {
           letter-spacing: 0.1em;
         }
         
-        .divider::before, .divider::after {
-          content: '';
-          flex: 1;
-          border-bottom: 1px solid var(--outline-variant);
-        }
-        
+        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--outline-variant); }
         .divider span { padding: 0 16px; }
         
         .btn-back {
@@ -294,44 +297,26 @@ export default function Login() {
           transition: var(--transition-fast);
         }
         
-        .btn-back:hover {
-          color: var(--primary);
-        }
+        .btn-back:hover { color: var(--primary); }
         
-        .forgot-password-link {
-          text-align: right;
-          margin-top: -16px;
-          margin-bottom: 24px;
-        }
-        
-        .forgot-password-link a {
-          color: var(--primary);
-          font-size: var(--text-label-sm);
-          font-weight: 600;
-          text-decoration: none;
-        }
+        .forgot-password-link { text-align: right; margin-top: -16px; margin-bottom: 24px; }
+        .forgot-password-link a { color: var(--primary); font-size: var(--text-label-sm); font-weight: 600; text-decoration: none; }
         
         .auth-footer {
-          margin-top: 32px;
+          margin-top: auto; /* Push to bottom on mobile */
           text-align: center;
           padding-top: 24px;
           border-top: 1px solid var(--outline-variant);
         }
-        
-        .auth-footer p {
-          color: var(--on-surface-variant);
-          font-size: var(--text-body-sm);
+
+        @media (min-width: 640px) {
+          .auth-footer { margin-top: 32px; }
         }
         
-        .auth-footer a {
-          color: var(--primary);
-          font-weight: 700;
-          text-decoration: none;
-        }
+        .auth-footer p { color: var(--on-surface-variant); font-size: 0.9rem; }
+        .auth-footer a { color: var(--primary); font-weight: 700; text-decoration: none; }
         
-        .btn-block {
-          width: 100%;
-        }
+        .auth-submit-btn { width: 100%; font-size: 1rem; }
       `}</style>
     </div>
   );

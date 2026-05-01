@@ -25,14 +25,14 @@
   --error-container: #ffdad6;
   --on-error-container: #93000a;
 
-  /* Typographic Scale */
+  /* Typographic Scale - Mobile First with clamp() */
   --font-main: 'Inter', system-ui, -apple-system, sans-serif;
   
-  --text-display: 36px;
-  --text-h1: 30px;
-  --text-h2: 24px;
-  --text-h3: 20px;
-  --text-body-lg: 18px;
+  --text-display: clamp(28px, 5vw, 36px);
+  --text-h1: clamp(22px, 3.5vw, 30px);
+  --text-h2: clamp(18px, 2.5vw, 24px);
+  --text-h3: clamp(16px, 2vw, 20px);
+  --text-body-lg: clamp(16px, 1.5vw, 18px);
   --text-body: 16px;
   --text-body-sm: 14px;
   --text-label-md: 14px;
@@ -48,10 +48,11 @@
   --radius-card-modal: 16px;
   --radius-full: 9999px;
 
-  /* Layout */
-  --sidebar-width: 240px;
-  --gutter: 24px;
-  --page-margin: 32px;
+  /* Layout Variables - Responsive */
+  --sidebar-width: 260px;
+  --sidebar-collapsed: 64px;
+  --gutter: 16px;
+  --page-margin: 16px;
   --max-width: 1440px;
 
   /* Transitions */
@@ -59,10 +60,30 @@
   --transition-normal: 200ms ease-out;
 }
 
+@media (min-width: 768px) {
+  :root {
+    --gutter: 20px;
+    --page-margin: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --gutter: 24px;
+    --page-margin: 32px;
+  }
+}
+
+/* Base Resets */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -72,13 +93,14 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
+  overflow-x: hidden; /* Rule 2: Prevent horizontal page scroll */
 }
 
-/* Headings */
+/* Typography */
 h1, h2, h3, h4 {
   font-family: var(--font-main);
   color: var(--on-surface);
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 h1 { font-size: var(--text-h1); font-weight: 600; letter-spacing: -0.01em; }
@@ -105,7 +127,9 @@ h3 { font-size: var(--text-h3); font-weight: 600; }
   transition: var(--transition-fast);
   border: 1px solid transparent;
   white-space: nowrap;
-  min-height: 44px; /* Accessibility */
+  min-height: 44px; /* Rule 4: Tap targets minimum 44px */
+  min-width: 44px;
+  touch-action: manipulation;
 }
 
 .btn-primary {
@@ -158,9 +182,10 @@ input, textarea, select {
   background-color: var(--surface-container-lowest);
   color: var(--on-surface);
   font-family: inherit;
-  font-size: var(--text-body-sm);
+  font-size: var(--text-body); /* Minimum 16px for iOS to prevent zoom */
   transition: var(--transition-fast);
   width: 100%;
+  min-height: 44px; /* Rule 4 */
 }
 
 input:focus {
@@ -177,10 +202,17 @@ input::placeholder {
 .card {
   background-color: var(--surface-container-lowest);
   border-radius: var(--radius-card-modal);
-  padding: 24px;
+  padding: 16px; /* Reduced mobile padding */
   border: 1px solid var(--surface-container-highest);
   box-shadow: var(--shadow-raised);
   transition: var(--transition-normal);
+  width: 100%; /* Rule 1 */
+}
+
+@media (min-width: 768px) {
+  .card {
+    padding: 24px;
+  }
 }
 
 /* Metric Card */
@@ -231,11 +263,22 @@ input::placeholder {
   margin-left: 4px;
 }
 
+/* Table Responsive Wrapper */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-card-modal);
+  border: 1px solid var(--surface-container-highest);
+  margin-bottom: 24px;
+}
+
 /* Tables */
 .data-table {
   width: 100%;
   border-collapse: collapse;
   background: var(--surface-container-lowest);
+  min-width: 600px; /* Force horizontal scroll for wide tables */
 }
 
 .data-table th {
@@ -262,18 +305,54 @@ input::placeholder {
 
 /* Layout Utilities */
 .container {
+  width: 100%;
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 0 var(--page-margin);
 }
 
-.section-spacing { margin-bottom: 32px; }
-.block-spacing { margin-bottom: 16px; }
+.section-spacing { margin-bottom: clamp(24px, 5vw, 48px); }
+.block-spacing { margin-bottom: clamp(12px, 3vw, 24px); }
 .element-spacing { margin-bottom: 8px; }
 
-/* Grid */
+/* Grid System - Mobile First */
 .grid-12 {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: 1fr;
   gap: var(--gutter);
+}
+
+@media (min-width: 640px) {
+  .grid-12 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-12 {
+    grid-template-columns: repeat(12, 1fr);
+  }
+}
+
+/* Responsive Image Rule 7 */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Scroll Container Improvement */
+.scroll-container {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe Area Support */
+.navbar {
+  padding-top: env(safe-area-inset-top);
+}
+
+.bottom-bar,
+.chat-input-bar {
+  padding-bottom: env(safe-area-inset-bottom);
 }

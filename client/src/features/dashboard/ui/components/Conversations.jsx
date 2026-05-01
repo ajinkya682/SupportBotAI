@@ -6,16 +6,13 @@ import {
   Bot,
   Send,
   CheckCircle2,
-  AlertCircle,
   Search,
   Sparkles,
   Loader2,
   Zap,
   ZapOff,
   CheckCircle,
-  MoreVertical,
-  Info,
-  ChevronRight
+  ChevronLeft
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
@@ -40,6 +37,7 @@ export default function Conversations({
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showThreadList, setShowThreadList] = useState(true);
 
   const chatEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -61,7 +59,10 @@ export default function Conversations({
   useEffect(() => {
     if (initialSelectedId) {
       const conv = conversations.find((c) => c._id === initialSelectedId);
-      if (conv) setSelectedConv(conv);
+      if (conv) {
+        setSelectedConv(conv);
+        setShowThreadList(false);
+      }
     }
   }, [initialSelectedId]);
 
@@ -181,8 +182,8 @@ export default function Conversations({
     switch(status) {
       case 'ai_resolved': return <span className="chip chip-success">AI RESOLVED</span>;
       case 'human_resolved': return <span className="chip chip-success">RESOLVED</span>;
-      case 'human_needed': return <span className="chip chip-error">ACTION REQUIRED</span>;
-      case 'in_progress': return <span className="chip chip-pending">IN PROGRESS</span>;
+      case 'human_needed': return <span className="chip chip-error">ACTION</span>;
+      case 'in_progress': return <span className="chip chip-pending">ACTIVE</span>;
       default: return <span className="chip chip-pending">{status}</span>;
     }
   };
@@ -198,15 +199,23 @@ export default function Conversations({
 
   const canSend = !isAgentView || (isAgentView && selectedConv?.agent?._id === user?._id);
 
+  const handleSelectThread = (conv) => {
+    setSelectedConv(conv);
+    if (setSelectedConversationId) setSelectedConversationId(conv._id);
+    if (window.innerWidth < 1024) {
+      setShowThreadList(false);
+    }
+  };
+
   return (
-    <div className="conversations-layout animate-fade-in">
+    <div className={`conversations-layout animate-fade-in ${!showThreadList ? 'viewing-chat' : ''}`}>
       {/* Thread List Sidebar */}
-      <div className="thread-sidebar">
+      <div className={`thread-sidebar ${!showThreadList ? 'hide-on-mobile' : ''}`}>
         <div className="sidebar-header">
           <div className="search-box">
             <Search size={16} />
             <input
-              placeholder="Search intelligence logs..."
+              placeholder="Search logs..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -218,7 +227,7 @@ export default function Conversations({
             {filteredConversations.length === 0 ? (
               <div className="empty-threads">
                 <MessageSquare size={32} />
-                <p>No active intelligence logs.</p>
+                <p>No active logs.</p>
               </div>
             ) : (
               [...filteredConversations]
@@ -228,23 +237,20 @@ export default function Conversations({
                     key={conv._id}
                     layout
                     className={`thread-item ${selectedConv?._id === conv._id ? "selected" : ""}`}
-                    onClick={() => {
-                      setSelectedConv(conv);
-                      if (setSelectedConversationId) setSelectedConversationId(conv._id);
-                    }}
+                    onClick={() => handleSelectThread(conv)}
                   >
                     <div className="thread-meta">
-                      <span className="thread-user">{conv.userName || 'Visitor Node'}</span>
+                      <span className="thread-user">{conv.userName || 'Visitor'}</span>
                       <span className="thread-time">
                         {new Date(conv.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </span>
                     </div>
                     <p className="thread-preview">
-                      {conv.messages[conv.messages.length - 1]?.content || "Initializing telemetry..."}
+                      {conv.messages[conv.messages.length - 1]?.content || "Initializing..."}
                     </p>
                     <div className="thread-footer">
                       {getStatusChip(conv.status)}
-                      {conv.isAiActive && <div className="ai-active-indicator"><Sparkles size={10} /> AI ACTIVE</div>}
+                      {conv.isAiActive && <div className="ai-active-indicator"><Sparkles size={10} /> AI</div>}
                     </div>
                     {selectedConv?._id === conv._id && <div className="selection-indicator" />}
                   </motion.div>
@@ -255,44 +261,54 @@ export default function Conversations({
       </div>
 
       {/* Neural Chat Interface */}
-      <div className="neural-interface">
+      <div className={`neural-interface ${showThreadList ? 'hide-on-mobile' : ''}`}>
         {selectedConv ? (
           <>
             <header className="interface-header">
-              <div className="header-identity">
-                <div className="identity-avatar">
-                  {(selectedConv.userName || "V").charAt(0).toUpperCase()}
-                </div>
-                <div className="identity-text">
-                  <h3>{selectedConv.userName || "Visitor Node"}</h3>
-                  <div className="identity-status">
-                    <span className="live-pulse-container"><div className="pulse-dot"></div> LIVE</span>
-                    <span className="id-separator">·</span>
-                    <span className="id-node">ID: {selectedConv._id.slice(-6).toUpperCase()}</span>
+              <div className="header-left">
+                <button className="back-btn" onClick={() => setShowThreadList(true)}>
+                  <ChevronLeft size={24} />
+                </button>
+                <div className="header-identity">
+                  <div className="identity-avatar">
+                    {(selectedConv.userName || "V").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="identity-text">
+                    <h3>{selectedConv.userName || "Visitor"}</h3>
+                    <div className="identity-status">
+                      <span className="live-pulse-container"><div className="pulse-dot"></div> LIVE</span>
+                      <span className="id-node desktop-only">ID: {selectedConv._id.slice(-6).toUpperCase()}</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div className="header-actions">
                 {isAgentView && !selectedConv.agent && (
-                  <button className="btn btn-primary" onClick={handleJoin}>
-                    Join Neural Link
+                  <button className="btn btn-primary btn-sm" onClick={handleJoin}>
+                    Join
                   </button>
                 )}
                 {(!isAgentView || (isAgentView && selectedConv.agent?._id === user?._id)) &&
                   selectedConv.status !== "human_resolved" && (
                     <button 
-                      className={`btn ${selectedConv.isAiActive ? "btn-secondary" : "btn-primary"}`}
+                      className={`btn btn-sm ${selectedConv.isAiActive ? "btn-secondary" : "btn-primary"}`}
                       onClick={handleToggleAi}
+                      title={selectedConv.isAiActive ? "Disable AI" : "Enable AI"}
                     >
                       {selectedConv.isAiActive ? <ZapOff size={16} /> : <Zap size={16} />}
-                      {selectedConv.isAiActive ? "Disable AI" : "Enable AI"}
+                      <span className="desktop-only">{selectedConv.isAiActive ? "Disable AI" : "Enable AI"}</span>
                     </button>
                   )}
                 {(!isAgentView || (isAgentView && selectedConv.agent?._id === user?._id)) &&
                   selectedConv.status !== "human_resolved" && (
-                    <button className="btn btn-secondary" onClick={() => handleResolve(selectedConv._id)}>
-                      <CheckCircle size={16} /> Terminate Session
+                    <button 
+                      className="btn btn-secondary btn-sm" 
+                      onClick={() => handleResolve(selectedConv._id)}
+                      title="Resolve"
+                    >
+                      <CheckCircle size={16} />
+                      <span className="desktop-only">Resolve</span>
                     </button>
                   )}
               </div>
@@ -318,7 +334,7 @@ export default function Conversations({
                       <div className="message-envelope">
                         {!isUser && isHuman && (
                           <div className="message-attribution">
-                            {senderName} <span className="attribution-role">{msg.senderRole || 'Neural Node'}</span>
+                            {senderName} <span className="attribution-role">{msg.senderRole || 'Node'}</span>
                           </div>
                         )}
                         <div className="message-body">
@@ -342,18 +358,18 @@ export default function Conversations({
                     onClick={handleAISuggest} 
                     disabled={isSuggesting || !canSend}
                     className="ai-intel-btn"
-                    title="Get AI Intelligence"
+                    aria-label="AI Suggestion"
                   >
                     {isSuggesting ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
                   </button>
                   <form onSubmit={handleSendReply} className="input-form">
                     <input
-                      placeholder={!canSend ? "Access restricted to linked nodes..." : "Transmit intelligence..."}
+                      placeholder={!canSend ? "Access restricted..." : "Type reply..."}
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
                       disabled={!canSend}
                     />
-                    <button type="submit" className="btn btn-primary" disabled={!replyText.trim() || isSending || !canSend}>
+                    <button type="submit" className="btn btn-primary send-btn" disabled={!replyText.trim() || isSending || !canSend}>
                       {isSending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
                     </button>
                   </form>
@@ -362,99 +378,163 @@ export default function Conversations({
             ) : (
               <div className="resolved-status">
                 <CheckCircle2 size={16} />
-                <span>Neural session terminated by {selectedConv.resolvedByName || "Support Node"}</span>
+                <span>Session terminated</span>
               </div>
             )}
           </>
         ) : (
-          <div className="neural-empty">
+          <div className="neural-empty hide-on-mobile">
             <div className="empty-orb">
               <MessageSquare size={40} />
             </div>
-            <h3>Neural Interface Awaiting Input</h3>
-            <p>Synchronize with an active thread from the global log to begin transmission.</p>
+            <h3>Select a Conversation</h3>
+            <p>Choose a thread from the log to begin transmission.</p>
           </div>
         )}
       </div>
 
       <style>{`
         .conversations-layout {
-          display: flex; height: calc(100vh - 160px); background: white;
-          border-radius: var(--radius-card-modal); border: 1px solid var(--outline-variant); overflow: hidden;
-          box-shadow: var(--shadow-raised);
+          display: flex; 
+          height: calc(100vh - 100px); 
+          background: white;
+          border-radius: 0; 
+          border: none; 
+          overflow: hidden;
+          position: relative;
+        }
+
+        @media (min-width: 1024px) {
+          .conversations-layout {
+            height: calc(100vh - 160px); 
+            border-radius: var(--radius-card-modal); 
+            border: 1px solid var(--outline-variant);
+            box-shadow: var(--shadow-raised);
+          }
         }
         
         .thread-sidebar {
-          width: 320px; border-right: 1px solid var(--outline-variant); display: flex; flex-direction: column;
+          width: 100%; 
+          border-right: 1px solid var(--outline-variant); 
+          display: flex; 
+          flex-direction: column;
           background: var(--surface-container-low);
+          z-index: 10;
         }
+
+        @media (min-width: 1024px) {
+          .thread-sidebar { width: 320px; }
+        }
+
+        .hide-on-mobile { display: none !important; }
+        @media (min-width: 1024px) { .hide-on-mobile { display: flex !important; } }
         
-        .sidebar-header { padding: 24px; border-bottom: 1px solid var(--outline-variant); }
+        .sidebar-header { padding: 16px; border-bottom: 1px solid var(--outline-variant); }
+        @media (min-width: 1024px) { .sidebar-header { padding: 24px; } }
+
         .search-box {
           display: flex; align-items: center; gap: 12px; background: white;
-          padding: 10px 16px; border-radius: var(--radius-btn-input); border: 1px solid var(--outline-variant);
+          padding: 10px 16px; border-radius: 12px; border: 1px solid var(--outline-variant);
         }
-        .search-box input { border: none; background: transparent; padding: 0; font-size: var(--text-body-sm); color: var(--on-surface); width: 100%; }
+        .search-box input { border: none; background: transparent; padding: 0; font-size: 14px; color: var(--on-surface); width: 100%; }
         .search-box input:focus { outline: none; }
         .search-box svg { color: var(--outline); }
         
-        .thread-list { flex: 1; overflow-y: auto; }
+        .thread-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .thread-item {
-          padding: 20px; border-bottom: 1px solid var(--surface-container-high); cursor: pointer;
+          padding: 16px; border-bottom: 1px solid var(--surface-container-high); cursor: pointer;
           transition: var(--transition-fast); position: relative;
         }
+        @media (min-width: 1024px) { .thread-item { padding: 20px; } }
+
         .thread-item:hover { background: var(--surface-container-high); }
         .thread-item.selected { background: white; }
         .selection-indicator { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--primary); }
         
-        .thread-meta { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .thread-user { font-weight: 700; color: var(--on-surface); font-size: var(--text-body-sm); }
-        .thread-time { font-size: 0.75rem; color: var(--outline); }
-        .thread-preview { font-size: var(--text-body-sm); color: var(--on-surface-variant); margin: 0 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .thread-meta { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .thread-user { font-weight: 700; color: var(--on-surface); font-size: 14px; }
+        .thread-time { font-size: 11px; color: var(--outline); }
+        .thread-preview { font-size: 13px; color: var(--on-surface-variant); margin: 0 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .thread-footer { display: flex; gap: 8px; align-items: center; }
-        .ai-active-indicator { font-size: 0.6rem; font-weight: 800; color: var(--primary); background: var(--surface-container); padding: 2px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px; }
+        .ai-active-indicator { font-size: 10px; font-weight: 800; color: var(--primary); background: var(--surface-container-low); padding: 2px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px; }
         
-        .neural-interface { flex: 1; display: flex; flex-direction: column; background: white; position: relative; }
-        .interface-header { padding: 20px 32px; border-bottom: 1px solid var(--outline-variant); display: flex; justify-content: space-between; align-items: center; background: var(--surface-container-lowest); }
-        .header-identity { display: flex; align-items: center; gap: 16px; }
-        .identity-avatar { width: 44px; height: 44px; border-radius: 12px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; }
-        .identity-text h3 { margin: 0; font-size: 1.1rem; font-weight: 700; }
-        .identity-status { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
-        .live-pulse-container { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: #10b981; font-weight: 800; }
+        .neural-interface { flex: 1; display: flex; flex-direction: column; background: white; position: relative; width: 100%; }
+        .interface-header { 
+          padding: 12px 16px; 
+          border-bottom: 1px solid var(--outline-variant); 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          background: white;
+          position: sticky;
+          top: 0;
+          z-index: 20;
+        }
+
+        @media (min-width: 1024px) {
+          .interface-header { padding: 20px 32px; background: var(--surface-container-lowest); }
+        }
+
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .back-btn { 
+          background: transparent; border: none; color: var(--on-surface); cursor: pointer; padding: 4px; border-radius: 8px;
+        }
+        @media (min-width: 1024px) { .back-btn { display: none; } }
+
+        .header-identity { display: flex; align-items: center; gap: 12px; }
+        .identity-avatar { width: 36px; height: 36px; border-radius: 10px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
+        @media (min-width: 1024px) { .identity-avatar { width: 44px; height: 44px; font-size: 18px; } }
+
+        .identity-text h3 { margin: 0; font-size: 15px; font-weight: 700; }
+        .identity-status { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+        .live-pulse-container { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #10b981; font-weight: 800; }
         .pulse-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: pulse 2s infinite; }
-        .id-separator { color: var(--outline-variant); font-size: 0.7rem; }
-        .id-node { font-size: 0.7rem; color: var(--outline); font-weight: 600; }
+        .id-node { font-size: 10px; color: var(--outline); font-weight: 600; }
+        .desktop-only { display: none; }
+        @media (min-width: 1024px) { .desktop-only { display: inline; } }
         
-        .header-actions { display: flex; gap: 12px; }
-        .neural-content { flex: 1; padding: 40px 32px; overflow-y: auto; background: var(--surface); }
-        .neural-messages { display: flex; flex-direction: column; gap: 32px; max-width: 800px; margin: 0 auto; }
-        .neural-message { display: flex; gap: 16px; width: 100%; }
+        .header-actions { display: flex; gap: 8px; }
+        .neural-content { flex: 1; padding: 24px 16px; overflow-y: auto; background: var(--surface); -webkit-overflow-scrolling: touch; }
+        @media (min-width: 1024px) { .neural-content { padding: 40px 32px; } }
+
+        .neural-messages { display: flex; flex-direction: column; gap: 24px; max-width: 800px; margin: 0 auto; }
+        .neural-message { display: flex; gap: 12px; width: 100%; }
         .neural-message.user { flex-direction: row-reverse; }
         .message-source { flex-shrink: 0; }
-        .source-avatar { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .source-avatar { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
         .source-avatar.ai { background: var(--primary-container); color: white; }
         .source-avatar.agent, .source-avatar.owner { background: var(--surface-container-highest); color: var(--on-surface); }
         
-        .message-envelope { max-width: 80%; display: flex; flex-direction: column; }
+        .message-envelope { max-width: 85%; display: flex; flex-direction: column; }
         .neural-message.user .message-envelope { align-items: flex-end; }
-        .message-attribution { font-size: 0.7rem; font-weight: 700; margin-bottom: 6px; color: var(--on-surface-variant); }
+        .message-attribution { font-size: 11px; font-weight: 700; margin-bottom: 4px; color: var(--on-surface-variant); }
         .attribution-role { font-weight: 500; opacity: 0.6; }
-        .message-body { padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; line-height: 1.6; }
+        .message-body { padding: 12px 16px; border-radius: 14px; font-size: 14px; line-height: 1.5; word-break: break-word; }
         .user .message-body { background: var(--primary); color: white; border-top-right-radius: 2px; }
-        .assistant .message-body { background: white; color: var(--on-surface); border: 1px solid var(--outline-variant); border-top-left-radius: 2px; box-shadow: var(--shadow-raised); }
-        .message-meta { font-size: 0.65rem; color: var(--outline); margin-top: 8px; }
+        .assistant .message-body { background: white; color: var(--on-surface); border: 1px solid var(--outline-variant); border-top-left-radius: 2px; }
+        .message-meta { font-size: 10px; color: var(--outline); margin-top: 6px; }
         
-        .interface-footer { padding: 24px 32px; background: white; border-top: 1px solid var(--outline-variant); }
-        .input-cluster { display: flex; gap: 16px; align-items: center; max-width: 800px; margin: 0 auto; }
-        .input-form { flex: 1; display: flex; gap: 12px; background: var(--surface-container-low); padding: 8px; border-radius: 16px; border: 1px solid var(--outline-variant); }
-        .input-form input { flex: 1; border: none; background: transparent; padding: 0 12px; font-size: var(--text-body-sm); color: var(--on-surface); }
+        .interface-footer { 
+          padding: 16px; 
+          background: white; 
+          border-top: 1px solid var(--outline-variant);
+          padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        }
+
+        @media (min-width: 1024px) {
+          .interface-footer { padding: 24px 32px; }
+        }
+
+        .input-cluster { display: flex; gap: 12px; align-items: center; max-width: 800px; margin: 0 auto; }
+        .input-form { flex: 1; display: flex; gap: 8px; background: var(--surface-container-low); padding: 6px; border-radius: 14px; border: 1px solid var(--outline-variant); }
+        .input-form input { flex: 1; border: none; background: transparent; padding: 0 8px; font-size: 14px; color: var(--on-surface); min-width: 0; }
         .input-form input:focus { outline: none; }
-        .ai-intel-btn { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--primary-container); background: var(--surface-container-lowest); color: var(--primary); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--transition-fast); }
-        .ai-intel-btn:hover { background: var(--primary); color: white; transform: scale(1.05); }
+        .ai-intel-btn { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--primary-container); background: white; color: var(--primary); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        .send-btn { min-width: 44px; padding: 0; border-radius: 10px; }
         
-        .resolved-status { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 20px; background: var(--surface-container-low); border-top: 1px solid var(--outline-variant); color: #065f46; font-size: var(--text-body-sm); font-weight: 600; }
+        .resolved-status { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; background: var(--surface-container-low); border-top: 1px solid var(--outline-variant); color: #065f46; font-size: 13px; font-weight: 600; }
         .neural-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--on-surface-variant); text-align: center; padding: 40px; }
-        .empty-orb { width: 80px; height: 80px; border-radius: 50%; background: var(--surface-container-low); display: flex; align-items: center; justify-content: center; margin-bottom: 24px; color: var(--outline); border: 1px solid var(--outline-variant); }
+        .empty-orb { width: 80px; height: 80px; border-radius: 50%; background: var(--surface-container-low); display: flex; align-items: center; justify-content: center; margin-bottom: 24px; color: var(--outline); }
         
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
       `}</style>
