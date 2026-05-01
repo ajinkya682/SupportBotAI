@@ -41,8 +41,13 @@ export const getBusiness = async (req, res) => {
             business = await Business.create({
                 owner: req.user._id,
                 name: "My Business",
-                // API Key is also auto-generated in pre-save hook of Model (as per our last update)
             });
+        }
+
+        // REPAIR: If business exists but has no apiKey, generate one now
+        if (business && !business.apiKey) {
+            business.apiKey = `sb_${crypto.randomBytes(16).toString('hex')}`;
+            await business.save();
         }
 
         if (!business) return res.status(404).json({ message: "Business not found" });
