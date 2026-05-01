@@ -62,7 +62,7 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
         <div className="sidebar-header">
           <Link to="/" className="sidebar-brand">
             <div className="brand-icon">
-              <Bot size={22} color="white" />
+              <img src="/image.png" alt="SupportBot AI" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
             </div>
             <div className="brand-text">
               <h3>SupportBot</h3>
