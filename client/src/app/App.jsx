@@ -11,6 +11,7 @@ import { Toaster } from "react-hot-toast";
 import Navbar from "../shared/ui/layout/Navbar";
 
 import Home from "../features/landing/ui/pages/HomePage";
+import ChatWidgetPage from "../features/chat/ui/pages/ChatWidgetPage";
 
 import "../App.css";
 
@@ -52,6 +53,7 @@ function AppContent() {
           path="/signup"
           element={!user ? <Signup /> : <Navigate to="/dashboard" />}
         />
+        <Route path="/chat-widget/:apiKey" element={<ChatWidgetPage />} />
       </Routes>
     </div>
   );
