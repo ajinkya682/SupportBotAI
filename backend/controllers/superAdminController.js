@@ -391,7 +391,10 @@ const getPublicConfig = async (req, res) => {
             success: true, 
             config: {
                 platformName: config.platformName,
-                heroVideoUrl: config.heroVideoUrl
+                heroVideoUrl: config.heroVideoUrl,
+                twitterUrl: config.twitterUrl,
+                linkedinUrl: config.linkedinUrl,
+                githubUrl: config.githubUrl
             }
         });
     } catch (error) {
@@ -414,7 +417,7 @@ const getSettings = async (req, res) => {
 
 const updateSettings = async (req, res) => {
     try {
-        const { platformName, proPlanPrice, freeConversationLimit, proConversationLimit, heroVideoUrl } = req.body;
+        const { platformName, proPlanPrice, freeConversationLimit, proConversationLimit, heroVideoUrl, twitterUrl, linkedinUrl, githubUrl } = req.body;
         let config = await PlatformConfig.findOne();
         if (!config) {
             config = new PlatformConfig();
@@ -424,6 +427,9 @@ const updateSettings = async (req, res) => {
         config.freeConversationLimit = freeConversationLimit;
         config.proConversationLimit = proConversationLimit;
         if (heroVideoUrl) config.heroVideoUrl = heroVideoUrl;
+        if (twitterUrl) config.twitterUrl = twitterUrl;
+        if (linkedinUrl) config.linkedinUrl = linkedinUrl;
+        if (githubUrl) config.githubUrl = githubUrl;
         
         await config.save();
         res.json({ success: true, settings: config });

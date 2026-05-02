@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Settings, Save, Lock, Globe, 
-  Database, Shield, MessageSquare, 
-  DollarSign, Loader2, RefreshCcw, Download, PlayCircle 
+  DollarSign, Loader2, RefreshCcw, Download, PlayCircle,
+  Globe, MessageSquare
 } from 'lucide-react';
+import { FaTwitter, FaLinkedin, FaGithub } from 'react-icons/fa6';
 import axios from 'axios';
 import { API_URL } from '../../../../shared/services/config';
 import toast from 'react-hot-toast';
@@ -18,7 +18,10 @@ const SASettings = () => {
     freeConversationLimit: 100,
     proConversationLimit: 999999,
     maintenanceMode: false,
-    heroVideoUrl: ''
+    heroVideoUrl: '',
+    twitterUrl: '',
+    linkedinUrl: '',
+    githubUrl: ''
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -174,6 +177,42 @@ const SASettings = () => {
                 />
               </div>
               <p className="side-desc" style={{ marginTop: '8px', marginBottom: 0 }}>This video appears when users click "Watch Video Tour" on the landing page.</p>
+            </div>
+
+            <div className="sa-divider" />
+
+            <div className="sa-card-header">
+              <h3><Globe size={18} /> Social Media Links</h3>
+            </div>
+            
+            <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+              <div className="form-group">
+                <label><FaTwitter size={14} style={{ marginRight: '6px' }} /> Twitter URL</label>
+                <input 
+                  type="text" 
+                  value={config.twitterUrl || ''} 
+                  onChange={(e) => setConfig({...config, twitterUrl: e.target.value})}
+                  placeholder="https://twitter.com/yourhandle"
+                />
+              </div>
+              <div className="form-group">
+                <label><FaLinkedin size={14} style={{ marginRight: '6px' }} /> LinkedIn URL</label>
+                <input 
+                  type="text" 
+                  value={config.linkedinUrl || ''} 
+                  onChange={(e) => setConfig({...config, linkedinUrl: e.target.value})}
+                  placeholder="https://linkedin.com/company/your"
+                />
+              </div>
+              <div className="form-group">
+                <label><FaGithub size={14} style={{ marginRight: '6px' }} /> GitHub URL</label>
+                <input 
+                  type="text" 
+                  value={config.githubUrl || ''} 
+                  onChange={(e) => setConfig({...config, githubUrl: e.target.value})}
+                  placeholder="https://github.com/your-org"
+                />
+              </div>
             </div>
 
             <div className="sa-divider" />

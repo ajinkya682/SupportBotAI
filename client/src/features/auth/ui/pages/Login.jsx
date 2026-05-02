@@ -79,8 +79,8 @@ export default function Login() {
       >
         <div className="auth-header">
           <Link to="/" className="auth-brand">
-            <div className="brand-icon">
-              <Bot size={28} color="white" />
+            <div className="brand-icon" style={{ background: 'transparent', padding: 0, width: '72px', height: '72px' }}>
+              <img src="/logo.png" alt="SupportBot AI" style={{ width: '72px', height: '72px', objectFit: 'contain' }} />
             </div>
             <span className="brand-text">
               SUPPORTBOT <span className="highlight">AI</span>

@@ -27,6 +27,7 @@ import {
   FileCode,
   MousePointer2
 } from "lucide-react";
+import Footer from '../../../../shared/ui/components/Footer';
 import { API_URL } from '../../../../shared/services/config';
 
 const SectionHeader = ({ title, icon: Icon, color = "var(--primary)" }) => (
@@ -71,10 +72,10 @@ export default function Docs() {
             className="text-center"
           >
             <div className="title-tag">DOCUMENTATION HUB</div>
-            <h1 className="hero-title">
+            <h1 className="hero-title" style={{textAlign:"center"}}>
               Build better <span className="gradient-text">support experiences</span>
             </h1>
-            <p className="hero-subtitle">
+            <p className="hero-subtitle" style={{textAlign:"center"}}>
               Everything you need to integrate, customize, and optimize your SupportBotAI assistant.
             </p>
 
@@ -432,6 +433,7 @@ export default function Docs() {
         .callout-icon { flex-shrink: 0; }
         .info-callout p { margin: 0; font-size: 0.95rem; line-height: 1.6; }
       `}</style>
+      <Footer />
     </div>
   );
 }

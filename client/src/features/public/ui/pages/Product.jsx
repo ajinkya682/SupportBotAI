@@ -12,6 +12,7 @@ import {
   Sparkles
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import Footer from "../../../../shared/ui/components/Footer";
 
 export default function Product() {
   const features = [
@@ -53,8 +54,8 @@ export default function Product() {
           >
             <Bot size={16} /> AI-FIRST PLATFORM
           </motion.div>
-          <h1 className="hero-title">Support That <span className="gradient-text">Thinks</span> Before It Speaks</h1>
-          <p className="hero-subtitle">Scale your customer service with an AI that doesn't just respond—it understands and resolves.</p>
+          <h1 className="hero-title" style={{textAlign:"center"}}>Support That <span className="gradient-text">Thinks</span> Before It Speaks</h1>
+          <p className="hero-subtitle" style={{textAlign:"center"}}>Scale your customer service with an AI that doesn't just respond—it understands and resolves.</p>
           <div className="hero-cta">
             <Link to="/signup" className="btn btn-primary btn-lg full-w-mobile">Get Started Free</Link>
             <button className="btn btn-outline btn-lg full-w-mobile">Watch Video Tour</button>
@@ -235,6 +236,7 @@ export default function Product() {
           .s-feat { text-align: left; }
         }
       `}</style>
+      <Footer />
     </div>
   );
 }
