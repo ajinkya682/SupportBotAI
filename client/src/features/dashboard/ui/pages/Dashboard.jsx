@@ -315,7 +315,6 @@ export default function Dashboard() {
             setSelectedConversationId={setSelectedConversationId}
             onConversationsUpdate={setConversations}
             socket={socket}
-            showResolved={false}
             ownerInfo={{
               name: user?.name,
               businessLogo: business?.appearance?.companyLogo,

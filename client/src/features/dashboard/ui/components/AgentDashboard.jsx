@@ -116,7 +116,6 @@ export default function AgentDashboard({ user }) {
     });
 
     socket.on("new_ticket", (newConv) => {
-      playSound('new_ticket');
       setConversations(prev => {
         const exists = prev.find(c => c._id === newConv._id);
         if (exists) return prev.map(c => c._id === newConv._id ? newConv : c);
@@ -235,7 +234,6 @@ export default function AgentDashboard({ user }) {
               socket={socket}
               onConversationsUpdate={setConversations}
               playSound={playSound}
-              showResolved={false}
               ownerInfo={business ? {
                 businessLogo: business.appearance?.companyLogo,
               } : null}
@@ -336,23 +334,15 @@ export default function AgentDashboard({ user }) {
         );
       case 'notifications':
         return <Notifications />;
-      case 'history':
-        return (
-          <div className="agent-chat-wrapper">
-            <Conversations 
-              conversations={conversations} 
-              isAgentView={true} 
-              socket={socket}
-              onConversationsUpdate={setConversations}
-              playSound={playSound}
-              showResolved={true}
-              ownerInfo={business ? {
-                businessLogo: business.appearance?.companyLogo,
-              } : null}
-            />
+      default: return (
+        <div className="empty-workload">
+          <div className="empty-icon-wrap">
+            <History size={48} />
           </div>
-        );
-      default: return null;
+          <h3>Session Archive</h3>
+          <p>This feature is coming soon. You'll be able to review all past customer interactions here.</p>
+        </div>
+      );
     }
   };
 
