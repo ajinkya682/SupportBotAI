@@ -39,8 +39,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user?.role === "agent") return;
-    dispatch(getBusiness());
-    dispatch(getConversations());
+    dispatch(getBusiness()).then((action) => {
+      // Check if the action was successful and returned business data
+      if (action.payload && typeof action.payload === 'object' && !action.error) {
+        dispatch(getConversations());
+      }
+    });
   }, [dispatch, user?.role]);
 
   useEffect(() => {
@@ -299,7 +303,7 @@ export default function Dashboard() {
 
           <div className="sa-top-actions">
             <div className="notification-wrap">
-              <NotificationBell />
+              {business && <NotificationBell />}
             </div>
             <div className="sa-admin-badge">
               {business?.plan?.toUpperCase() || 'STARTER'}

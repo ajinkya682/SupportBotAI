@@ -39,6 +39,7 @@ const io = new Server(server, {
 // Pass io to req before routes
 app.use((req, res, next) => {
   req.io = io;
+  console.log(`[REQ] ${req.method} ${req.url}`);
   next();
 });
 
@@ -103,6 +104,12 @@ app.use('/api/agents', require('./routes/agentRoutes'));
 app.use('/api/super-admin', require('./routes/superAdminRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 
+// ── Catch-all for undefined API routes ────────────────────────────────────────
+app.use('/api', (req, res) => {
+  console.warn(`[404] API Route not found: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ message: `API route ${req.originalUrl} not found` });
+});
+
 // ── Global Error Handler ───────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -143,13 +150,16 @@ const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
   try {
+    console.log('🔄 Connecting to MongoDB...');
     await connectDB();
-    server.listen(PORT, '0.0.0.0', () => {
+    console.log('✅ MongoDB Connected');
+    
+    server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
+      console.log(`🌐 API Base URL: http://localhost:${PORT}/api`);
     });
   } catch (error) {
-    console.error('❌ Failed to connect to MongoDB:', error.message);
+    console.error('❌ Server startup failed:', error.message);
     process.exit(1);
   }
 };
