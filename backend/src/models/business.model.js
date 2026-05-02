@@ -73,5 +73,5 @@ BusinessSchema.methods.hasReachedLimit = function() {
     return this.conversationCount >= this.conversationLimit;
 };
 
-const Business = mongoose.model('Business', BusinessSchema);
-export default Business;
+const business = mongoose.model('Business', BusinessSchema);
+export default business;
