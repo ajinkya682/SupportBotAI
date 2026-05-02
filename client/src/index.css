@@ -188,10 +188,14 @@ input, textarea, select {
   min-height: 44px; /* Rule 4 */
 }
 
-input:focus {
-  outline: none;
+input:focus, textarea:focus, select:focus, button:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+input:focus, textarea:focus, select:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(53, 37, 205, 0.12);
+  background-color: var(--surface-container-lowest);
 }
 
 input::placeholder {

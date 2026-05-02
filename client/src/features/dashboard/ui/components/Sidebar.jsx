@@ -9,7 +9,8 @@ import {
   Sparkles,
   Users,
   Palette,
-  X
+  X,
+  Building2
 } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { logout, reset } from "../../../auth/state/authSlice";
@@ -49,7 +50,7 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
       <AnimatePresence>
         {isOpen && (
           <motion.div 
-            className="sidebar-backdrop"
+            className="sa-sidebar-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -58,256 +59,238 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
         )}
       </AnimatePresence>
 
-      <aside className={`sidebar ${isOpen ? 'is-open' : ''}`}>
-        <div className="sidebar-header">
-          <Link to="/" className="sidebar-brand">
-            <div className="brand-icon">
-              <img src="/image.png" alt="SupportBot AI" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
+      <aside className={`sa-sidebar ${isOpen ? 'open' : ''}`}>
+        <div className="sa-sidebar-header">
+          <div className="sa-header-main">
+            <div className="sa-logo-wrapper">
+              {business?.appearance?.companyLogo ? (
+                <img 
+                  src={business.appearance.companyLogo} 
+                  alt={business.name} 
+                  style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} 
+                />
+              ) : (
+                <Building2 size={20} color="white" />
+              )}
             </div>
-            <div className="brand-text">
-              <h3>SupportBot</h3>
-              <span>Enterprise AI</span>
+            <div className="sa-brand-text">
+              <h3>{business?.name || 'SupportBot'}</h3>
+              <span>{isFree ? 'Starter Plan' : 'Enterprise Node'}</span>
             </div>
-          </Link>
-          <button className="sidebar-close-btn" onClick={onClose} aria-label="Close sidebar">
-            <X size={24} />
+          </div>
+          <button className="mobile-close-btn" onClick={onClose} aria-label="Close sidebar">
+            <X size={20} color="var(--outline)" />
           </button>
         </div>
 
-        <nav className="sidebar-nav">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-              onClick={() => handleTabClick(item.id)}
-            >
-              <item.icon size={18} className="nav-icon" />
-              <span>{item.label}</span>
-              {activeTab === item.id && <div className="active-accent" />}
-            </button>
-          ))}
+        <nav className="sa-sidebar-nav">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                className={`sa-nav-link ${isActive ? 'active' : ''}`}
+                onClick={() => handleTabClick(item.id)}
+              >
+                <Icon size={18} className="sa-icon" />
+                <span>{item.label}</span>
+                {isActive && <motion.div layoutId="active-pill" className="active-pill desktop-only" />}
+              </button>
+            );
+          })}
         </nav>
 
-        <div className="sidebar-footer">
+        <div className="sa-sidebar-footer">
           {isFree && (
-            <div className="upgrade-promo-card">
+            <div className="sa-upgrade-card">
               <div className="promo-header">
                 <Sparkles size={14} />
                 <span>PRO UPGRADE</span>
               </div>
               <p>Scale your intelligence with advanced URL scanning and custom branding.</p>
-              <button className="btn btn-primary" onClick={onUpgrade}>
+              <button className="btn-upgrade-sa" onClick={onUpgrade}>
                 Upgrade Now
               </button>
             </div>
           )}
           
-          <button onClick={onLogout} className="logout-btn">
+          <button onClick={onLogout} className="sa-logout-btn">
             <LogOut size={18} />
             <span>Sign Out</span>
           </button>
         </div>
 
         <style>{`
-          .sidebar {
-            width: var(--sidebar-width);
-            height: 100vh;
-            background-color: var(--surface-container);
-            display: flex;
-            flex-direction: column;
-            padding: 32px 16px;
+          .sa-sidebar { 
             position: fixed;
             top: 0;
+            bottom: 0;
             left: 0;
-            z-index: 1100;
+            width: 280px; 
+            background: white; 
+            border-right: 1px solid var(--outline-variant);
+            display: flex; 
+            flex-direction: column; 
+            padding: 24px 16px; 
+            z-index: 1000; 
             transform: translateX(-100%);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 8px 0 32px rgba(0, 0, 0, 0.1);
           }
 
+          .sa-sidebar.open { transform: translateX(0); }
+
           @media (min-width: 1024px) {
-            .sidebar {
+            .sa-sidebar {
               position: sticky;
-              transform: translateX(0);
-              box-shadow: none;
-              z-index: 100;
+              width: 300px;
+              transform: none;
+              padding: 32px 16px;
+              height: 100vh;
             }
           }
 
-          .sidebar.is-open {
-            transform: translateX(0);
-          }
-
-          .sidebar-backdrop {
+          .sa-sidebar-overlay {
             position: fixed;
             inset: 0;
             background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(4px);
-            z-index: 1050;
+            z-index: 950;
           }
 
           @media (min-width: 1024px) {
-            .sidebar-backdrop { display: none; }
+            .sa-sidebar-overlay { display: none; }
           }
-          
-          .sidebar-header {
-            margin-bottom: 40px;
-            padding: 0 8px;
-            display: flex;
+
+          .sa-sidebar-header { 
+            display: flex; 
+            align-items: center; 
             justify-content: space-between;
-            align-items: center;
-          }
-          
-          .sidebar-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
+            padding: 0 8px; 
+            margin-bottom: 32px; 
           }
 
-          .sidebar-close-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: transparent;
-            border: none;
-            color: var(--on-surface-variant);
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-          }
+          @media (min-width: 1024px) { .sa-sidebar-header { margin-bottom: 40px; } }
 
-          @media (min-width: 1024px) {
-            .sidebar-close-btn { display: none; }
+          .sa-header-main { display: flex; align-items: center; gap: 12px; }
+          .sa-logo-wrapper { 
+            width: 40px; 
+            height: 40px; 
+            background: var(--primary); 
+            border-radius: 12px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            box-shadow: 0 4px 12px rgba(53, 37, 205, 0.2);
+            flex-shrink: 0;
           }
           
-          .brand-icon {
-            width: 36px;
-            height: 36px;
-            background: var(--primary);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: var(--shadow-raised);
-          }
+          .sa-brand-text h3 { color: var(--on-surface); margin: 0; font-size: 1rem; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+          .sa-brand-text span { color: var(--primary); font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
           
-          .brand-text h3 {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--on-surface);
-            margin: 0;
-            line-height: 1.1;
-          }
+          .mobile-close-btn { background: transparent; border: none; padding: 4px; display: flex; align-items: center; justify-content: center; }
+          @media (min-width: 1024px) { .mobile-close-btn { display: none; } }
+
+          .sa-sidebar-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-right: 4px; }
           
-          .brand-text span {
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: var(--outline);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-          }
-          
-          .sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            flex: 1;
-            overflow-y: auto;
-          }
-          
-          .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 12px;
-            border-radius: var(--radius-btn-input);
-            border: none;
-            background: transparent;
-            color: var(--on-surface-variant);
-            font-weight: 500;
-            font-size: var(--text-label-md);
-            cursor: pointer;
-            transition: var(--transition-fast);
-            text-align: left;
+          .sa-nav-link { 
+            display: flex; 
+            align-items: center; 
+            gap: 14px; 
+            padding: 12px 14px; 
+            border-radius: 12px; 
+            color: var(--on-surface-variant); 
+            text-decoration: none; 
+            font-weight: 600; 
+            font-size: 0.9rem; 
+            transition: 0.2s; 
             position: relative;
-            min-height: 44px;
+            background: transparent;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+            text-align: left;
+          }
+
+          .sa-nav-link:hover { background: var(--surface-container-low); color: var(--on-surface); }
+          
+          .sa-nav-link.active { 
+            color: var(--primary); 
+            background: var(--primary-low); 
+            font-weight: 700;
+          }
+
+          .active-pill { 
+            position: absolute; 
+            left: -16px; 
+            width: 4px; 
+            height: 24px; 
+            background: var(--primary); 
+            border-radius: 0 4px 4px 0; 
           }
           
-          .nav-item:hover {
-            background-color: var(--surface-container-high);
-            color: var(--on-surface);
-          }
-          
-          .nav-item.active {
-            background-color: var(--surface-container-highest);
-            color: var(--primary);
-            font-weight: 600;
-          }
-          
-          .active-accent {
-            position: absolute;
-            left: -16px;
-            width: 3px;
-            height: 20px;
-            background-color: var(--primary);
-            border-radius: 0 4px 4px 0;
-          }
-          
-          .nav-icon { flex-shrink: 0; }
-          
-          .sidebar-footer {
-            margin-top: auto;
+          .sa-icon { flex-shrink: 0; }
+
+          .sa-sidebar-footer { 
+            padding-top: 16px; 
+            border-top: 1px solid var(--outline-variant); 
+            margin-top: auto; 
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            padding-top: 24px;
+            gap: 12px;
           }
-          
-          .upgrade-promo-card {
-            padding: 20px;
-            background-color: var(--surface-container-low);
-            border: 1px solid var(--outline-variant);
-            border-radius: var(--radius-card-modal);
-          }
-          
-          .promo-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+
+          .sa-upgrade-card {
+            background: linear-gradient(135deg, var(--primary-low), white);
+            border: 1px solid var(--primary-container);
+            padding: 16px;
+            border-radius: 16px;
             margin-bottom: 8px;
-            color: var(--primary);
+          }
+
+          .promo-header { display: flex; align-items: center; gap: 8px; color: var(--primary); font-size: 0.65rem; font-weight: 800; margin-bottom: 6px; }
+          .sa-upgrade-card p { font-size: 0.7rem; color: var(--on-surface-variant); line-height: 1.4; margin-bottom: 12px; font-weight: 500; }
+          
+          .btn-upgrade-sa {
+            width: 100%;
+            padding: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
             font-size: 0.75rem;
             font-weight: 700;
-            letter-spacing: 0.05em;
-          }
-          
-          .upgrade-promo-card p {
-            font-size: 0.75rem;
-            color: var(--on-surface-variant);
-            line-height: 1.4;
-            margin-bottom: 16px;
-          }
-          
-          .upgrade-promo-card .btn { width: 100%; min-height: 36px; font-size: 0.8rem; }
-          
-          .logout-btn {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 12px;
-            border-radius: var(--radius-btn-input);
-            border: none;
-            background: transparent;
-            color: var(--on-surface-variant);
-            font-weight: 500;
-            font-size: var(--text-label-md);
             cursor: pointer;
-            transition: var(--transition-fast);
-            min-height: 44px;
+            transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(53, 37, 205, 0.2);
           }
+
+          .btn-upgrade-sa:hover { transform: translateY(-1px); filter: brightness(1.1); }
+
+          .sa-logout-btn { 
+            display: flex; 
+            align-items: center; 
+            gap: 14px; 
+            width: 100%; 
+            padding: 12px 14px; 
+            border-radius: 12px; 
+            background: transparent; 
+            border: none; 
+            color: #ef4444; 
+            cursor: pointer; 
+            font-weight: 700; 
+            transition: 0.2s; 
+            font-size: 0.9rem; 
+          }
+
+          .sa-logout-btn:hover { background: #fef2f2; }
+
+          .desktop-only { display: none; }
+          @media (min-width: 1024px) { .desktop-only { display: inline-flex; } }
           
-          .logout-btn:hover { background-color: #ffdad6; color: #93000a; }
+          /* Custom scrollbar for nav */
+          .sa-sidebar-nav::-webkit-scrollbar { width: 4px; }
+          .sa-sidebar-nav::-webkit-scrollbar-thumb { background: var(--outline-variant); border-radius: 10px; }
         `}</style>
       </aside>
     </>

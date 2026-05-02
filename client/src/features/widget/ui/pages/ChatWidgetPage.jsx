@@ -440,8 +440,11 @@ export default function ChatWidgetPage() {
       </div>
 
       <div className="cw-messages" ref={scrollRef}>
-        {messages.map((m, i) => (
-          <div key={i} className={`cw-msg cw-msg--${m.role}`}>
+        {messages.map((m, i) => {
+          const isHuman = m.senderType === "user" || m.senderType === "agent" || m.senderType === "owner";
+          const displaySide = isHuman ? 'user' : 'assistant';
+          return (
+            <div key={i} className={`cw-msg cw-msg--${displaySide}`}>
             {m.role === "assistant" && (
               <div
                 className="cw-avatar"
@@ -469,7 +472,7 @@ export default function ChatWidgetPage() {
               <div
                 className="cw-bubble"
                 style={
-                  m.role === "user"
+                  isHuman
                     ? { background: themeColor, color: "#fff" }
                     : {}
                 }
@@ -484,7 +487,8 @@ export default function ChatWidgetPage() {
               </div>
             </div>
           </div>
-        ))}
+        );
+      })}
 
         {loading && isAiActive && (
           <div className="cw-msg cw-msg--assistant">
@@ -699,7 +703,7 @@ export default function ChatWidgetPage() {
         .cw-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
         .cw-avatar--user { background: #e2e8f0; }
         .cw-avatar-img { width: 100%; height: 100%; object-fit: cover; }
-        .cw-bubble-wrap { display: flex; flex-direction: column; gap: 3px; max-width: 78%; }
+        .cw-bubble-wrap { display: flex; flex-direction: column; gap: 3px; max-width: 60%; }
         .cw-msg--user .cw-bubble-wrap { align-items: flex-end; }
         .cw-sender-label { font-size: 0.65rem; font-weight: 700; color: #64748b; padding: 0 4px; }
         .cw-bubble { padding: 10px 14px; border-radius: 18px; font-size: 0.875rem; line-height: 1.55; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }

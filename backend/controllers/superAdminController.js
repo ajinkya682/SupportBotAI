@@ -93,7 +93,7 @@ const getOverviewStats = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching overview stats:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
     }
 };
 
@@ -131,7 +131,7 @@ const getOverviewActivity = async (req, res) => {
         res.json({ success: true, activities: limitedActivities });
     } catch (error) {
         console.error('Error fetching overview activity:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
     }
 };
 
@@ -165,7 +165,7 @@ const getOverviewChartData = async (req, res) => {
         res.json({ success: true, chartData });
     } catch (error) {
         console.error('Error fetching chart data:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
     }
 };
 
@@ -191,14 +191,15 @@ const getBusinesses = async (req, res) => {
                 convCount,
                 ticketCount,
                 createdAt: b.createdAt,
-                lastActiveAt: b.lastActiveAt || b.createdAt
+                lastActiveAt: b.lastActiveAt || b.createdAt,
+                isBlocked: b.isBlocked || false
             };
         }));
 
         res.json({ success: true, businesses: results });
     } catch (error) {
         console.error('Error fetching businesses:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
     }
 };
 
@@ -227,12 +228,13 @@ const getBusinessDetails = async (req, res) => {
                 createdAt: business.createdAt,
                 agents,
                 recentConversations,
-                subscriptionHistory
+                subscriptionHistory,
+                isBlocked: business.isBlocked || false
             }
         });
     } catch (error) {
         console.error('Error fetching business details:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
     }
 };
 
@@ -244,7 +246,7 @@ const updateBusinessPlan = async (req, res) => {
         res.json({ success: true, business });
     } catch (error) {
         console.error('Error updating plan:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
     }
 };
 
@@ -270,14 +272,15 @@ const getAgents = async (req, res) => {
                 activeConvs,
                 totalConvs,
                 resolvedTickets,
-                createdAt: agent.createdAt
+                createdAt: agent.createdAt,
+                isBlocked: agent.isBlocked || false
             };
         }));
 
         res.json({ success: true, agents: results });
     } catch (error) {
         console.error('Error fetching agents:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
     }
 };
 
@@ -287,10 +290,17 @@ const getAgentDetails = async (req, res) => {
         if (!agent) return res.status(404).json({ success: false, message: 'Agent not found' });
 
         const history = await Conversation.find({ assignedAgentId: agent._id }).sort({ createdAt: -1 }).limit(50);
-        res.json({ success: true, agent, history });
+        res.json({ 
+            success: true, 
+            agent: {
+                ...agent.toObject(),
+                id: agent._id
+            }, 
+            history 
+        });
     } catch (error) {
         console.error('Error fetching agent details:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
     }
 };
 
@@ -330,7 +340,7 @@ const getConversations = async (req, res) => {
         res.json({ success: true, conversations: results });
     } catch (error) {
         console.error('Error fetching conversations:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
     }
 };
 
@@ -344,7 +354,7 @@ const getConversationDetails = async (req, res) => {
         res.json({ success: true, conversation });
     } catch (error) {
         console.error('Error fetching conversation details:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
     }
 };
 
@@ -365,7 +375,7 @@ const getSubscriptions = async (req, res) => {
         res.json({ success: true, subscriptions: results });
     } catch (error) {
         console.error('Error fetching subscriptions:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
     }
 };
 
@@ -380,7 +390,7 @@ const getSettings = async (req, res) => {
         res.json({ success: true, settings: config });
     } catch (error) {
         console.error('Error fetching settings:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
     }
 };
 
@@ -400,7 +410,7 @@ const updateSettings = async (req, res) => {
         res.json({ success: true, settings: config });
     } catch (error) {
         console.error('Error updating settings:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
     }
 };
 
@@ -430,7 +440,7 @@ const changePassword = async (req, res) => {
         res.json({ success: true, message: 'Password updated successfully' });
     } catch (error) {
         console.error('Error changing password:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
     }
 };
 
@@ -583,39 +593,61 @@ const blockBusiness = async (req, res) => {
     try {
         const business = await Business.findById(req.params.id);
         if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
-        business.isBlocked = !business.isBlocked;
-        await business.save();
-        res.json({ success: true, message: `Business ${business.isBlocked ? 'blocked' : 'unblocked'}` });
-    } catch (error) { res.status(500).json({ success: false }); }
+        
+        const updated = await Business.findByIdAndUpdate(
+            req.params.id, 
+            { $set: { isBlocked: !business.isBlocked } },
+            { new: true }
+        );
+        
+        res.json({ success: true, message: `Business ${updated.isBlocked ? 'blocked' : 'unblocked'}` });
+    } catch (error) { 
+        console.error('Error blocking business:', error);
+        res.status(500).json({ success: false, message: error.message }); 
+    }
 };
 
 const deleteBusiness = async (req, res) => {
     try {
         await Business.findByIdAndDelete(req.params.id);
         res.json({ success: true, message: 'Business removed successfully' });
-    } catch (error) { res.status(500).json({ success: false }); }
+    } catch (error) { 
+        console.error('Error deleting business:', error);
+        res.status(500).json({ success: false, message: error.message }); 
+    }
 };
 
 const blockAgent = async (req, res) => {
     try {
         const agent = await User.findById(req.params.id);
         if (!agent) return res.status(404).json({ success: false, message: 'Agent not found' });
-        agent.isBlocked = !agent.isBlocked;
-        await agent.save();
-        res.json({ success: true, message: `Agent ${agent.isBlocked ? 'blocked' : 'unblocked'}` });
-    } catch (error) { res.status(500).json({ success: false }); }
+        
+        const updated = await User.findByIdAndUpdate(
+            req.params.id,
+            { $set: { isBlocked: !agent.isBlocked } },
+            { new: true }
+        );
+        
+        res.json({ success: true, message: `Agent ${updated.isBlocked ? 'blocked' : 'unblocked'}` });
+    } catch (error) { 
+        console.error('Error blocking agent:', error);
+        res.status(500).json({ success: false, message: error.message }); 
+    }
 };
 
 const deleteAgent = async (req, res) => {
     try {
         await User.findByIdAndDelete(req.params.id);
         res.json({ success: true, message: 'Agent removed successfully' });
-    } catch (error) { res.status(500).json({ success: false }); }
+    } catch (error) { 
+        console.error('Error deleting agent:', error);
+        res.status(500).json({ success: false, message: error.message }); 
+    }
 };
 
-exports.exportSettings = async (req, res) => {
+const exportSettings = async (req, res) => {
   try {
-    const settings = await Setting.findOne();
+    const settings = await PlatformConfig.findOne();
     const csvData = [
       ['Parameter', 'Value'],
       ['Platform Name', settings?.platformName || 'SupportBot AI'],
