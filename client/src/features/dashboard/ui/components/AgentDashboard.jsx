@@ -38,7 +38,6 @@ import toast from "react-hot-toast";
 import NotificationBell from "./NotificationBell";
 import Notifications from "./Notifications";
 import AgentProfileSetup from "./AgentProfileSetup";
-import Profile from "./Profile";
 import { usePushNotifications } from "../../../../shared/hooks/usePushNotifications";
 import PushPrompt from "../../../../shared/ui/components/PushPrompt";
 
