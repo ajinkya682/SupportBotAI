@@ -1,6 +1,3 @@
-/**
- * Simple in-memory cache utility with TTL and Size Management
- */
 class CacheService {
     constructor(maxSize = 1000) {
         this.cache = new Map();

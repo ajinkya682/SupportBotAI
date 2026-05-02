@@ -1,24 +1,32 @@
 import express from 'express';
 const router = express.Router();
 
-import { 
-    addAgent, 
-    listAgents, 
-    deleteAgent, 
-    updateProfile, 
+import {
+    addAgent,
+    listAgents,
+    deleteAgent,
+    updateProfile,
     updateAvailability,
-    getAgentStats, 
+    getAgentStats,
     joinConversation,
     resolveConversation
 } from '../controller/agent.controller.js';
 
 
 import { protect } from '../middlewares/auth.middleware.js';
-import { uploadSinglePhoto } from '../service/storage.service.js';
+import validateRequest from '../validators/validateRequest.js';
+import {
+    addAgentValidator,
+    updateProfileValidator,
+    updateAvailabilityValidator,
+    agentIdValidator,
+    joinConversationValidator,
+    resolveConversationValidator
+} from '../validators/agent.validator.js';
 
 /**
  * @desc    Global Middleware
- * Saare agent routes protected hain, isliye baar-baar 'protect' 
+ * Saare agent routes protected hain, isliye baar-baar 'protect'
  * likhne ke bajaye hum router level par apply kar sakte hain.
  */
 router.use(protect);
@@ -27,10 +35,10 @@ router.use(protect);
  * @route   Management Routes (Business Owner)
  */
 router.route('/')
-    .get(listAgents)   
-    .post(addAgent);   
+    .get(listAgents)
+    .post(addAgentValidator, validateRequest, addAgent);
 
-router.delete('/:id', deleteAgent); 
+router.delete('/:id', agentIdValidator, validateRequest, deleteAgent);
 
 /**
  * @route   Agent Operational Routes
@@ -38,14 +46,14 @@ router.delete('/:id', deleteAgent);
 router.get('/stats', getAgentStats);
 
 
-router.patch('/update-profile', uploadSinglePhoto, updateProfile);
+router.patch('/update-profile', updateProfileValidator, validateRequest, updateProfile);
 
-router.patch('/update-availability', updateAvailability);
+router.patch('/update-availability', updateAvailabilityValidator, validateRequest, updateAvailability);
 
 /**
  * @route   Conversation Management
  */
-router.patch('/join/:id', joinConversation);
-router.patch('/resolve/:id', resolveConversation);
+router.patch('/join/:id', joinConversationValidator, validateRequest, joinConversation);
+router.patch('/resolve/:id', resolveConversationValidator, validateRequest, resolveConversation);
 
 export default router;
