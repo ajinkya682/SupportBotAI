@@ -54,11 +54,6 @@ const ConversationSchema = new mongoose.Schema({
     resolvedByName: { type: String },
     resolvedByType: { type: String, enum: ['agent', 'owner', 'ai'] },
     resolvedAt: { type: Date },
-    aiGroundedStatus: { 
-        type: String, 
-        enum: ['answered', 'fallback-empty', 'fallback-irrelevant'], 
-        default: 'answered' 
-    },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Conversation', ConversationSchema);

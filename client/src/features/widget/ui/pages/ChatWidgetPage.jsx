@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, X, Sparkles, Bell, User, Send, Volume2, VolumeX, RotateCcw, Star, ChevronDown, Minus } from "lucide-react";
+import { MessageSquare, X, Sparkles, Bell, User, Send, Volume2, VolumeX, RotateCcw, Star, ChevronDown } from "lucide-react";
 import Loader from "../../../../shared/ui/components/Loader";
-import ReactMarkdown from 'react-markdown';
 
 function playPop(muted) {
   if (muted) return;
@@ -444,590 +443,318 @@ export default function ChatWidgetPage() {
     <div className="cw-root">
       {!isConnected && (
         <div className="cw-reconnect-banner">
-          <RotateCcw size={12} className="spin" /> Reconnecting to service...
+          <RotateCcw size={11} style={{animation:'cwSpin 1s linear infinite'}} /> Reconnecting...
         </div>
       )}
 
       {/* Header */}
-      <div className="cw-header" style={{ borderTop: `4px solid ${themeColor}` }}>
+      <div className="cw-header">
         <div className="cw-header-left">
-          <div className="cw-header-av">
-            {headerAvatar ? (
-              <img src={headerAvatar} alt={headerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <Sparkles size={20} color={themeColor} />
-            )}
+          <div className="cw-avatar-ring" style={{'--rc': themeColor}}>
+            <div className="cw-header-av">
+              {headerAvatar
+                ? <img key={headerAvatar} src={headerAvatar} alt="" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%',animation:'cwFadeIn 0.3s ease'}} />
+                : <Sparkles size={15} color={themeColor} />}
+            </div>
+            <div className="cw-online-dot" />
           </div>
           <div className="cw-header-text">
             <span className="cw-bot-name">{headerName}</span>
-            <div className="cw-status">
-              <div className="cw-online-dot" />
-              <span>Online</span>
-            </div>
+            <span className="cw-status">
+              <span className="cw-status-pulse" style={{background:'#22c55e'}} />
+              {isAiActive ? 'Online · AI Assistant' : agent ? `${agent.roleTitle||'Support Agent'} · Real Human 🟢` : 'Connecting...'}
+            </span>
           </div>
         </div>
-        <div className="cw-header-actions">
-          <button className="cw-icon-btn" onClick={() => setIsMuted(m => !m)} title={isMuted ? 'Unmute' : 'Mute'}>
-            {isMuted ? <VolumeX size={18} color="#94a3b8" /> : <Volume2 size={18} color="#94a3b8" />}
+        <div style={{display:'flex',alignItems:'center',gap:'4px'}}>
+          <button className="cw-icon-btn" onClick={()=>setIsMuted(m=>!m)} title={isMuted?'Unmute':'Mute'}>
+            {isMuted ? <VolumeX size={14} color="#94a3b8"/> : <Volume2 size={14} color="#94a3b8"/>}
           </button>
-          <button className="cw-icon-btn" onClick={() => window.parent.postMessage("close-supportbot", "*")}>
-            <Minus size={20} color="#94a3b8" />
+          {!isSubscribed && (
+            <button className="cw-icon-btn" onClick={() => subscribeToPush(conversationId)} title="Enable Notifications">
+              <Bell size={14} color={themeColor} />
+            </button>
+          )}
+          <button className="cw-icon-btn" onClick={()=>window.parent.postMessage("close-supportbot","*")}>
+            <X size={15} color="#94a3b8"/>
           </button>
         </div>
       </div>
+      <div className="cw-header-pulse" style={{'--pc':themeColor}} />
 
-      {/* Message Thread */}
+      {/* Messages */}
       <div className="cw-messages" ref={scrollRef}>
-        {messages.length === 1 && !loading && showWelcome && (
-          <div className="cw-empty-state">
-            <div className="cw-empty-av">
-              {logoUrl ? (
-                <img src={logoUrl} alt={botName} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-              ) : (
-                <Sparkles size={40} color={themeColor} />
-              )}
-            </div>
-            <h2>How can we help?</h2>
-            <p>Ask me anything about our products or services. I'm here to help you instantly.</p>
-          </div>
-        )}
-
         {messages.map((m, i) => {
-          const isUserMsg = m.role === 'user' || m.senderType === 'user';
-          const ts = m.timestamp ? new Date(m.timestamp) : null;
-          const prevTs = i > 0 ? new Date(messages[i-1].timestamp) : null;
-          const showSeparator = ts && prevTs && (ts - prevTs > 30 * 60 * 1000); // 30 mins gap
-          const avatar = m.senderAvatar || (m.senderType === 'ai' ? logoUrl : null);
-
-          const separator = showSeparator ? (
-            <div key={`sep-${i}`} className="cw-date-separator">
-              <span>{ts.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
-          ) : null;
-
           if (m.role === 'system_escalation') return (
-            <div key={i} className="cw-esc-card" style={{ borderLeftColor: themeColor }}>
-              <div className="cw-esc-badge" style={{ background: `linear-gradient(135deg, ${themeColor}, #dc2626)` }}>⚡ HIGH INTENT</div>
-              <div className="cw-esc-line">Connecting to a human agent...</div>
+            <div key={i} className="cw-esc-card">
+              <div className="cw-esc-badge">⚡ HIGH INTENT</div>
+              {['Detecting query complexity...','High intent identified. Preparing escalation...','Connecting to Senior Enterprise Team...','Agent is joining...'].map((line,li)=>(
+                <div key={li} className="cw-esc-line" style={{animationDelay:`${li*0.6}s`}}>
+                  {li===3 ? <><Loader size={12} color={themeColor} className="mr-1.5" />{line}</> : line}
+                </div>
+              ))}
             </div>
           );
 
           if (m.role === 'system_agent_joined') return (
             <div key={i} className="cw-agent-joined-pill">
               <span className="cw-aj-dot" />
-              <strong>{m.agent?.displayName || m.agent?.name || 'Agent'}</strong> joined the chat
+              <strong>{m.agent?.displayName||m.agent?.name||'Agent'}</strong> 🟢 Real Human joined
             </div>
           );
 
+          const isAgentMsg = m.senderType==='agent'||m.senderType==='owner';
+          const isUserMsg = m.role==='user'||m.senderType==='user';
+          const ts = m.timestamp ? new Date(m.timestamp) : null;
+          const src = m.senderAvatar||(m.senderType==='ai'?logoUrl:null);
+
           return (
-            <>
-              {separator}
-              <div key={i} className={`cw-msg cw-msg--${isUserMsg ? 'user' : 'bot'}`}>
-                {!isUserMsg && (
-                  <div className="cw-av-mini">
-                    {avatar ? (
-                      <img src={avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-                    ) : (
-                      <div style={{ background: `${themeColor}15`, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Sparkles size={14} color={themeColor} />
-                      </div>
-                    )}
+            <div key={i} className={`cw-msg cw-msg--${isUserMsg?'user':'bot'}`}>
+              {!isUserMsg && (
+                <div className="cw-av" style={{background:`${themeColor}18`,border:`1.5px solid ${themeColor}33`}}>
+                  {src ? <img src={src} alt="" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/> : <Sparkles size={12} color={themeColor}/>}
+                </div>
+              )}
+              <div className="cw-bubble-wrap">
+                {isAgentMsg && (
+                  <div className="cw-sender-label">
+                    {m.senderName||'Agent'}{m.senderRole?`, ${m.senderRole}`:''}
+                    <span className="cw-human-badge">🟢 Real Human</span>
                   </div>
                 )}
-                <div className="cw-bubble-container">
-                  <div className={`cw-bubble cw-bubble--${isUserMsg ? 'user' : 'bot'}`}>
-                    {isUserMsg ? (
-                      <span>{m.content}</span>
-                    ) : (
-                      <div className="cw-markdown">
-                        <ReactMarkdown>{m.content}</ReactMarkdown>
-                      </div>
-                    )}
-                  </div>
-                  {ts && <span className="cw-ts">{ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+                <div className={`cw-bubble ${isUserMsg?'cw-bubble--user':'cw-bubble--bot'}`}
+                  style={isUserMsg?{background:`linear-gradient(135deg,${themeColor},${themeColor}dd)`}:{}}>
+                  {(() => {
+                    const parts = m.content.split(/(\[.*?\]\(.*?\))/g);
+                    return parts.map((part, i) => {
+                      const match = part.match(/\[(.*?)\]\((.*?)\)/);
+                      if (match) {
+                        return (
+                          <a key={i} href={match[2]} target="_blank" rel="noopener noreferrer" style={{ color: isUserMsg ? '#fff' : themeColor, textDecoration: 'underline' }}>
+                            {match[1]}
+                          </a>
+                        );
+                      }
+                      return part;
+                    });
+                  })()}
                 </div>
+                {ts && <div className="cw-ts">{ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>}
               </div>
-            </>
+              {isUserMsg && (
+                <div className="cw-av cw-av--user"><User size={12} color="#94a3b8"/></div>
+              )}
+            </div>
           );
         })}
 
         {/* AI typing */}
-        {loading && (
+        {loading && isAiActive && (
           <div className="cw-msg cw-msg--bot">
-            <div className="cw-av-mini">
-              {logoUrl ? (
-                <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-              ) : (
-                <div style={{ background: `${themeColor}15`, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Sparkles size={14} color={themeColor} />
-                </div>
-              )}
+            <div className="cw-av" style={{background:`${themeColor}18`,border:`1.5px solid ${themeColor}33`}}>
+              {logoUrl ? <img src={logoUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/> : <Sparkles size={12} color={themeColor}/>}
             </div>
-            <div className="cw-bubble cw-bubble--bot">
-              <div className="cw-typing-dots">
-                <span /><span /><span />
-              </div>
-            </div>
+            <div className="cw-bubble cw-bubble--bot cw-bubble--typing"><span/><span/><span/></div>
           </div>
         )}
 
         {/* Agent typing */}
         {isAgentTyping && (
           <div className="cw-msg cw-msg--bot">
-            <div className="cw-av-mini" style={{ background: '#dcfce7' }}>
-              <User size={14} color="#16a34a" />
+            <div className="cw-av" style={{background:'#dcfce7',border:'1.5px solid #bbf7d0'}}>
+              <User size={12} color="#16a34a"/>
             </div>
-            <div className="cw-bubble-container">
-              <div className="cw-bubble cw-bubble--bot">
-                <div className="cw-typing-dots">
-                  <span style={{ background: '#16a34a' }} /><span style={{ background: '#16a34a' }} /><span style={{ background: '#16a34a' }} />
-                </div>
-              </div>
-              <span className="cw-ts" style={{ fontStyle: 'italic' }}>{typingAgentName} is typing...</span>
+            <div className="cw-bubble-wrap">
+              <div className="cw-bubble cw-bubble--bot cw-bubble--typing"><span/><span/><span/></div>
+              <div className="cw-ts" style={{fontStyle:'italic'}}>{typingAgentName} is typing...</div>
             </div>
           </div>
         )}
 
-        {error && (
-          <div className="cw-error">
-            <span>{error}</span>
-            <button onClick={() => setError(null)}><X size={12} /></button>
+        {/* Resolved card */}
+        {isResolved && (
+          <div className="cw-resolved-card">
+            <div className="cw-resolved-check">✓</div>
+            <div className="cw-resolved-title">Conversation Resolved</div>
+            <div className="cw-resolved-sub">Hope we helped! Rate your experience:</div>
+            <div className="cw-stars">
+              {[1,2,3,4,5].map(s=>(
+                <Star key={s} size={22}
+                  fill={s<=(starHover||starRating)?'#f59e0b':'none'}
+                  color={s<=(starHover||starRating)?'#f59e0b':'#d1d5db'}
+                  style={{cursor:'pointer',transition:'all 0.15s'}}
+                  onMouseEnter={()=>setStarHover(s)}
+                  onMouseLeave={()=>setStarHover(0)}
+                  onClick={()=>setStarRating(s)}/>
+              ))}
+            </div>
+            <button onClick={startNewChat} className="cw-new-chat-btn" style={{background:themeColor}}>
+              Start New Conversation
+            </button>
           </div>
+        )}
+
+        {error && <div className="cw-error">{error}</div>}
+
+        {/* Scroll-to-bottom pill */}
+        {showScrollPill && (
+          <button className="cw-scroll-pill" onClick={scrollToBottom} style={{background:themeColor}}>
+            <ChevronDown size={14}/> {newMsgCount>0?`${newMsgCount} new`:''}
+          </button>
         )}
       </div>
 
-      {/* Quick Replies */}
-      {business?.faqs?.length > 0 && messages.length === 1 && !loading && showWelcome && (
-        <div className="cw-chips-wrapper">
-          {business.faqs.slice(0, 5).map((faq, i) => (
-            <button key={i} className="cw-chip" onClick={() => handleSend(faq.question)}>
-              {faq.question}
-            </button>
-          ))}
+
+      {showResolveButtons && !isResolved && !loading && (
+        <div className="cw-feedback">
+          <div className="cw-feedback-text">Did that solve your problem?</div>
+          <div className="cw-feedback-btns">
+            <button className="cw-fb-btn cw-fb-btn--primary" onClick={handleSolved} style={{background:themeColor}}>✅ Solved</button>
+            <button className="cw-fb-btn cw-fb-btn--secondary" onClick={handleAskSomethingElse} style={{color:themeColor,borderColor:`${themeColor}44`}}>Ask Something Else</button>
+          </div>
         </div>
       )}
 
-      {/* Input Bar */}
+      {business?.faqs?.length > 0 && messages.length === 1 && !loading && (
+        <div className="cw-faqs">
+          <div className="cw-faqs-label">SUGGESTED QUESTIONS</div>
+          <div className="cw-faqs-list">
+            {business.faqs.slice(0, 5).map((faq, i) => (
+              <button 
+                key={i} 
+                className="cw-faq-btn" 
+                onClick={() => handleSend(faq.question)} 
+                style={{
+                  borderColor: '#DDD8FE',
+                  color: themeColor,
+                  animationDelay: `${i * 0.1}s`
+                }}
+              >
+                {faq.question}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="cw-inputbar">
+        {!isAiActive && agent && (
+          <div className="cw-conn-label">Connected with {agent.displayName}{agent.roleTitle ? `, ${agent.roleTitle}` : ''}</div>
+        )}
         <form className="cw-input-form" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
           <input
             ref={inputRef}
             className="cw-input"
-            placeholder={isResolved ? "Conversation ended..." : "Type your message..."}
+            placeholder={isResolved ? "Start a new conversation..." : isAiActive ? (business?.appearance?.placeholderText || "Ask anything...") : "Reply to agent..."}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            disabled={isResolved}
-            aria-label="Type your message"
+            autoComplete="off"
           />
-          <button 
-            type="submit" 
-            className="cw-send-btn" 
-            disabled={!input.trim() || loading || isResolved}
-            style={{ background: input.trim() && !loading && !isResolved ? themeColor : '#e5e7eb' }}
-            aria-label="Send message"
-          >
-            <Send size={18} color="#fff" fill={input.trim() ? "#fff" : "none"} />
+          <button type="submit" className="cw-send-btn" disabled={!input.trim() || loading} style={{background: input.trim() && !loading ? themeColor : '#d1d5db'}}>
+            {loading ? <Loader size={15} color="#fff" /> : <Send size={15} fill={input.trim() ? "currentColor" : "none"}/>}
           </button>
         </form>
         {showBranding && (
-          <div className="cw-powered">Powered by SupportBotAI</div>
+          <div className="cw-powered">POWERED BY&nbsp;<strong style={{color:themeColor}}>SUPPORTBOTAI</strong></div>
         )}
       </div>
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        
-        :root {
-          --brand-primary: ${themeColor};
-          --bubble-bot-bg: #ffffff;
-          --bubble-user-bg: ${themeColor};
-          --chat-bg: #f9fafb;
-          --header-bg: #ffffff;
-          --text-main: #1f2937;
-          --text-muted: #6b7280;
-          --border-color: #e5e7eb;
-        }
-
-        html, body { 
-          height: 100vh !important; 
-          margin: 0 !important; 
-          padding: 0 !important; 
-          overflow: hidden !important; 
-          font-family: 'Inter', sans-serif;
-        }
-
-        .cw-root {
-          display: flex;
-          flex-direction: column;
-          height: 100vh;
-          width: 100%;
-          background: var(--chat-bg);
-          color: var(--text-main);
-          overflow: hidden;
-          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-          border-radius: 16px;
-        }
-
+        html,body{height:100vh!important;margin:0!important;padding:0!important;overflow:hidden!important;}
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        .cw-root{display:flex;flex-direction:column;height:100vh;width:100%;font-family:'Inter',sans-serif;background:#fff;color:#111827;overflow:hidden;}
+        /* Reconnect */
+        .cw-reconnect-banner{background:#fef3c7;color:#92400e;font-size:0.68rem;font-weight:600;padding:6px 14px;display:flex;align-items:center;gap:6px;justify-content:center;flex-shrink:0;}
         /* Header */
-        .cw-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 16px 20px;
-          background: #ffffff;
-          border-bottom: 1px solid var(--border-color);
-          z-index: 10;
-        }
-
-        .cw-header-left {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .cw-header-av {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          background: #f3f4f6;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-          border: 2px solid #fff;
-          box-shadow: 0 0 0 1px var(--border-color);
-        }
-
-        .cw-header-text {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .cw-bot-name {
-          font-size: 0.95rem;
-          font-weight: 700;
-          color: var(--text-main);
-        }
-
-        .cw-status {
-          font-size: 0.75rem;
-          color: var(--text-muted);
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .cw-online-dot {
-          width: 8px;
-          height: 8px;
-          background: #10b981;
-          border-radius: 50%;
-        }
-
-        .cw-header-actions {
-          display: flex;
-          gap: 8px;
-        }
-
-        /* Message Thread */
-        .cw-messages {
-          flex: 1;
-          overflow-y: auto;
-          padding: 20px 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-          scroll-behavior: smooth;
-        }
-
-        .cw-messages::-webkit-scrollbar {
-          width: 5px;
-        }
-        .cw-messages::-webkit-scrollbar-thumb {
-          background: #d1d5db;
-          border-radius: 10px;
-        }
-
-        .cw-msg {
-          display: flex;
-          max-width: 85%;
-          position: relative;
-          animation: cwSlideUp 0.3s ease-out forwards;
-        }
-
-        @keyframes cwSlideUp {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        .cw-msg--bot {
-          align-self: flex-start;
-          flex-direction: row;
-          gap: 10px;
-          align-items: flex-end;
-        }
-
-        .cw-msg--user {
-          align-self: flex-end;
-          flex-direction: row-reverse;
-          align-items: flex-end;
-        }
-
-        .cw-date-separator {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 24px 0;
-          font-size: 0.7rem;
-          color: #9ca3af;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-        .cw-date-separator span {
-          background: var(--chat-bg);
-          padding: 0 12px;
-          z-index: 1;
-        }
-        .cw-date-separator::before {
-          content: "";
-          position: absolute;
-          left: 0;
-          right: 0;
-          height: 1px;
-          background: #e5e7eb;
-          z-index: 0;
-        }
-
-        .cw-av-mini {
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          overflow: hidden;
-          flex-shrink: 0;
-          align-self: flex-end;
-          margin-bottom: 4px;
-        }
-
-        .cw-bubble {
-          padding: 12px 16px;
-          font-size: 0.9rem;
-          line-height: 1.6;
-          word-break: break-word;
-          position: relative;
-        }
-
-        .cw-bubble--bot {
-          background: var(--bubble-bot-bg);
-          color: #374151;
-          border-radius: 18px 18px 18px 4px;
-          border: 1px solid rgba(0,0,0,0.05);
-          box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-
-        .cw-bubble--user {
-          background: var(--bubble-user-bg);
-          color: #ffffff;
-          border-radius: 18px 18px 4px 18px;
-        }
-
-        .cw-ts {
-          font-size: 0.7rem;
-          color: #9ca3af;
-          margin-top: 4px;
-          display: block;
-        }
-
-        .cw-msg--user .cw-ts { text-align: right; }
-
-        /* Markdown Styles */
-        .cw-markdown p { margin-bottom: 8px; }
-        .cw-markdown p:last-child { margin-bottom: 0; }
-        .cw-markdown strong { font-weight: 700; color: inherit; }
-        .cw-markdown ul, .cw-markdown ol { padding-left: 20px; margin: 8px 0; }
-        .cw-markdown li { margin-bottom: 4px; }
-        .cw-markdown li::marker { color: var(--brand-primary); }
-        .cw-markdown code { 
-          background: rgba(0,0,0,0.05); 
-          padding: 2px 4px; 
-          border-radius: 4px; 
-          font-family: monospace; 
-          font-size: 0.85em; 
-        }
-        .cw-markdown a { 
-          color: var(--brand-primary); 
-          text-decoration: none; 
-          font-weight: 600;
-        }
-        .cw-markdown a:hover { text-decoration: underline; }
-
-        /* Typing Indicator */
-        .cw-typing-dots {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          padding: 4px 0;
-        }
-        .cw-typing-dots span {
-          width: 8px;
-          height: 8px;
-          background: var(--brand-primary);
-          border-radius: 50%;
-          opacity: 0.6;
-          animation: cwTypingWave 1.2s infinite ease-in-out;
-        }
-        .cw-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .cw-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes cwTypingWave {
-          0%, 60%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
-          30% { transform: translateY(-4px) scale(1.1); opacity: 1; }
-        }
-
-        /* Empty State */
-        .cw-empty-state {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          text-align: center;
-          padding: 40px 20px;
-          animation: cwFadeIn 0.5s ease-out;
-        }
-        .cw-empty-av {
-          width: 80px;
-          height: 80px;
-          border-radius: 50%;
-          background: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 20px;
-          box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-          border: 4px solid #fff;
-        }
-        .cw-empty-state h2 { font-size: 1.25rem; font-weight: 800; margin-bottom: 8px; color: var(--text-main); }
-        .cw-empty-state p { font-size: 0.95rem; color: var(--text-muted); max-width: 240px; line-height: 1.5; }
-
-        @keyframes cwFadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Quick Replies */
-        .cw-chips-wrapper {
-          display: flex;
-          gap: 8px;
-          overflow-x: auto;
-          padding: 4px 16px 16px;
-          scrollbar-width: none;
-        }
-        .cw-chips-wrapper::-webkit-scrollbar { display: none; }
-        .cw-chip {
-          white-space: nowrap;
-          padding: 8px 16px;
-          background: #ffffff;
-          border: 1px solid var(--border-color);
-          border-radius: 20px;
-          font-size: 0.85rem;
-          font-weight: 600;
-          color: var(--text-main);
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .cw-chip:hover {
-          background: var(--brand-primary);
-          color: #ffffff;
-          border-color: var(--brand-primary);
-          transform: translateY(-2px);
-        }
-
-        /* Input Bar */
-        .cw-inputbar {
-          background: #ffffff;
-          padding: 12px 16px 16px;
-          border-top: 1px solid var(--border-color);
-          box-shadow: 0 -4px 10px rgba(0,0,0,0.02);
-        }
-        .cw-input-form {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-        .cw-input {
-          flex: 1;
-          border: none;
-          background: transparent;
-          font-size: 0.95rem;
-          padding: 10px 0;
-          outline: none;
-          color: var(--text-main);
-        }
-        .cw-send-btn {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          border: none;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .cw-send-btn:hover:not(:disabled) { transform: scale(1.1); }
-        .cw-send-btn:active:not(:disabled) { transform: scale(0.9); }
-        .cw-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-        .cw-powered {
-          font-size: 0.6rem;
-          text-align: center;
-          color: #9ca3af;
-          margin-top: 8px;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-        }
-
-        .cw-reconnect-banner {
-          background: #fef3c7;
-          color: #92400e;
-          font-size: 0.75rem;
-          font-weight: 600;
-          padding: 8px;
-          text-align: center;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-        }
-
-        .cw-error {
-          background: #fee2e2;
-          color: #b91c1c;
-          font-size: 0.8rem;
-          padding: 10px 14px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-top: 10px;
-          animation: cwSlideUp 0.3s ease-out;
-        }
-        .cw-error button {
-          background: none;
-          border: none;
-          color: #b91c1c;
-          cursor: pointer;
-          opacity: 0.7;
-        }
-        .cw-error button:hover { opacity: 1; }
-
-        .spin { animation: cwSpin 1s linear infinite; }
-        @keyframes cwSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-        /* Mobile Styles */
-        @media (max-width: 640px) {
-          .cw-root { border-radius: 0; }
-          .cw-header { border-radius: 0; position: sticky; top: 0; }
-          .cw-inputbar { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
-        }
+        .cw-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1.5px solid #f0f0f5;flex-shrink:0;}
+        .cw-header-left{display:flex;align-items:center;gap:10px;}
+        .cw-avatar-ring{position:relative;width:40px;height:40px;flex-shrink:0;}
+        .cw-avatar-ring::before{content:'';position:absolute;inset:-2px;border-radius:50%;background:conic-gradient(var(--rc,#7c3aed),#818cf8,var(--rc,#7c3aed));animation:cwRing 3s linear infinite;z-index:0;}
+        @keyframes cwRing{to{transform:rotate(360deg);}}
+        @keyframes cwFadeIn{from{opacity:0;}to{opacity:1;}}
+        .cw-header-av{position:relative;z-index:1;width:36px;height:36px;border-radius:50%;background:#f3f0ff;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:2px;}
+        .cw-online-dot{position:absolute;bottom:1px;right:1px;width:10px;height:10px;background:#22c55e;border-radius:50%;border:2px solid #fff;z-index:2;animation:cwPulse 2s infinite;}
+        @keyframes cwPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4);}50%{box-shadow:0 0 0 4px rgba(34,197,94,0);}}
+        .cw-header-text{display:flex;flex-direction:column;gap:2px;}
+        .cw-bot-name{font-size:0.95rem;font-weight:700;color:#111827;}
+        .cw-status{font-size:0.68rem;color:#6b7280;display:flex;align-items:center;gap:5px;}
+        .cw-status-pulse{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+        .cw-icon-btn{background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;transition:background 0.15s;}
+        .cw-icon-btn:hover{background:#f1f5f9;}
+        .cw-header-pulse{height:2px;background:linear-gradient(90deg,transparent,var(--pc,#7c3aed),transparent);background-size:200% 100%;animation:cwHeaderPulse 2.5s ease-in-out infinite;flex-shrink:0;}
+        @keyframes cwHeaderPulse{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+        /* Messages */
+        .cw-messages{flex:1;overflow-y:auto;padding:14px 12px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;position:relative;}
+        .cw-messages::-webkit-scrollbar{width:4px;} .cw-messages::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:4px;}
+        .cw-msg{display:flex;align-items:flex-end;gap:8px;animation:cwFadeUp 0.25s ease-out;}
+        .cw-msg--user{flex-direction:row-reverse;}
+        .cw-msg--bot{}
+        @keyframes cwFadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+        .cw-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
+        .cw-av--user{background:#ede9fe;}
+        .cw-bubble-wrap{display:flex;flex-direction:column;gap:3px;max-width:70%;}
+        .cw-msg--user .cw-bubble-wrap{align-items:flex-end;}
+        .cw-sender-label{font-size:0.63rem;font-weight:700;color:#64748b;padding:0 4px;}
+        .cw-bubble{padding:10px 14px;border-radius:18px;font-size:0.84rem;line-height:1.6;word-break:break-word;}
+        .cw-bubble--bot{background:#f8f7ff;color:#1f2937;border-radius:18px 18px 18px 4px;border:1px solid #ede9fe;}
+        .cw-bubble--user{color:#fff;border-radius:18px 18px 4px 18px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.2);}
+        .cw-ts{font-size:0.6rem;color:#9ca3af;padding:0 4px;}
+        .cw-human-badge{margin-left:6px;font-size:0.58rem;background:#dcfce7;color:#16a34a;padding:1px 6px;border-radius:8px;font-weight:700;}
+        /* Typing dots */
+        .cw-bubble--typing{display:flex;align-items:center;gap:4px;padding:12px 16px;}
+        .cw-bubble--typing span{width:6px;height:6px;background:#94a3b8;border-radius:50%;animation:cwTyping 1.2s infinite ease-in-out;}
+        .cw-bubble--typing span:nth-child(2){animation-delay:0.2s;}
+        .cw-bubble--typing span:nth-child(3){animation-delay:0.4s;}
+        @keyframes cwTyping{0%,60%,100%{transform:translateY(0);opacity:0.4;}30%{transform:translateY(-5px);opacity:1;}}
+        /* Escalation card */
+        .cw-esc-card{background:linear-gradient(135deg,#fdf4ff,#fef3c7);border-left:3px solid #7c3aed;border-radius:12px;padding:12px 14px;margin:4px 0;animation:cwFadeUp 0.4s ease-out;}
+        .cw-esc-badge{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#7c3aed,#dc2626);color:#fff;font-size:0.62rem;font-weight:800;padding:3px 8px;border-radius:20px;letter-spacing:0.05em;margin-bottom:8px;animation:cwBadgePop 0.4s cubic-bezier(0.34,1.56,0.64,1);}
+        @keyframes cwBadgePop{from{transform:scale(0.8);}to{transform:scale(1);}}
+        .cw-esc-line{font-size:0.72rem;color:#374151;padding:3px 0;display:flex;align-items:center;animation:cwFadeUp 0.4s ease-out both;}
+        /* Agent Joined Pill */
+        .cw-agent-joined-pill{align-self:center;background:#f0fdf4;border:1px solid #bbf7d0;padding:4px 14px;border-radius:20px;font-size:0.68rem;color:#166534;display:flex;align-items:center;gap:6px;margin:8px 0;animation:cwFadeUp 0.3s ease-out;}
+        .cw-aj-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,0.2);animation:cwPulse 2s infinite;}
+        @keyframes cwPulse{0%{box-shadow:0 0 0 0px rgba(34,197,94,0.4);} 70%{box-shadow:0 0 0 6px rgba(34,197,94,0);} 100%{box-shadow:0 0 0 0px rgba(34,197,94,0);}}
+        /* Resolved card */
+        .cw-resolved-card{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px dashed #22c55e;border-radius:16px;padding:18px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;animation:cwFadeUp 0.4s ease-out;}
+        .cw-resolved-check{width:40px;height:40px;border-radius:50%;background:#22c55e;color:#fff;font-size:1.2rem;font-weight:700;display:flex;align-items:center;justify-content:center;}
+        .cw-resolved-title{font-size:0.9rem;font-weight:800;color:#166534;}
+        .cw-resolved-sub{font-size:0.72rem;color:#4b7c5a;}
+        .cw-stars{display:flex;gap:4px;}
+        .cw-new-chat-btn{border:none;color:#fff;padding:9px 20px;border-radius:20px;font-size:0.78rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:4px;}
+        .cw-new-chat-btn:hover{filter:brightness(1.1);transform:translateY(-1px);}
+        /* Scroll pill */
+        .cw-scroll-pill{position:sticky;bottom:0;align-self:center;border:none;color:#fff;padding:5px 12px;border-radius:20px;font-size:0.68rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);animation:cwFadeUp 0.2s ease-out;}
+        /* Error */
+        .cw-error{font-size:0.75rem;color:#ef4444;background:rgba(239,68,68,0.06);padding:8px 12px;border-radius:10px;text-align:center;}
+        /* Feedback */
+        .cw-feedback{flex-shrink:0;padding:10px 14px;background:#fff;border-top:1px solid #f1f5f9;animation:cwFadeUp 0.3s ease-out;}
+        .cw-feedback-text{font-size:0.72rem;font-weight:700;color:#64748b;margin-bottom:8px;text-align:center;}
+        .cw-feedback-btns{display:flex;gap:8px;justify-content:center;}
+        .cw-fb-btn{padding:6px 16px;border-radius:12px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all 0.2s;border:1.5px solid transparent;}
+        .cw-fb-btn--primary{color:#fff;} .cw-fb-btn--secondary{background:#fff;}
+        .cw-fb-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.08);}
+        /* FAQs */
+        .cw-faqs{flex-shrink:0;padding:12px 14px 10px;background:#fff;display:flex;flex-direction:column;gap:10px;border-top:1px solid #f1f5f9;}
+        .cw-faqs-label{font-size:0.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-left:4px;}
+        .cw-faqs-list{display:flex;gap:8px;overflow-x:auto;padding:2px 4px 6px;scrollbar-width:none;-ms-overflow-style:none;}
+        .cw-faqs-list::-webkit-scrollbar{display:none;}
+        .cw-faq-btn{white-space:nowrap;padding:8px 16px;border-radius:24px;border:1.5px solid #DDD8FE;background:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;animation:cwFadeUp 0.4s ease-out both;}
+        .cw-faq-btn:hover{background:#F5F3FF;transform:translateY(-2px);box-shadow:0 4px 12px rgba(124,58,237,0.08);}
+        /* Input bar */
+        .cw-inputbar{flex-shrink:0;padding:8px 10px 6px;background:#fff;border-top:1px solid #e5e7eb;}
+        .cw-conn-label{font-size:0.68rem;color:#7c3aed;font-weight:700;text-align:center;margin-bottom:6px;}
+        .cw-input-form{display:flex;align-items:center;gap:6px;background:#f9fafb;border-radius:28px;padding:4px 4px 4px 14px;border:1.5px solid #e5e7eb;transition:border-color 0.2s,box-shadow 0.2s;}
+        .cw-input-form:focus-within{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,0.1);}
+        .cw-input{flex:1;border:none;background:transparent;font-size:0.8rem;outline:none;padding:4px 0;color:#111827;font-family:'Inter',sans-serif;}
+        .cw-input::placeholder{color:#9ca3af;}
+        .cw-send-btn{width:36px;height:36px;border-radius:50%;border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all 0.2s;}
+        .cw-send-btn:hover:not(:disabled){transform:scale(1.05);}
+        .cw-send-btn:disabled{opacity:0.45;cursor:not-allowed;}
+        .cw-powered{display:flex;align-items:center;justify-content:center;gap:4px;font-size:0.55rem;color:#94a3b8;margin-top:4px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;}
+        @keyframes cwSpin{to{transform:rotate(360deg);}}
+        .spin{animation:cwSpin 0.8s linear infinite;}
       `}</style>
 
     </div>

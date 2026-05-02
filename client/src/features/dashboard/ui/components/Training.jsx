@@ -187,25 +187,6 @@ export default function Training({ formData, setFormData, onSave, isLoading, bus
         </button>
       </div>
 
-      {(!formData.knowledge && formData.faqs.length === 0) && (
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="kb-empty-warning"
-        >
-          <div className="warning-content">
-            <AlertCircle size={24} />
-            <div>
-              <h4>No Knowledge Base Yet</h4>
-              <p>Your chatbot has no knowledge base yet. Add your business information so your chatbot can start answering customer questions.</p>
-            </div>
-          </div>
-          <button className="btn btn-primary btn-sm" onClick={() => setTrainingMode('manual')}>
-            <Plus size={16} /> Add Knowledge Content
-          </button>
-        </motion.div>
-      )}
-
       <div className="training-tabs-wrapper">
         <div className="training-tabs">
           <button 
@@ -416,44 +397,6 @@ export default function Training({ formData, setFormData, onSave, isLoading, bus
       <style>{`
         .training-container { padding-bottom: 40px; }
         
-        .kb-empty-warning {
-          background: #fffbeb;
-          border: 1px solid #fcd34d;
-          border-radius: 16px;
-          padding: 24px;
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-          margin-bottom: 32px;
-          align-items: flex-start;
-        }
-
-        @media (min-width: 768px) {
-          .kb-empty-warning {
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-          }
-        }
-
-        .warning-content {
-          display: flex;
-          gap: 16px;
-          align-items: center;
-          color: #92400e;
-        }
-
-        .warning-content h4 {
-          margin: 0 0 4px;
-          font-weight: 800;
-        }
-
-        .warning-content p {
-          margin: 0;
-          font-size: 0.9rem;
-          line-height: 1.5;
-        }
-
         .training-header { 
           display: flex; 
           flex-direction: column; 

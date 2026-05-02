@@ -21,16 +21,13 @@ const analyzeMessage = (text) => {
 
   const angryWords = ['hate', 'worst', 'angry', 'terrible', 'scam', 'refund', 'sue', 'legal', 'bad service'];
   const urgentWords = ['urgent', 'asap', 'immediately', 'now', 'quickly', 'emergency'];
-  const escalationWords = ['agent', 'human', 'person', 'support team', 'representative', 'talk to someone', 'connect'];
 
   let emotion = 'neutral';
   if (angryWords.some((word) => lowerText.includes(word))) emotion = 'angry';
   else if (urgentWords.some((word) => lowerText.includes(word))) emotion = 'urgent';
 
   let intent = 'general_query';
-  if (escalationWords.some((word) => lowerText.includes(word))) {
-    intent = 'human_escalation';
-  } else if (lowerText.includes('price') || lowerText.includes('cost') || lowerText.includes('pay')) {
+  if (lowerText.includes('price') || lowerText.includes('cost') || lowerText.includes('pay')) {
     intent = 'billing';
   } else if (lowerText.includes('help') || lowerText.includes('how to') || lowerText.includes('not working')) {
     intent = 'technical_support';
@@ -58,82 +55,30 @@ const extractNameFromMessage = (text) => {
   return null;
 };
 
-const isKnowledgeBaseEmpty = (business) => {
-  const hasKnowledge = business.knowledge && business.knowledge.trim().length > 0;
-  const hasFaqs = business.faqs && business.faqs.length > 0;
-  return !hasKnowledge && !hasFaqs;
-};
-
-const isMessageRelevant = (text, business) => {
-  const lowerText = text.toLowerCase();
-  
-  // 1. Always allow short greetings and polite words
-  const greetings = ['hello', 'hi', 'hey', 'greetings', 'morning', 'afternoon', 'evening', 'thanks', 'thank you', 'okay', 'ok', 'yes', 'no'];
-  if (greetings.some(g => lowerText.includes(g))) return true;
-
-  // 2. Always allow escalation requests
-  const escalationWords = ['agent', 'human', 'person', 'representative', 'talk to', 'support'];
-  if (escalationWords.some(w => lowerText.includes(w))) return true;
-
-  const knowledge = (business.knowledge || '').toLowerCase();
-  const faqs = (business.faqs || []).map(f => `${f.question} ${f.answer}`).join(' ').toLowerCase();
-  const allContent = `${knowledge} ${faqs}`;
-
-  // 3. Simple keyword matching: filter out very common words (stop words)
-  const stopWords = ['is', 'the', 'a', 'an', 'and', 'or', 'but', 'how', 'what', 'where', 'when', 'who', 'why', 'can', 'you', 'i', 'me', 'my', 'your', 'it', 'they', 'them', 'this', 'that', 'with', 'for', 'about', 'to', 'of', 'in', 'on', 'at', 'by', 'from'];
-  const words = lowerText.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
-
-  if (words.length === 0) return true; // Allow very short/simple messages
-
-  // Check if at least one meaningful word exists in the KB
-  return words.some(word => allContent.includes(word));
-};
-
-const FALLBACK_MESSAGE = "That's outside what I can help with right now. For more details please reach out to our support team directly.";
-
 const buildSystemPrompt = (business, visitorName, emotion, intent) => {
   const botName = business.appearance?.botName || business.name || 'SupportBotAI';
-  const faqContext = business.faqs.map((f, i) => `Entry ${i + 1}: ${f.question} - ${f.answer}`).join('\n');
+  const faqContext = business.faqs.map((f) => `Q: ${f.question}\nA: ${f.answer}`).join('\n');
   const visitorInstruction =
     visitorName === 'the user'
       ? 'Unknown. On your FIRST reply ONLY, after briefly acknowledging their message, naturally ask for their name. Do not ask again after that.'
       : `You are speaking with ${visitorName}. Use their name naturally in conversation where appropriate.`;
 
   return `
-    You are "${botName}", a high-end, professional customer support assistant for "${business.name}".
-    
-    TONE & STYLE:
-    - Conversational & Human: Speak naturally as if you are a helpful human support agent. 
-    - NEVER be robotic. NEVER list FAQ entries in a mechanical "Question 1: ... Answer 1: ..." format.
-    - Conciseness is Key: Keep responses brief and focused. Maximum 3-4 short paragraphs or a single short bulleted list.
-    - Direct Start: Never say "Based on information..." or "Here is what I found." Start your answer directly and warmly.
-    - No Internal Labels: Never expose internal labels like "FAQ entry" or "Question 1".
-    - Markdown: Use markdown (bold, bullet points) naturally to make information scannable. Use bullet points only for distinct items.
-    
-    STRICT OPERATING MODE: GROUNDED.
-    - ONLY answer using the KNOWLEDGE BASE and FAQS provided below.
-    - If the user asks something not covered, politely decline using: "${FALLBACK_MESSAGE}"
-    - NEVER pull answers from general training knowledge or the internet.
-    - NEVER make up information.
-    
+    You are "${botName}", a professional and friendly AI support assistant for "${business.name}".
+    GOAL: Resolve customer issues instantly with high empathy. Sound like a warm, knowledgeable human — never robotic.
     VISITOR NAME: ${visitorInstruction}
-    
-    KNOWLEDGE BASE:
-    ${business.knowledge || 'No specific knowledge base content provided.'}
-    
-    FAQS (Reference only, do not list these labels):
-    ${faqContext || 'No specific FAQs provided.'}
-    
+    KNOWLEDGE BASE:\n${business.knowledge}
+    FAQS:\n${faqContext}
     USER CONTEXT:
     - Detected Intent: ${intent}
     - Detected Emotion: ${emotion}
     - Support Email: ${business.supportEmail}
-    
-    RESPONSE GUIDELINES:
-    1. Be empathetic. If the user is frustrated, acknowledge it warmly first.
-    2. Start with [CONFIDENCE: High] if you are certain of the answer from the context.
-    3. Start with [CONFIDENCE: Low] if you are unsure. DO NOT GUESS.
-    4. If Low confidence, explicitly state you are escalating to a human team member.
+    STRICT GUIDELINES:
+    1. Be professional, concise, warm, and helpful. Sound human.
+    2. If the user is ${emotion === 'angry' ? 'angry, acknowledge their frustration with genuine empathy first' : emotion}.
+    3. Start your response with [CONFIDENCE: High] if you know the EXACT answer from your knowledge base.
+    4. Start your response with [CONFIDENCE: Low] if you are unsure. DO NOT GUESS.
+    5. If you use [CONFIDENCE: Low], explicitly state that you are escalating to a human agent.
   `;
 };
 
@@ -283,25 +228,6 @@ exports.handleChat = async (req, res) => {
     }
 
     // ── AI CHAT (AI is Active) ──────────────────────────────────────────────
-    
-    // 1. Check if Knowledge Base is Empty
-    if (isKnowledgeBaseEmpty(business)) {
-      const fallbackReply = "Our support assistant is not configured yet. Please contact us directly for help.";
-      const aiGroundedStatus = 'fallback-empty';
-      
-      const responseData = await handleFallbackResponse(req, business, conversation, lastUserMessage, fallbackReply, aiGroundedStatus, botName, botAvatar, emotion, intent);
-      return res.json(responseData);
-    }
-
-    // 2. Intent Relevance Check
-    if (!isMessageRelevant(lastUserMessage, business)) {
-      const aiGroundedStatus = 'fallback-irrelevant';
-      
-      const responseData = await handleFallbackResponse(req, business, conversation, lastUserMessage, FALLBACK_MESSAGE, aiGroundedStatus, botName, botAvatar, emotion, intent);
-      return res.json(responseData);
-    }
-
-    // 3. AI Generation
     const systemPrompt = buildSystemPrompt(business, visitorName, emotion, intent);
     const chatResponse = await mistral.chat.complete({
       model: AI_MODEL,
@@ -318,13 +244,11 @@ exports.handleChat = async (req, res) => {
     const needsEscalation =
       confidence.toLowerCase() === 'low' ||
       emotion === 'angry' ||
-      intent === 'account_management' ||
-      intent === 'human_escalation';
-
-    // Determine Grounded Status based on AI response content
-    const aiGroundedStatus = aiReply.includes(FALLBACK_MESSAGE) ? 'fallback-irrelevant' : 'answered';
+      intent === 'account_management';
 
     if (conversationId) {
+      // (Conversation already found above)
+
       if (extractedName && (!conversation.userName || conversation.userName === 'Anonymous')) {
         conversation.userName = extractedName;
       }
@@ -348,7 +272,6 @@ exports.handleChat = async (req, res) => {
       conversation.messages.push(userMsg, aiMsg);
       conversation.emotion = emotion;
       conversation.intent = intent;
-      conversation.aiGroundedStatus = aiGroundedStatus;
       conversation.updatedAt = new Date();
 
       const isUntitled =
@@ -439,7 +362,6 @@ exports.handleChat = async (req, res) => {
         messages: [userMsg, aiMsg],
         emotion,
         intent,
-        aiGroundedStatus,
         status: needsEscalation ? 'human_needed' : 'ai_resolved',
         routingStatus: needsEscalation ? 'pending' : 'resolved',
         priority: emotion === 'angry' ? 'high' : needsEscalation ? 'medium' : 'low',
@@ -474,71 +396,6 @@ exports.handleChat = async (req, res) => {
     console.error('AI Chat Error:', error);
     res.status(500).json({ error: 'AI Assistant Error', details: error.message });
   }
-};
-
-const handleFallbackResponse = async (req, business, conversation, lastUserMessage, fallbackReply, aiGroundedStatus, botName, botAvatar, emotion, intent) => {
-  const extractedName = extractNameFromMessage(lastUserMessage);
-  
-  if (conversation) {
-    const userMsg = {
-      role: 'user',
-      content: lastUserMessage,
-      timestamp: new Date(),
-      senderType: 'user',
-      senderName: conversation.userName || 'User',
-    };
-    const aiMsg = {
-      role: 'assistant',
-      content: fallbackReply,
-      timestamp: new Date(),
-      senderType: 'ai',
-      senderName: botName,
-      senderAvatar: botAvatar,
-    };
-    conversation.messages.push(userMsg, aiMsg);
-    conversation.aiGroundedStatus = aiGroundedStatus;
-    await conversation.save();
-    emitConversationUpdate(req.io, business.owner, conversation, aiMsg);
-  } else {
-    conversation = await Conversation.create({
-      business: business._id,
-      messages: [
-        {
-          role: 'user',
-          content: lastUserMessage,
-          timestamp: new Date(),
-          senderType: 'user',
-          senderName: extractedName || 'Anonymous',
-        },
-        {
-          role: 'assistant',
-          content: fallbackReply,
-          timestamp: new Date(),
-          senderType: 'ai',
-          senderName: botName,
-          senderAvatar: botAvatar,
-        }
-      ],
-      emotion,
-      intent,
-      aiGroundedStatus,
-      status: 'ai_resolved',
-      userName: extractedName || 'Anonymous',
-      origin: req.body.origin || null,
-      title: intent.replace('_', ' ').charAt(0).toUpperCase() + intent.replace('_', ' ').slice(1),
-    });
-    await Business.findByIdAndUpdate(business._id, { $inc: { conversationCount: 1 } });
-    cache.del(business.apiKey);
-  }
-
-  return {
-    content: fallbackReply,
-    conversationId: conversation._id,
-    ownerId: business.owner.toString(),
-    status: conversation.status,
-    userName: conversation.userName,
-    title: conversation.title,
-  };
 };
 
 // ── Agent Suggestion ──────────────────────────────────────────────────────────
