@@ -5,6 +5,7 @@ import agentRoutes from './routes/agent.routes.js'
 import businessRoutes from './routes/business.routes.js';
 import conversationRoutes from './routes/conversation.routes.js'
 import notificationRoutes from './routes/notification.routes.js';
+import superAdminRoutes from './routes/superAdmin.routes.js';
 
 const app = express();
 app.use(express.json());
@@ -16,5 +17,6 @@ app.use('/api/agent', agentRoutes);
 app.use('/api/business',businessRoutes)
 app.use('/api/conversation',conversationRoutes)
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/super-admin', superAdminRoutes);
 
 export default app;
