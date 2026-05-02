@@ -43,6 +43,16 @@ function aiAskedForName(text) {
 export default function ChatWidgetPage() {
   const { apiKey } = useParams();
 
+  // 1. All Refs at the top
+  const scrollRef = useRef(null);
+  const inputRef = useRef(null);
+  const socketRef = useRef(null);
+  const conversationIdRef = useRef(null);
+  const ownerIdRef = useRef(null);
+  const typingTimerRef = useRef(null);
+  const pendingAiRef = useRef(null);
+
+  // 2. All State
   const [business, setBusiness] = useState(null);
   const [ownerId, setOwnerId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -57,7 +67,6 @@ export default function ChatWidgetPage() {
   const [isWidgetOpen, setIsWidgetOpen] = useState(true);
   const [isResolved, setIsResolved] = useState(false);
   const [agent, setAgent] = useState(null);
-
   const [showResolveButtons, setShowResolveButtons] = useState(false);
   const [lastHumanSender, setLastHumanSender] = useState(null);
   const [showWelcome, setShowWelcome] = useState(true);
@@ -70,44 +79,31 @@ export default function ChatWidgetPage() {
   const [starHover, setStarHover] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
 
-  const scrollRef = useRef(null);
-  const inputRef = useRef(null);
-  const socketRef = useRef(null);
-  const conversationIdRef = useRef(null);
-  const ownerIdRef = useRef(null);
+  // 3. Sync Refs with State
+  useEffect(() => { conversationIdRef.current = conversationId; }, [conversationId]);
+  useEffect(() => { ownerIdRef.current = ownerId; }, [ownerId]);
 
-  useEffect(() => {
-    conversationIdRef.current = conversationId;
-  }, [conversationId]);
-  useEffect(() => {
-    ownerIdRef.current = ownerId;
-  }, [ownerId]);
-
+  // 4. Initial Config Fetch
   useEffect(() => {
     const fetchBusiness = async () => {
       try {
         const { data } = await axios.get(`${API_URL}/chat/config/${apiKey}`);
         setBusiness(data);
         setOwnerId(data.ownerId);
-        setMessages([
-          {
-            role: "assistant",
-            content:
-              data.appearance?.welcomeMessage ||
-              "Hey there! 👋 How can I help you today?",
-            timestamp: new Date(),
-            senderType: "ai",
-            senderName: data.appearance?.botName || data.name || "SupportBotAI",
-            senderAvatar: data.appearance?.companyLogo || null,
-          },
-        ]);
-      } catch (err) {
-        console.error("Config fetch failed", err);
-      }
+        setMessages([{
+          role: "assistant",
+          content: data.appearance?.welcomeMessage || "Hey there! 👋 How can I help you today?",
+          timestamp: new Date(),
+          senderType: "ai",
+          senderName: data.appearance?.botName || data.name || "SupportBotAI",
+          senderAvatar: data.appearance?.botAvatar || data.appearance?.companyLogo || null,
+        }]);
+      } catch (err) { console.error("Config fetch failed", err); }
     };
     fetchBusiness();
   }, [apiKey]);
 
+  // 5. Socket Setup
   useEffect(() => {
     if (!ownerId) return;
 
@@ -118,10 +114,7 @@ export default function ChatWidgetPage() {
 
     const joinRooms = () => {
       sock.emit("join_room", { ownerId, role: "user" });
-      if (conversationIdRef.current) {
-        sock.emit("join_session", conversationIdRef.current);
-        console.log('[Widget] Joined session room:', conversationIdRef.current);
-      }
+      if (conversationIdRef.current) sock.emit("join_session", conversationIdRef.current);
     };
 
     sock.on("connect", () => { setIsConnected(true); joinRooms(); });
@@ -131,7 +124,6 @@ export default function ChatWidgetPage() {
     sock.on("new_message", (data) => {
       const cid = conversationIdRef.current;
       if (!cid || data.conversationId !== cid.toString()) return;
-
       if (data.senderType === "user") return;
 
       const newMsg = {
@@ -145,13 +137,16 @@ export default function ChatWidgetPage() {
       };
 
       setMessages((prev) => {
-        // Deduplicate: skip if last message has same content from same sender
-        const last = prev[prev.length - 1];
-        if (
-          last &&
-          last.content === data.content &&
-          last.senderType === data.senderType
-        ) return prev;
+        // Dedup: check last 10 messages
+        const recent = prev.slice(-10);
+        const isDup = recent.some(m => m.content === data.content && (m.senderType === data.senderType || (m.senderType === 'ai' && data.senderType === 'ai')));
+        if (isDup) return prev;
+        
+        // Skip if this content was just added by REST
+        if (pendingAiRef.current === data.content) {
+          pendingAiRef.current = null;
+          return prev;
+        }
         return [...prev, newMsg];
       });
 
@@ -161,11 +156,13 @@ export default function ChatWidgetPage() {
         setLastHumanSender({ type: data.senderType, name: data.senderName, id: data.senderId });
         setIsAiActive(false);
       }
+      
       if (!isWidgetOpen) {
         setUnreadCount((prev) => prev + 1);
         window.parent.postMessage({ type: "new-message", content: data.content, count: unreadCount + 1 }, "*");
         window.parent.postMessage({ type: "unread-count", count: unreadCount + 1 }, "*");
       }
+
       if (scrollRef.current) {
         const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
         if (scrollHeight - scrollTop - clientHeight > 100) { setShowScrollPill(true); setNewMsgCount(p => p + 1); }
@@ -175,19 +172,27 @@ export default function ChatWidgetPage() {
     sock.on("agent_typing", (data) => {
       const cid = conversationIdRef.current;
       if (!cid || data.conversationId !== cid.toString()) return;
-      setIsAgentTyping(true); setTypingAgentName(data.agentName || "Agent");
-      clearTimeout(typingTimerRef.current);
+      setIsAgentTyping(true);
+      setTypingAgentName(data.agentName || "Agent");
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
       typingTimerRef.current = setTimeout(() => setIsAgentTyping(false), 3000);
     });
 
     sock.on("agent_joined", (data) => {
       const cid = conversationIdRef.current;
       if (!cid || data.conversationId !== cid.toString()) return;
-      setAgent(data.agent); setIsAiActive(false);
-      setMessages((prev) => [
-        ...prev.filter((m) => m.role !== "system_escalation"),
-        { role: "system_agent_joined", agent: data.agent, timestamp: new Date() }
-      ]);
+      setAgent(data.agent);
+      setIsAiActive(false);
+      setMessages((prev) => {
+        // Prevent duplicate join cards for the same agent
+        const hasJoinCard = prev.some(m => m.role === 'system_agent_joined' && m.agent?._id === data.agent?._id);
+        if (hasJoinCard) return prev;
+
+        return [
+          ...prev.filter((m) => m.role !== "system_escalation"),
+          { role: "system_agent_joined", agent: data.agent, timestamp: new Date() }
+        ];
+      });
     });
 
     sock.on("ticket_resolved", (data) => {
@@ -201,16 +206,14 @@ export default function ChatWidgetPage() {
       const cid = conversationIdRef.current;
       if (!cid || data.conversationId !== cid.toString()) return;
       setIsAiActive(data.isAiActive);
-      if (data.isAiActive) {
-        setAgent(null);
-      }
+      if (data.isAiActive) setAgent(null);
     });
-
 
     return () => {
       sock.off('connect'); sock.off('disconnect'); sock.off('new_message');
       sock.off('agent_typing'); sock.off('agent_joined'); sock.off('ticket_resolved'); sock.off('ai_toggled');
-      clearTimeout(typingTimerRef.current); sock.disconnect();
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      sock.disconnect();
     };
   }, [ownerId]);
 
@@ -238,6 +241,7 @@ export default function ChatWidgetPage() {
   const botName =
     business?.appearance?.botName || business?.name || "SupportBotAI";
   const logoUrl = business?.appearance?.companyLogo || null;
+  const botAvatarUrl = business?.appearance?.botAvatar || null;
 
   const scrollToBottom = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -320,11 +324,22 @@ export default function ChatWidgetPage() {
           timestamp: new Date(),
           senderType: "ai",
           senderName: botName,
-          senderAvatar: logoUrl,
+          senderAvatar: botAvatarUrl || logoUrl,
         };
-        setMessages((prev) => [...prev, aiMsg]);
-        if (!capturedName && aiAskedForName(data.content))
-          setWaitingForName(true);
+        // Mark this content so the socket listener skips it if it arrives after us
+        pendingAiRef.current = data.content;
+        setMessages((prev) => {
+          // Also dedup here in case socket already added it
+          const recent = prev.slice(-5);
+          if (recent.some(m => m.content === data.content && m.senderType === 'ai')) {
+            pendingAiRef.current = null;
+            return prev;
+          }
+          return [...prev, aiMsg];
+        });
+        // Clear the pending marker after a safe window
+        setTimeout(() => { pendingAiRef.current = null; }, 3000);
+        if (!capturedName && aiAskedForName(data.content)) setWaitingForName(true);
       }
 
       // Show escalation cinematic message if ticket was created
@@ -414,7 +429,9 @@ export default function ChatWidgetPage() {
   };
 
   const headerName = !isAiActive && agent ? (agent.displayName || agent.name) : botName;
-  const headerAvatar = !isAiActive && agent?.profilePhoto ? agent.profilePhoto : logoUrl;
+  const headerAvatar = !isAiActive && agent?.profilePhoto 
+    ? agent.profilePhoto 
+    : (botAvatarUrl || logoUrl);
 
   return (
     <div className="cw-root">
@@ -447,7 +464,7 @@ export default function ChatWidgetPage() {
           <button className="cw-icon-btn" onClick={()=>setIsMuted(m=>!m)} title={isMuted?'Unmute':'Mute'}>
             {isMuted ? <VolumeX size={14} color="#94a3b8"/> : <Volume2 size={14} color="#94a3b8"/>}
           </button>
-          <button className="cw-icon-btn" onClick={()=>window.parent.postMessage("close-chat","*")}>
+          <button className="cw-icon-btn" onClick={()=>window.parent.postMessage({ type: "close-chat" },"*")}>
             <X size={15} color="#94a3b8"/>
           </button>
         </div>
@@ -469,13 +486,9 @@ export default function ChatWidgetPage() {
           );
 
           if (m.role === 'system_agent_joined') return (
-            <div key={i} className="cw-agent-joined-card">
-              <span className="cw-aj-check">✓</span>
-              <div className="cw-aj-text">
-                <strong>{m.agent?.displayName||m.agent?.name||'Agent'}</strong> has joined
-                <div className="cw-aj-sub">Now chatting with a real human</div>
-              </div>
-              {m.agent?.profilePhoto && <img src={m.agent.profilePhoto} alt="" className="cw-aj-photo"/>}
+            <div key={i} className="cw-agent-joined-pill">
+              <span className="cw-aj-dot" />
+              <strong>{m.agent?.displayName||m.agent?.name||'Agent'}</strong> 🟢 Real Human joined
             </div>
           );
 
@@ -500,7 +513,20 @@ export default function ChatWidgetPage() {
                 )}
                 <div className={`cw-bubble ${isUserMsg?'cw-bubble--user':'cw-bubble--bot'}`}
                   style={isUserMsg?{background:`linear-gradient(135deg,${themeColor},${themeColor}dd)`}:{}}>
-                  {m.content}
+                  {(() => {
+                    const parts = m.content.split(/(\[.*?\]\(.*?\))/g);
+                    return parts.map((part, i) => {
+                      const match = part.match(/\[(.*?)\]\((.*?)\)/);
+                      if (match) {
+                        return (
+                          <a key={i} href={match[2]} target="_blank" rel="noopener noreferrer" style={{ color: isUserMsg ? '#fff' : themeColor, textDecoration: 'underline' }}>
+                            {match[1]}
+                          </a>
+                        );
+                      }
+                      return part;
+                    });
+                  })()}
                 </div>
                 {ts && <div className="cw-ts">{ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>}
               </div>
@@ -621,10 +647,14 @@ export default function ChatWidgetPage() {
         /* Header */
         .cw-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1.5px solid #f0f0f5;flex-shrink:0;}
         .cw-header-left{display:flex;align-items:center;gap:10px;}
-        .cw-avatar-ring{position:relative;width:40px;height:40px;flex-shrink:0;}
-        .cw-avatar-ring::before{content:'';position:absolute;inset:-2px;border-radius:50%;background:conic-gradient(var(--rc,#7c3aed),#818cf8,var(--rc,#7c3aed));animation:cwRing 3s linear infinite;z-index:0;}
+        .cw-avatar-ring{position:relative;width:40px;height:40px;flex-shrink:0;animation:cwFloat 3s ease-in-out infinite;}
+        @keyframes cwFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
+        }
+        .cw-avatar-ring::before{content:'';position:absolute;inset:-2px;border-radius:50%;background:conic-gradient(var(--rc,#7c3aed),#818cf8,var(--rc,#7c3aed));animation:cwRing 3s linear infinite;z-index:0;opacity:0.6;}
         @keyframes cwRing{to{transform:rotate(360deg);}}
-        .cw-header-av{position:relative;z-index:1;width:36px;height:36px;border-radius:50%;background:#f3f0ff;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:2px;}
+        .cw-header-av{position:relative;z-index:1;width:36px;height:36px;border-radius:50%;background:#f3f0ff;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:2px;box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
         .cw-online-dot{position:absolute;bottom:1px;right:1px;width:10px;height:10px;background:#22c55e;border-radius:50%;border:2px solid #fff;z-index:2;animation:cwPulse 2s infinite;}
         @keyframes cwPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4);}50%{box-shadow:0 0 0 4px rgba(34,197,94,0);}}
         .cw-header-text{display:flex;flex-direction:column;gap:2px;}
@@ -663,13 +693,10 @@ export default function ChatWidgetPage() {
         .cw-esc-badge{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#7c3aed,#dc2626);color:#fff;font-size:0.62rem;font-weight:800;padding:3px 8px;border-radius:20px;letter-spacing:0.05em;margin-bottom:8px;animation:cwBadgePop 0.4s cubic-bezier(0.34,1.56,0.64,1);}
         @keyframes cwBadgePop{from{transform:scale(0.8);}to{transform:scale(1);}}
         .cw-esc-line{font-size:0.72rem;color:#374151;padding:3px 0;display:flex;align-items:center;animation:cwFadeUp 0.4s ease-out both;}
-        /* Agent joined card */
-        .cw-agent-joined-card{display:flex;align-items:center;gap:10px;background:#f0fdf4;border:1px solid #d1fae5;border-radius:12px;padding:10px 14px;margin:4px 0;animation:cwScaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1);}
-        @keyframes cwScaleIn{from{transform:scale(0.92);opacity:0;}to{transform:scale(1);opacity:1;}}
-        .cw-aj-check{width:26px;height:26px;border-radius:50%;background:#22c55e;color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;}
-        .cw-aj-text{flex:1;font-size:0.75rem;color:#374151;}
-        .cw-aj-sub{font-size:0.62rem;color:#6b7280;margin-top:2px;}
-        .cw-aj-photo{width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid #bbf7d0;}
+        /* Agent Joined Pill */
+        .cw-agent-joined-pill{align-self:center;background:#f0fdf4;border:1px solid #bbf7d0;padding:4px 14px;border-radius:20px;font-size:0.68rem;color:#166534;display:flex;align-items:center;gap:6px;margin:8px 0;animation:cwFadeUp 0.3s ease-out;}
+        .cw-aj-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,0.2);animation:cwPulse 2s infinite;}
+        @keyframes cwPulse{0%{box-shadow:0 0 0 0px rgba(34,197,94,0.4);} 70%{box-shadow:0 0 0 6px rgba(34,197,94,0);} 100%{box-shadow:0 0 0 0px rgba(34,197,94,0);}}
         /* Resolved card */
         .cw-resolved-card{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px dashed #22c55e;border-radius:16px;padding:18px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;animation:cwFadeUp 0.4s ease-out;}
         .cw-resolved-check{width:40px;height:40px;border-radius:50%;background:#22c55e;color:#fff;font-size:1.2rem;font-weight:700;display:flex;align-items:center;justify-content:center;}
