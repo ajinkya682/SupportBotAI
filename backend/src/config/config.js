@@ -79,7 +79,7 @@ const config = {
     IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY,
     IMAGEKIT_URL_ENDPOINT: process.env.IMAGEKIT_URL_ENDPOINT,
     MISTRAL_API_KEY: process.env.MISTRAL_API_KEY,
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
     AI_MODEL: process.env.AI_MODEL || 'mistral-large-latest',
     AI_MAX_TOKENS: parseInt(process.env.AI_MAX_TOKENS) || 1024,
     PINECONE_API_KEY: process.env.PINECONE_API_KEY || '',
