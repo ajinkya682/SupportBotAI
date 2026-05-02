@@ -279,9 +279,9 @@ export default function ForgotPassword() {
         .auth-card { 
           background: white; 
           border-radius: 0; 
-          padding: 48px 24px 32px; 
+          padding: 24px; 
           min-height: 100vh;
-          padding-top: calc(48px + env(safe-area-inset-top));
+          padding-top: calc(64px + 24px + env(safe-area-inset-top));
           display: flex;
           flex-direction: column;
         }
@@ -289,8 +289,10 @@ export default function ForgotPassword() {
         @media (min-width: 640px) {
           .auth-card {
             border-radius: 32px;
-            padding: 56px;
+            padding: 32px 40px;
             min-height: auto;
+            margin-top: 20px;
+            margin-bottom: 20px;
             border: 1px solid var(--outline-variant);
             box-shadow: var(--shadow-4);
           }
