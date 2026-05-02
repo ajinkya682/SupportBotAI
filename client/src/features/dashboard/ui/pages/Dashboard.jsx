@@ -289,6 +289,12 @@ export default function Dashboard() {
     return <AgentDashboard user={user} />;
   }
 
+  const onLogout = () => {
+    dispatch(logout());
+    dispatch(reset());
+    socket.disconnect();
+  };
+
   const renderContent = () => {
     if (
       (convLoading && conversations.length === 0) ||
