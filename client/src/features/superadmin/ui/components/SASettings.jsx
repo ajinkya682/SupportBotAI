@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   DollarSign, Loader2, RefreshCcw, Download, PlayCircle,
-  Globe, MessageSquare, Save
+  Globe, MessageSquare, Save, Shield, Lock, Database
 } from 'lucide-react';
 import { FaTwitter, FaLinkedin, FaGithub } from 'react-icons/fa6';
 import axios from 'axios';
