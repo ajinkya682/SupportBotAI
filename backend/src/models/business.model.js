@@ -1,36 +1,52 @@
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 /**
  * Business Schema (The Tenant)
  * Stores AI training data, widget customization, and usage limits.
  */
 const BusinessSchema = new mongoose.Schema({
-
     owner: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User', 
-        required: true,
+        required: [true, 'Owner ID is required'],
         index: true 
     },
-    name: { type: String, required: true },
-    supportEmail: { type: String },
+    name: { 
+        type: String, 
+        required: [true, 'Business name is required'],
+        trim: true 
+    },
+    supportEmail: { 
+        type: String,
+        lowercase: true,
+        trim: true 
+    },
     
+    // AI Training Data
     knowledge: { type: String, default: "" },
     lastTrainedAt: { type: Date },
     trainedFromUrl: { type: String },
-    trainedPagesCount: { type: Number },
+    trainedPagesCount: { type: Number, default: 0 },
     
+    // Security & Access
     apiKey: { 
         type: String, 
         unique: true, 
         index: true 
     },
+    allowedDomains: { 
+        type: [String], 
+        default: [],
+        lowercase: true
+    },
     
     faqs: [{
-        question: String,
-        answer: String
+        question: { type: String, trim: true },
+        answer: { type: String, trim: true }
     }],
     
+    // Customization (Widget UI)
     appearance: {
         themeColor: { type: String, default: '#6366f1' },
         botName: { type: String },
@@ -40,19 +56,19 @@ const BusinessSchema = new mongoose.Schema({
         placeholderText: { type: String, default: 'Type your message...' }
     },
     
-    plan: { type: String, enum: ['free', 'pro'], default: 'free' },
+    // Quota & Billing
+    plan: { 
+        type: String, 
+        enum: ['free', 'pro', 'enterprise'], 
+        default: 'free' 
+    },
     conversationLimit: { type: Number, default: 100 },
     conversationCount: { type: Number, default: 0 },
     
-    allowedDomains: { 
-        type: [String], 
-        default: [] 
-    },
-    
+    // System Status
     lastActiveAt: { type: Date },
-    
     notifications: [{
-        message: String,
+        message: { type: String, required: true },
         isRead: { type: Boolean, default: false },
         createdAt: { type: Date, default: Date.now }
     }]
@@ -62,16 +78,31 @@ const BusinessSchema = new mongoose.Schema({
     toObject: { virtuals: true }
 });
 
+/**
+ * MIDDLEWARE: Pre-save hooks
+ */
 BusinessSchema.pre('save', function(next) {
+    // Set default botName if missing
     if (!this.appearance.botName) {
         this.appearance.botName = this.name;
     }
+
+    // Auto-generate API Key for new business
+    if (this.isNew && !this.apiKey) {
+        this.apiKey = `sb_${crypto.randomBytes(16).toString('hex')}`;
+    }
+    
     next();
 });
 
+/**
+ * METHODS: Instance helpers
+ */
 BusinessSchema.methods.hasReachedLimit = function() {
     return this.conversationCount >= this.conversationLimit;
 };
 
-const business = mongoose.model('Business', BusinessSchema);
-export default business;
+// CRITICAL: OverwriteModelError check
+const Business = mongoose.models.Business || mongoose.model('Business', BusinessSchema);
+
+export default Business;
