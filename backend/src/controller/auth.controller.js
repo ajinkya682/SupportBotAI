@@ -116,6 +116,8 @@ export const loginUser = async (req, res) => {
     }
 };
 
+
+
 export const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
