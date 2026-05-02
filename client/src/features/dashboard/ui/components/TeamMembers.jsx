@@ -18,7 +18,7 @@ export default function TeamMembers() {
   const [agents, setAgents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [inviteData, setInviteData] = useState({ name: '', email: '', roleTitle: 'Support Agent' });
+  const [inviteData, setInviteData] = useState({ name: '', email: '', password: '', roleTitle: 'Support Agent' });
   const [isInviting, setIsInviting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -50,8 +50,8 @@ export default function TeamMembers() {
       });
       setAgents([...agents, data.agent]);
       setShowInviteModal(false);
-      setInviteData({ name: '', email: '', roleTitle: 'Support Agent' });
-      toast.success('Invitation sent successfully');
+      setInviteData({ name: '', email: '', password: '', roleTitle: 'Support Agent' });
+      toast.success('Agent added successfully');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to invite agent');
     } finally {
@@ -86,7 +86,7 @@ export default function TeamMembers() {
           <p>Manage human agents who can take over AI conversations.</p>
         </div>
         <button className="btn btn-primary invite-btn" onClick={() => setShowInviteModal(true)}>
-          <UserPlus size={18} /> <span>Invite Member</span>
+          <UserPlus size={18} /> <span>Add Member</span>
         </button>
       </div>
 
@@ -233,8 +233,8 @@ export default function TeamMembers() {
                 <div className="modal-title-group">
                   <div className="modal-icon"><UserPlus size={20} /></div>
                   <div>
-                    <h3>Invite Member</h3>
-                    <p>Send an invitation to join your workspace.</p>
+                    <h3>Add Team Member</h3>
+                    <p>Directly register a new agent to your workspace.</p>
                   </div>
                 </div>
                 <button className="close-btn" onClick={() => setShowInviteModal(false)}><X size={20} /></button>
@@ -260,6 +260,16 @@ export default function TeamMembers() {
                     required
                   />
                 </div>
+                <div className="form-group">
+                  <label>Password</label>
+                  <input 
+                    type="password"
+                    placeholder="Set agent password"
+                    value={inviteData.password}
+                    onChange={(e) => setInviteData({ ...inviteData, password: e.target.value })}
+                    required
+                  />
+                </div>
                 <div className="form-group" style={{ marginBottom: '24px' }}>
                   <label>Role Title</label>
                   <select 
@@ -276,7 +286,7 @@ export default function TeamMembers() {
                 <div className="modal-footer">
                   <button type="button" className="btn btn-secondary" onClick={() => setShowInviteModal(false)}>Cancel</button>
                   <button type="submit" className="btn btn-primary" disabled={isInviting}>
-                    {isInviting ? <Loader2 size={18} className="animate-spin" /> : 'Send Invite'}
+                    {isInviting ? <Loader2 size={18} className="animate-spin" /> : 'Add Agent'}
                   </button>
                 </div>
               </form>

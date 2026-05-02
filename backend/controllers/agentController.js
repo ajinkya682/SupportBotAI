@@ -33,8 +33,9 @@ exports.addAgent = async (req, res) => {
             email,
             password,
             role: 'agent',
+            roleTitle: req.body.roleTitle || 'Support Agent',
             ownerId: req.user._id,
-            status: 'inactive'
+            status: 'online'
         });
 
         res.status(201).json({
