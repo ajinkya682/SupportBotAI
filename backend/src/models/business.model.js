@@ -25,6 +25,12 @@ const BusinessSchema = new mongoose.Schema({
     
     // AI Training Data
     knowledge: { type: String, default: "" },
+    knowledgeChunks: [{
+        content: { type: String, trim: true },
+        sourceUrl: { type: String, trim: true, default: null },
+        chunkIndex: { type: Number },
+        createdAt: { type: Date, default: Date.now }
+    }],
     lastTrainedAt: { type: Date },
     trainedFromUrl: { type: String },
     trainedPagesCount: { type: Number, default: 0 },
