@@ -11,9 +11,16 @@ import {
   BarChart3, 
   Globe, 
   Clock,
-  Sparkles
+  Sparkles,
+  PlayCircle,
+  Activity,
+  Cpu,
+  Inbox,
+  Languages,
+  Code
 } from "lucide-react";
 import PricingSection from "../components/PricingSection";
+import HeroAnimation from "../components/HeroAnimation";
 
 export default function Home() {
   return (
@@ -28,47 +35,113 @@ export default function Home() {
             className="hero-text"
           >
             <div className="hero-badge">
-              <Sparkles size={16} />
-              <span>Revolutionizing Support with Gen-AI</span>
+              <Sparkles size={14} />
+              <span>AI-FIRST PLATFORM</span>
             </div>
             <h1>
-              AI that resolves support <br /> 
-              <span className="gradient-text">tickets instantly.</span>
+              Support That Thinks <br /> 
+              <span className="gradient-text">Before It Speaks.</span>
             </h1>
             <p className="hero-desc">
-              SupportBotAI is an intelligent customer support platform that handles 80% of your common queries automatically, while seamlessly routing complex issues to your human team.
+              Scale your customer service with an AI that doesn't just respond—it understands and resolves complex queries instantly.
             </p>
+            
             <div className="hero-cta">
               <Link to="/signup" className="btn btn-primary btn-lg full-width-mobile">
-                Start Free Trial <ArrowRight size={20} />
+                Get Started Free <ArrowRight size={20} />
               </Link>
               <Link to="/product" className="btn btn-secondary btn-lg full-width-mobile">
-                View Features
+                <PlayCircle size={20} /> Watch Video Tour
               </Link>
+            </div>
+
+            <div className="hero-highlights">
+              <div className="highlight-item">
+                <Cpu size={18} />
+                <span>Advanced AI Core</span>
+              </div>
+              <div className="highlight-item">
+                <Activity size={18} />
+                <span>Emotion Detection</span>
+              </div>
+              <div className="highlight-item">
+                <Layers size={18} />
+                <span>Seamless Integration</span>
+              </div>
+              <div className="highlight-item">
+                <Inbox size={18} />
+                <span>Real-time Inbox</span>
+              </div>
             </div>
           </motion.div>
 
           <motion.div 
             className="hero-visual"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, delay: 0.2 }}
           >
-            <div className="dashboard-mockup">
-              <div className="mockup-header">
+            <HeroAnimation />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Integration Strip */}
+      <section className="integration-strip">
+        <div className="container">
+          <p className="strip-label">CONNECTS SEAMLESSLY WITH YOUR STACK</p>
+          <div className="integration-logos">
+            <div className="logo-item"><Globe size={24} /> <span>WordPress</span></div>
+            <div className="logo-item"><Zap size={24} /> <span>Shopify</span></div>
+            <div className="logo-item"><Cpu size={24} /> <span>React</span></div>
+            <div className="logo-item"><Layers size={24} /> <span>Webflow</span></div>
+            <div className="logo-item"><Shield size={24} /> <span>Next.js</span></div>
+          </div>
+        </div>
+      </section>
+
+      {/* Code Snippet & Features */}
+      <section className="mid-features-section">
+        <div className="container">
+          <div className="mid-grid">
+            <div className="code-block-container">
+              <div className="code-header">
                 <div className="dots"><span></span><span></span><span></span></div>
+                <span>widget.js</span>
               </div>
-              <div className="mockup-body">
-                <div className="mockup-sidebar"></div>
-                <div className="mockup-content">
-                  <div className="mockup-card"></div>
-                  <div className="mockup-grid">
-                    <div></div><div></div>
-                  </div>
-                </div>
+              <div className="code-content">
+                <code>
+                  <span className="keyword">&lt;script</span> <span className="attr">src</span>=<span className="string">"https://supportbotai.com/widget.js"</span><span className="keyword">&gt;&lt;/script&gt;</span>
+                </code>
+              </div>
+              <div className="code-caption">
+                <Code size={14} /> One line of code to deploy everywhere.
               </div>
             </div>
-          </motion.div>
+
+            <div className="feature-cards-grid">
+              <div className="mini-card">
+                <div className="icon-box"><Sparkles size={20} /></div>
+                <h4>Instant Learning</h4>
+                <p>Train from any URL or PDF in seconds.</p>
+              </div>
+              <div className="mini-card">
+                <div className="icon-box"><Languages size={20} /></div>
+                <h4>Multi-language</h4>
+                <p>Support in 100+ languages natively.</p>
+              </div>
+              <div className="mini-card">
+                <div className="icon-box"><BarChart3 size={20} /></div>
+                <h4>Deep Analytics</h4>
+                <p>Insights into customer sentiment.</p>
+              </div>
+              <div className="mini-card">
+                <div className="icon-box"><Zap size={20} /></div>
+                <h4>Hybrid Handover</h4>
+                <p>Perfect AI-to-Human transition.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -80,67 +153,6 @@ export default function Home() {
             {['Stripe', 'Airbnb', 'HubSpot', 'Linear', 'Discord', 'Slack'].map(name => (
               <span key={name} className="logo-placeholder">{name}</span>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="features-section">
-        <div className="container">
-          <div className="section-title text-center">
-            <div className="title-tag">CORE CAPABILITIES</div>
-            <h2>Built for modern support teams</h2>
-            <p>Everything you need to automate your support workflow and keep your customers happy 24/7.</p>
-          </div>
-
-          <div className="feature-grid">
-            <div className="card feature-card">
-              <div className="feature-icon" style={{ background: 'var(--surface-container-low)', color: 'var(--primary)' }}>
-                <Bot size={32} />
-              </div>
-              <h3>AI-First Resolution</h3>
-              <p>Our advanced LLMs understand intent and emotion, resolving most queries before a human ever sees them.</p>
-            </div>
-
-            <div className="card feature-card">
-              <div className="feature-icon" style={{ background: '#d1fae5', color: '#065f46' }}>
-                <Layers size={32} />
-              </div>
-              <h3>Seamless Routing</h3>
-              <p>When the AI detects complexity or high emotion, it instantly routes the chat to an agent with full context.</p>
-            </div>
-
-            <div className="card feature-card">
-              <div className="feature-icon" style={{ background: '#fef3c7', color: '#92400e' }}>
-                <Globe size={32} />
-              </div>
-              <h3>Instant Integration</h3>
-              <p>Deploy your custom chatbot to any website with a single script tag. Zero code required for basic setup.</p>
-            </div>
-
-            <div className="card feature-card">
-              <div className="feature-icon" style={{ background: '#ffdad6', color: '#93000a' }}>
-                <Shield size={32} />
-              </div>
-              <h3>Custom Knowledge</h3>
-              <p>Train your AI on your own documentation, FAQs, and website content to ensure perfect brand alignment.</p>
-            </div>
-
-            <div className="card feature-card">
-              <div className="feature-icon" style={{ background: '#e0e7ff', color: '#3525cd' }}>
-                <BarChart3 size={32} />
-              </div>
-              <h3>Actionable Analytics</h3>
-              <p>Track resolution rates, response times, and customer sentiment with our professional dashboard.</p>
-            </div>
-
-            <div className="card feature-card">
-              <div className="feature-icon" style={{ background: '#f3e8ff', color: '#7c3aed' }}>
-                <Clock size={32} />
-              </div>
-              <h3>24/7 Availability</h3>
-              <p>Your support never sleeps. Provide instant answers to global customers regardless of time zones.</p>
-            </div>
           </div>
         </div>
       </section>
@@ -216,262 +228,96 @@ export default function Home() {
       </footer>
 
       <style>{`
-        .landing-page { background: var(--surface); color: var(--on-surface); }
+        .landing-page { background: #ffffff; color: #1e293b; }
         
-        /* Hero Section Responsive */
-        .hero-section { 
-          padding: 64px 0 80px; 
-          overflow: hidden; 
-          position: relative; 
-        }
+        .hero-section { padding: 100px 0 120px; overflow: hidden; position: relative; }
         
         .hero-container { 
-          display: flex;
-          flex-direction: column;
-          gap: 48px;
-          align-items: center; 
-          position: relative; 
-          z-index: 1; 
-          text-align: center;
+          display: flex; flex-direction: column; gap: 64px; align-items: center; 
+          position: relative; z-index: 1; 
         }
 
         @media (min-width: 1024px) {
-          .hero-section { padding: 120px 0 160px; }
-          .hero-container { 
-            display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 60px;
-            text-align: left;
-          }
+          .hero-container { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; text-align: left; }
         }
         
         .hero-badge { 
-          display: flex; 
-          align-items: center; 
-          gap: 10px; 
-          background: var(--surface-container); 
-          color: var(--primary); 
-          padding: 8px 16px; 
-          border-radius: 30px; 
-          font-weight: 700; 
-          font-size: 12px; 
-          width: fit-content; 
-          margin: 0 auto 24px; 
-          border: 1px solid var(--outline-variant); 
-        }
-
-        @media (min-width: 1024px) {
-          .hero-badge { margin: 0 0 32px 0; font-size: var(--text-label-sm); }
+          display: flex; align-items: center; gap: 10px; 
+          background: #f5f3ff; color: #7c3aed; padding: 10px 18px; 
+          border-radius: 99px; font-weight: 800; font-size: 11px; 
+          width: fit-content; margin-bottom: 32px; border: 1px solid rgba(124, 58, 237, 0.1);
+          letter-spacing: 0.1em;
         }
 
         .hero-text h1 { 
-          font-size: clamp(2.5rem, 8vw, 4rem); 
-          line-height: 1.1; 
-          margin-bottom: 24px; 
-          letter-spacing: -0.02em; 
-          font-weight: 700; 
+          font-size: clamp(3rem, 8vw, 4.5rem); line-height: 1.05; 
+          margin-bottom: 24px; letter-spacing: -0.03em; font-weight: 900; 
         }
         
-        .gradient-text { 
-          background: linear-gradient(135deg, var(--primary), #7c3aed); 
-          -webkit-background-clip: text; 
-          -webkit-text-fill-color: transparent; 
-        }
+        .gradient-text { background: linear-gradient(135deg, #7c3aed, #3525cd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
-        .hero-desc { 
-          font-size: 1rem; 
-          color: var(--on-surface-variant); 
-          line-height: 1.6; 
-          margin-bottom: 32px; 
-          max-width: 600px; 
-          margin-left: auto;
-          margin-right: auto;
-        }
-
-        @media (min-width: 1024px) {
-          .hero-desc { font-size: 1.15rem; margin: 0 0 48px 0; }
-        }
+        .hero-desc { font-size: 1.25rem; color: #64748b; line-height: 1.6; margin-bottom: 48px; max-width: 540px; }
         
-        .hero-cta { 
-          display: flex; 
-          flex-direction: column;
-          gap: 12px; 
-        }
+        .hero-cta { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 60px; }
+        .btn-lg { padding: 18px 36px; font-size: 1.1rem; border-radius: 16px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .btn-primary { background: #7c3aed; color: white; box-shadow: 0 20px 40px -10px rgba(124, 58, 237, 0.4); border: none; }
+        .btn-secondary { background: #f8fafc; color: #1e293b; border: 1px solid #e2e8f0; }
 
-        @media (min-width: 640px) {
-          .hero-cta { flex-direction: row; justify-content: center; gap: 20px; }
-        }
+        .hero-highlights { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .highlight-item { display: flex; align-items: center; gap: 12px; color: #64748b; font-weight: 600; font-size: 14px; }
+        .highlight-item svg { color: #7c3aed; }
 
-        @media (min-width: 1024px) {
-          .hero-cta { justify-content: flex-start; }
-        }
+        .hero-visual { width: 100%; max-width: 900px; }
 
-        .full-width-mobile { width: 100%; }
-        @media (min-width: 640px) { .full-width-mobile { width: auto; } }
+        /* Integration Strip */
+        .integration-strip { padding: 40px 0; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; background: #fafafa; }
+        .strip-label { text-align: center; font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 0.15em; margin-bottom: 32px; }
+        .integration-logos { display: flex; flex-wrap: wrap; justify-content: center; gap: 48px; opacity: 0.6; }
+        .logo-item { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; color: #64748b; }
 
-        .btn-lg { padding: 14px 28px; font-size: 1rem; border-radius: 12px; }
-        @media (min-width: 768px) { .btn-lg { padding: 16px 32px; font-size: 1.1rem; border-radius: 14px; } }
+        /* Mid Section */
+        .mid-features-section { padding: 120px 0; background: #ffffff; }
+        .mid-grid { display: grid; grid-template-columns: 1fr; gap: 64px; align-items: center; }
+        @media (min-width: 1024px) { .mid-grid { grid-template-columns: 1fr 1fr; } }
+
+        .code-block-container { background: #1e293b; border-radius: 24px; padding: 32px; box-shadow: 0 40px 80px -20px rgba(0,0,0,0.3); }
+        .code-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; color: #94a3b8; font-size: 12px; font-weight: 700; }
+        .code-header .dots { display: flex; gap: 6px; }
+        .code-header .dots span { width: 8px; height: 8px; border-radius: 50%; background: #334155; }
+        .code-content { color: #e2e8f0; font-family: monospace; font-size: 14px; line-height: 1.8; overflow-x: auto; padding: 10px 0; }
+        .keyword { color: #818cf8; }
+        .attr { color: #38bdf8; }
+        .string { color: #34d399; }
+        .code-caption { margin-top: 24px; color: #64748b; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+
+        .feature-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .mini-card { padding: 24px; border-radius: 20px; border: 1px solid #f1f5f9; background: #ffffff; transition: all 0.3s ease; }
+        .mini-card:hover { border-color: #7c3aed; transform: translateY(-5px); }
+        .icon-box { width: 44px; height: 44px; border-radius: 12px; background: #f5f3ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+        .mini-card h4 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+        .mini-card p { font-size: 13px; color: #64748b; line-height: 1.5; }
+
+        /* Existing Styles Optimized */
+        .trust-section { padding: 80px 0; }
+        .trust-label { text-align: center; font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 0.1em; margin-bottom: 40px; }
+        .logo-cloud { display: flex; flex-wrap: wrap; justify-content: center; gap: 60px; opacity: 0.4; font-weight: 900; font-size: 1.5rem; }
         
-        .hero-visual { width: 100%; max-width: 540px; }
-        .dashboard-mockup { 
-          background: white; 
-          border-radius: 16px; 
-          border: 1px solid var(--outline-variant); 
-          box-shadow: var(--shadow-overlay); 
-          overflow: hidden; 
-          height: 300px; 
-          display: flex; 
-          flex-direction: column; 
-        }
+        .how-it-works { padding: 120px 0; background: #f8fafc; }
+        .section-title h2 { font-size: 3rem; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 20px; }
+        .steps-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 60px; margin-top: 80px; }
+        @media (min-width: 768px) { .steps-grid { grid-template-columns: repeat(3, 1fr); } }
+        .step-item { position: relative; }
+        .step-num { font-size: 4rem; font-weight: 900; color: #7c3aed; opacity: 0.05; position: absolute; top: -40px; left: -10px; }
+        .step-item h3 { font-size: 1.5rem; font-weight: 800; margin-bottom: 16px; }
+        .step-item p { color: #64748b; line-height: 1.7; }
 
-        @media (min-width: 768px) {
-          .dashboard-mockup { height: 400px; border-radius: 20px; }
-        }
-
-        .mockup-header { height: 28px; background: var(--surface-container-low); display: flex; align-items: center; padding: 0 12px; gap: 4px; }
-        .dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--outline-variant); display: inline-block; margin-right: 3px; }
-        .mockup-body { flex: 1; display: flex; }
-        .mockup-sidebar { width: 48px; background: var(--surface-container); border-right: 1px solid var(--outline-variant); }
-        .mockup-content { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-        .mockup-card { height: 80px; background: var(--surface-container-low); border-radius: 8px; }
-        .mockup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; flex: 1; }
-        .mockup-grid div { background: var(--surface-container-lowest); border-radius: 8px; border: 1px solid var(--outline-variant); }
-        
-        /* Trust Section Responsive */
-        .trust-section { padding: 48px 0; background: var(--surface-container-low); border-y: 1px solid var(--outline-variant); }
-        .trust-label { text-align: center; font-size: 10px; font-weight: 700; color: var(--on-surface-variant); letter-spacing: 0.1em; margin-bottom: 32px; }
-        
-        @media (min-width: 768px) {
-          .trust-label { font-size: var(--text-label-sm); letter-spacing: 0.15em; }
-        }
-
-        .logo-cloud { 
-          display: grid; 
-          grid-template-columns: repeat(3, 1fr);
-          gap: 32px; 
-          justify-items: center;
-          opacity: 0.5; 
-          font-weight: 800; 
-          font-size: 1.1rem; 
-        }
-
-        @media (min-width: 768px) {
-          .logo-cloud { display: flex; justify-content: center; gap: 64px; font-size: 1.5rem; }
-        }
-        
-        /* Features Section Responsive */
-        .features-section { padding: 64px 0; }
-        @media (min-width: 768px) { .features-section { padding: 120px 0; } }
-
-        .section-title { margin-bottom: 48px; }
-        @media (min-width: 768px) { .section-title { margin-bottom: 80px; } }
-
-        .title-tag { font-size: var(--text-label-sm); font-weight: 700; color: var(--primary); letter-spacing: 0.1em; margin-bottom: 12px; }
-        .section-title h2 { font-size: clamp(1.5rem, 5vw, 2.25rem); margin-bottom: 16px; font-weight: 600; }
-        .section-title p { color: var(--on-surface-variant); font-size: 1rem; max-width: 600px; margin: 0 auto; }
-        
-        .feature-grid { 
-          display: grid; 
-          grid-template-columns: 1fr; 
-          gap: 20px; 
-        }
-
-        @media (min-width: 640px) {
-          .feature-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        @media (min-width: 1024px) {
-          .feature-grid { grid-template-columns: repeat(3, 1fr); gap: 32px; }
-        }
-
-        .feature-card { padding: 24px; border-radius: 16px; transition: var(--transition-normal); }
-        @media (min-width: 768px) { .feature-card { padding: 40px; border-radius: 20px; } }
-        
-        .feature-card:hover { transform: translateY(-8px); border-color: var(--primary); }
-        .feature-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
-        .feature-card h3 { font-size: var(--text-h3); margin-bottom: 12px; }
-        .feature-card p { color: var(--on-surface-variant); line-height: 1.6; font-size: var(--text-body-sm); }
-        
-        /* How it Works Responsive */
-        .how-it-works { padding: 64px 0; background: var(--surface-container-low); }
-        @media (min-width: 768px) { .how-it-works { padding: 120px 0; } }
-
-        .steps-grid { 
-          display: grid; 
-          grid-template-columns: 1fr; 
-          gap: 48px; 
-          margin-top: 64px; 
-        }
-
-        @media (min-width: 1024px) {
-          .steps-grid { grid-template-columns: repeat(3, 1fr); gap: 60px; margin-top: 80px; }
-        }
-
-        .step-item { position: relative; padding-top: 32px; }
-        .step-num { font-size: 3rem; font-weight: 800; color: var(--outline-variant); position: absolute; top: -20px; left: -10px; opacity: 0.3; }
-        
-        @media (min-width: 768px) {
-          .step-num { font-size: 4rem; top: -50px; }
-        }
-
-        .step-item h3 { font-size: var(--text-h3); margin-bottom: 12px; position: relative; z-index: 1; }
-        .step-item p { color: var(--on-surface-variant); line-height: 1.6; position: relative; z-index: 1; font-size: var(--text-body-sm); }
-        
-        /* Footer Responsive */
-        .landing-footer { padding: 64px 0 40px; border-top: 1px solid var(--outline-variant); background: var(--surface-container-lowest); }
-        @media (min-width: 768px) { .landing-footer { padding: 100px 0 40px; } }
-
-        .footer-top { 
-          display: flex;
-          flex-direction: column;
-          gap: 48px; 
-          margin-bottom: 64px; 
-        }
-
-        @media (min-width: 1024px) {
-          .footer-top { 
-            display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 100px;
-            margin-bottom: 80px;
-          }
-        }
-
-        .footer-brand { max-width: 400px; }
-        .footer-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 800; font-size: 1.25rem; color: var(--on-surface); margin-bottom: 20px; }
-        .footer-brand p { color: var(--on-surface-variant); line-height: 1.7; font-size: var(--text-body-sm); }
-        
-        .footer-nav { 
-          display: grid; 
-          grid-template-columns: repeat(2, 1fr); 
-          gap: 32px; 
-        }
-
-        @media (min-width: 640px) {
-          .footer-nav { grid-template-columns: repeat(3, 1fr); gap: 40px; }
-        }
-
-        .footer-col h4 { font-size: var(--text-label-md); margin-bottom: 16px; color: var(--on-surface); font-weight: 700; }
-        .footer-col a { display: block; color: var(--on-surface-variant); text-decoration: none; margin-bottom: 10px; font-weight: 500; font-size: var(--text-body-sm); transition: var(--transition-fast); }
-        
-        .footer-bottom { 
-          display: flex; 
-          flex-direction: column;
-          gap: 20px;
-          justify-content: space-between; 
-          align-items: center; 
-          padding-top: 32px; 
-          border-top: 1px solid var(--outline-variant); 
-          text-align: center;
-        }
-
-        @media (min-width: 768px) {
-          .footer-bottom { flex-direction: row; text-align: left; padding-top: 40px; }
-        }
-
-        .footer-bottom p { font-size: var(--text-label-sm); color: var(--on-surface-variant); }
-        .social-links { display: flex; gap: 24px; }
-        .social-links a { color: var(--on-surface-variant); text-decoration: none; font-weight: 600; font-size: var(--text-label-sm); transition: var(--transition-fast); }
+        .landing-footer { padding: 100px 0 40px; border-top: 1px solid #f1f5f9; }
+        .footer-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 900; font-size: 1.5rem; color: #1e293b; margin-bottom: 24px; }
+        .footer-brand p { color: #64748b; max-width: 320px; line-height: 1.7; }
+        .footer-nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+        .footer-col h4 { font-size: 14px; font-weight: 800; margin-bottom: 24px; }
+        .footer-col a { display: block; color: #64748b; text-decoration: none; margin-bottom: 12px; font-weight: 600; font-size: 14px; }
+        .footer-bottom { border-top: 1px solid #f1f5f9; padding-top: 40px; margin-top: 60px; display: flex; justify-content: space-between; align-items: center; }
       `}</style>
     </div>
   );
