@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Navbar from "./components/Navbar";
+import Login from "./pages/Login";
 
 const Signup = () => (
   <div style={{ padding: "100px", textAlign: "center" }}>
@@ -26,7 +27,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
 
         <Route path="/signup" element={<div>Signup</div>} />
-        <Route path="/login" element={<div>Login</div>} />
+        <Route path="/login" element={<Login />} />
         <Route path="/product" element={<div>Product</div>} />
         <Route path="/pricing" element={<div>Pricing</div>} />
       </Routes>
