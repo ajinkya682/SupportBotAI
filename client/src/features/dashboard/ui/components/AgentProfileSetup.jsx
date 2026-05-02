@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { Camera, User, Briefcase, CheckCircle2, Loader2, X } from "lucide-react";
+import { Camera, User, Briefcase, CheckCircle2, X } from "lucide-react";
+import Loader from "../../../../shared/ui/components/Loader";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
@@ -137,11 +138,11 @@ export default function AgentProfileSetup({ user, onComplete, onDismiss }) {
 
         <button className="ps-save-btn" onClick={handleSave} disabled={saving}>
           {saving ? (
-            <Loader2 size={18} className="spin" />
+            <Loader size={18} />
           ) : (
             <CheckCircle2 size={18} />
           )}
-          {saving ? "Saving..." : "Save Profile & Go Live"}
+          {saving ? "Saving Intelligence..." : "Save Profile & Go Live"}
         </button>
 
         <style>{`

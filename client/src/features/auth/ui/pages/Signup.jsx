@@ -8,12 +8,15 @@ import {
   Mail, 
   Lock, 
   User, 
-  Loader2, 
-  Bot, 
-  Building2, 
+  Building, 
   ArrowRight, 
-  CheckCircle2 
+  CheckCircle2,
+  Bot,
+  Building2,
+  ShieldCheck,
+  ChevronLeft
 } from 'lucide-react';
+import Loader from "../../../../shared/ui/components/Loader";
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -108,8 +111,8 @@ export default function Signup() {
                 <label><Lock size={14} className="label-icon" /> Password</label>
                 <input type="password" name="password" value={password} onChange={onChange} placeholder="••••••••" required />
               </div>
-              <button type="submit" className="btn btn-primary auth-submit-btn" disabled={isLoading}>
-                {isLoading ? <Loader2 size={20} className="animate-spin" /> : 'Create Account'}
+              <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={isLoading}>
+                {isLoading ? <Loader size={20} color="#fff" /> : 'Establish Credentials'}
               </button>
             </form>
           </motion.div>

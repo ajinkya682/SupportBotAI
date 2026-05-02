@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  DollarSign, Loader2, RefreshCcw, Download, PlayCircle,
+  DollarSign, RefreshCcw, Download, PlayCircle,
   Globe, MessageSquare, Save, Shield, Lock, Database
 } from 'lucide-react';
+import Loader from '../../../../shared/ui/components/Loader';
 import { FaTwitter, FaLinkedin, FaGithub } from 'react-icons/fa6';
 import axios from 'axios';
 import { API_URL } from '../../../../shared/services/config';
@@ -94,9 +95,8 @@ const SASettings = () => {
 
   if (isLoading) {
     return (
-      <div className="sa-loading-view">
-        <Loader2 className="animate-spin" size={40} color="var(--primary)" />
-        <p>Accessing System Core...</p>
+      <div className="sa-loading-view" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px' }}>
+        <Loader fullPage label="Accessing System Core..." />
       </div>
     );
   }
@@ -138,7 +138,7 @@ const SASettings = () => {
             <div className="sa-card-header">
               <h3><Globe size={18} /> General Settings</h3>
               <button type="submit" className="btn btn-primary btn-sm" disabled={isSaving}>
-                {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                {isSaving ? <Loader size={14} /> : <Save size={14} />}
                 <span>Save Changes</span>
               </button>
             </div>

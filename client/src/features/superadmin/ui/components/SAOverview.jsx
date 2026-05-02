@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Users, Building2, MessageSquare, ArrowUpRight, ArrowDownRight, Globe, Zap, Download, Loader2 } from 'lucide-react';
+import { TrendingUp, Users, Building2, MessageSquare, ArrowUpRight, ArrowDownRight, Globe, Zap, Download } from 'lucide-react';
+import Loader from '../../../../shared/ui/components/Loader';
 import axios from 'axios';
 import { API_URL } from '../../../../shared/services/config';
 import toast from 'react-hot-toast';
@@ -71,9 +72,8 @@ const SAOverview = () => {
 
   if (isLoading) {
     return (
-      <div className="sa-loading-view">
-        <Loader2 className="animate-spin" size={40} color="var(--primary)" />
-        <p>Synchronizing Global Intelligence...</p>
+      <div className="sa-loading-view" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px' }}>
+        <Loader fullPage label="Synchronizing Global Intelligence..." />
       </div>
     );
   }
@@ -91,7 +91,7 @@ const SAOverview = () => {
             onClick={handleDownloadReport}
             disabled={isExporting}
           >
-            {isExporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+            {isExporting ? <Loader size={18} /> : <Download size={18} />}
             <span>Download Report</span>
           </button>
         </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, X, Loader2, Sparkles, Bell, User, Send, Volume2, VolumeX, RotateCcw, Star, ChevronDown } from "lucide-react";
+import { MessageSquare, X, Sparkles, Bell, User, Send, Volume2, VolumeX, RotateCcw, Star, ChevronDown } from "lucide-react";
+import Loader from "../../../../shared/ui/components/Loader";
 
 function playPop(muted) {
   if (muted) return;
@@ -489,7 +490,7 @@ export default function ChatWidgetPage() {
               <div className="cw-esc-badge">⚡ HIGH INTENT</div>
               {['Detecting query complexity...','High intent identified. Preparing escalation...','Connecting to Senior Enterprise Team...','Agent is joining...'].map((line,li)=>(
                 <div key={li} className="cw-esc-line" style={{animationDelay:`${li*0.6}s`}}>
-                  {li===3 ? <><Loader2 size={12} style={{animation:'cwSpin 0.8s linear infinite',marginRight:6}}/>{line}</> : line}
+                  {li===3 ? <><Loader size={12} color={themeColor} className="mr-1.5" />{line}</> : line}
                 </div>
               ))}
             </div>
@@ -650,7 +651,7 @@ export default function ChatWidgetPage() {
             autoComplete="off"
           />
           <button type="submit" className="cw-send-btn" disabled={!input.trim() || loading} style={{background: input.trim() && !loading ? themeColor : '#d1d5db'}}>
-            {loading ? <Loader2 size={15} className="spin"/> : <Send size={15} fill={input.trim() ? "currentColor" : "none"}/>}
+            {loading ? <Loader size={15} color="#fff" /> : <Send size={15} fill={input.trim() ? "currentColor" : "none"}/>}
           </button>
         </form>
         {showBranding && (

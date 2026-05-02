@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { getBusiness, updateBusiness } from "../../state/businessSlice";
 import { getConversations } from "../../../conversations/state/conversationSlice";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, Sparkles, Loader2, Bell, ChevronRight, Menu, Volume2, VolumeX, ChevronDown, User, Key, LogOut } from "lucide-react";
+import { X, Check, Sparkles, Bell, ChevronRight, Menu, Volume2, VolumeX, ChevronDown, User, Key, LogOut } from "lucide-react";
 import axios from "axios";
 import socket from "../../../../shared/services/socket";
 import toast from "react-hot-toast";
@@ -22,6 +22,7 @@ import NotificationBell from "../components/NotificationBell";
 import SystemSettings from "../components/SystemSettings";
 import Notifications from "../components/Notifications";
 import Profile from "../components/Profile";
+import Loader from "../../../../shared/ui/components/Loader";
 import { logout, reset } from "../../../auth/state/authSlice";
 import { usePushNotifications } from "../../../../shared/hooks/usePushNotifications";
 import useSound from "../../../../shared/services/useSound";
@@ -302,9 +303,7 @@ export default function Dashboard() {
     ) {
       return (
         <div className="loading-state">
-          <Loader2 size={48} className="animate-spin" />
-          <p>Synchronizing neural nodes...</p>
-          {businessLoading && <p style={{fontSize: '12px', opacity: 0.6}}>Fetching your workspace profile...</p>}
+          <Loader size={32} label="Synchronizing neural nodes..." />
         </div>
       );
     }
@@ -578,7 +577,7 @@ export default function Dashboard() {
                   disabled={isUpgrading}
                 >
                   {isUpgrading ? (
-                    <Loader2 size={20} className="animate-spin" />
+                    <Loader size={20} color="#fff" />
                   ) : (
                     "Initiate Expansion"
                   )}
@@ -597,7 +596,7 @@ export default function Dashboard() {
         .sa-layout { background: var(--surface); display: flex; flex-direction: column; width: 100%; min-height: 0; }
         @media (min-width: 1024px) { .sa-layout { flex-direction: row; } }
 
-        .sa-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; overflow: hidden; }
+        .sa-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; overflow-y: auto; }
         
         .sa-top-bar { 
           height: 60px; 

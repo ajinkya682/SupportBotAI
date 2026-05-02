@@ -40,6 +40,7 @@ import Notifications from "./Notifications";
 import AgentProfileSetup from "./AgentProfileSetup";
 import { usePushNotifications } from "../../../../shared/hooks/usePushNotifications";
 import PushPrompt from "../../../../shared/ui/components/PushPrompt";
+import Loader from "../../../../shared/ui/components/Loader";
 
 export default function AgentDashboard({ user: propUser }) {
   const dispatch = useDispatch();
@@ -481,6 +482,14 @@ export default function AgentDashboard({ user: propUser }) {
     }
   };
 
+  if (!business && activeTab !== 'notifications') {
+    return (
+      <div className="ag-layout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <Loader fullPage label="Initializing Agent Console..." />
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-root ag-layout">
       {showProfileSetup && (
@@ -766,7 +775,7 @@ export default function AgentDashboard({ user: propUser }) {
         .ag-logout-btn { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 16px; border-radius: 12px; background: transparent; border: none; color: #ef4444; cursor: pointer; font-weight: 700; transition: 0.2s; font-size: 0.9rem; }
         .ag-logout-btn:hover { background: #fef2f2; }
         
-        .ag-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; overflow: hidden; }
+        .ag-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; overflow-y: auto; }
         
         .ag-top-bar { height: 60px; padding: 0 12px; display: flex; justify-content: space-between; align-items: center; background: white; border-bottom: 1px solid var(--outline-variant); flex-shrink: 0; gap: 8px; }
         @media (min-width: 768px) { .ag-top-bar { height: 72px; padding: 0 32px; gap: 16px; } }

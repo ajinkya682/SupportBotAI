@@ -80,3 +80,27 @@ exports.changePassword = async (req, res) => {
         res.status(500).json({ message: "Failed to update password" });
     }
 };
+exports.updateProfile = async (req, res) => {
+    const { name } = req.body;
+
+    try {
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            { name },
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({
+            success: true,
+            user,
+            message: "Profile updated successfully"
+        });
+    } catch (error) {
+        console.error("Update Profile Error:", error);
+        res.status(500).json({ message: "Failed to update profile" });
+    }
+};

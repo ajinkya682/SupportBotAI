@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CreditCard, TrendingUp, Zap, Users, 
   Calendar, ArrowUpRight, DollarSign, 
-  PieChart as PieIcon, Loader2, Download,
+  PieChart as PieIcon, Download,
   CheckCircle2, Clock, ShieldCheck
 } from 'lucide-react';
+import Loader from '../../../../shared/ui/components/Loader';
 import axios from 'axios';
 import { API_URL } from '../../../../shared/services/config';
 import toast from 'react-hot-toast';
@@ -77,9 +78,8 @@ const SASubscriptions = () => {
 
   if (isLoading) {
     return (
-      <div className="sa-loading-view">
-        <Loader2 className="animate-spin" size={40} color="var(--primary)" />
-        <p>Calculating Platform Revenue...</p>
+      <div className="sa-loading-view" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px' }}>
+        <Loader fullPage label="Calculating Platform Revenue..." />
       </div>
     );
   }
@@ -96,7 +96,7 @@ const SASubscriptions = () => {
           onClick={handleDownloadSubscriptions}
           disabled={isExporting}
         >
-          {isExporting ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
+          {isExporting ? <Loader size={18} /> : <Download size={18} />}
           <span>Export Revenue Report</span>
         </button>
       </header>

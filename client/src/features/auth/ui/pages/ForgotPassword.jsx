@@ -1,16 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  Mail,
-  Key,
-  ShieldCheck,
-  ArrowLeft,
-  Loader2,
-  Sparkles,
-  Lock,
-  ChevronRight,
-  CheckCircle2,
-} from "lucide-react";
+import { Mail, ArrowLeft, ArrowRight, ShieldCheck, Lock, CheckCircle2 } from "lucide-react";
+import Loader from "../../../../shared/ui/components/Loader";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { toast } from "react-hot-toast";

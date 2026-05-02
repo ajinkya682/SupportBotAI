@@ -8,8 +8,15 @@ import {
   Check, 
   ShieldCheck, 
   X,
-  Loader2,
-  AlertCircle
+  AlertCircle,
+  Mail,
+  Shield,
+  Edit2,
+  Save,
+  ChevronRight,
+  ShieldAlert,
+  KeyRound,
+  Fingerprint
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
@@ -17,11 +24,17 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { API_URL } from "../../../../shared/services/config";
 import { updateUserProfile } from "../../../auth/state/authSlice";
+import Loader from "../../../../shared/ui/components/Loader";
 
 export default function Profile({ view = "general" }) {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   
+  // Profile Details State
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileName, setProfileName] = useState(user?.name || "");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
   // Profile Photo State
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -42,6 +55,10 @@ export default function Profile({ view = "general" }) {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState({});
   const [strength, setStrength] = useState({ score: 0, label: "", color: "" });
+
+  useEffect(() => {
+    setProfileName(user?.name || "");
+  }, [user]);
 
   // Password validation rules
   const validatePassword = (pwd) => {
@@ -67,13 +84,13 @@ export default function Profile({ view = "general" }) {
     if (/[0-9]/.test(pwd)) score++;
     if (/[^A-Za-z0-9]/.test(pwd)) score++;
 
-    let label = "Weak";
+    let label = "Weak Security";
     let color = "#ef4444";
     if (score >= 4) {
-      label = "Strong";
+      label = "Ironclad Protection";
       color = "#10b981";
     } else if (score >= 2) {
-      label = "Medium";
+      label = "Average Defense";
       color = "#f59e0b";
     }
     setStrength({ score, label, color });
@@ -89,15 +106,13 @@ export default function Profile({ view = "general" }) {
     }
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file (JPG, PNG, WEBP)");
+      toast.error("Please select an image file");
       return;
     }
 
     setPhotoFile(file);
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setPhotoPreview(reader.result);
-    };
+    reader.onloadend = () => setPhotoPreview(reader.result);
     reader.readAsDataURL(file);
   };
 
@@ -118,7 +133,7 @@ export default function Profile({ view = "general" }) {
 
       if (data.success) {
         dispatch(updateUserProfile({ profilePhoto: data.profilePhoto }));
-        toast.success("Profile photo updated successfully");
+        toast.success("Identity updated successfully");
         setPhotoFile(null);
         setPhotoPreview(null);
       }
@@ -129,6 +144,29 @@ export default function Profile({ view = "general" }) {
     }
   };
 
+  const handleUpdateProfile = async () => {
+    if (!profileName.trim()) return;
+    setIsSavingProfile(true);
+
+    try {
+      const { data } = await axios.put(`${API_URL}/profile/update`, {
+        name: profileName
+      }, {
+        headers: { Authorization: `Bearer ${user?.token}` }
+      });
+
+      if (data.success) {
+        dispatch(updateUserProfile({ name: profileName }));
+        toast.success("Profile details synchronized");
+        setIsEditingProfile(false);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update profile");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     
@@ -136,10 +174,10 @@ export default function Profile({ view = "general" }) {
     const errors = {};
     const pwdValidation = validatePassword(passwordData.newPassword);
     if (pwdValidation.length > 0) {
-      errors.newPassword = "Password must meet all security requirements";
+      errors.newPassword = "Security standard not met";
     }
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      errors.confirmPassword = "Passwords do not match";
+      errors.confirmPassword = "Verification mismatch";
     }
     if (!passwordData.currentPassword) {
       errors.currentPassword = "Required";
@@ -162,13 +200,13 @@ export default function Profile({ view = "general" }) {
       });
 
       if (data.success) {
-        toast.success("Password updated successfully");
+        toast.success("Access credentials updated");
         setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
       }
     } catch (err) {
-      const msg = err.response?.data?.message || "Failed to update password";
+      const msg = err.response?.data?.message || "Standard security failure";
       if (msg.toLowerCase().includes("current")) {
-        setPasswordErrors({ currentPassword: "Current password is incorrect" });
+        setPasswordErrors({ currentPassword: "Authentication failed: incorrect password" });
       } else {
         toast.error(msg);
       }
@@ -181,563 +219,310 @@ export default function Profile({ view = "general" }) {
     setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
   };
 
-  const isFormValid = () => {
-    return passwordData.currentPassword && 
-           passwordData.newPassword && 
-           passwordData.confirmPassword &&
-           validatePassword(passwordData.newPassword).length === 0 &&
-           passwordData.newPassword === passwordData.confirmPassword;
-  };
-
   return (
-    <div className="profile-page-wrapper animate-fade-in">
-      <div className="profile-header-main">
-        <h1>{view === "security" ? "Security Settings" : "My Profile"}</h1>
-        <p>{view === "security" ? "Manage your account password and security" : "Manage your account settings and preferences"}</p>
-      </div>
-
-      <div className="profile-grid single-column">
-        {/* Section 1: Photo & Info */}
-        {view === "general" && (
-          <section className="profile-card info-section full-width">
-          <div className="avatar-upload-container">
-            <div className="avatar-large">
-              {photoPreview ? (
-                <img src={photoPreview} alt="Preview" />
-              ) : user?.profilePhoto ? (
-                <img src={user.profilePhoto} alt={user?.name} />
-              ) : (
-                <div className="avatar-initials">{user?.name?.charAt(0)}</div>
-              )}
-              
-              <button 
-                className="camera-btn" 
-                onClick={() => fileInputRef.current.click()}
-                title="Change Photo"
-              >
-                <Camera size={20} />
-              </button>
-            </div>
-            
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handlePhotoSelect} 
-              accept="image/jpeg,image/jpg,image/png,image/webp" 
-              hidden 
-            />
-
-            {photoFile && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }} 
-                animate={{ opacity: 1, y: 0 }}
-                className="upload-actions"
-              >
+    <div className="profile-container animate-fade-in">
+      {view === "general" && (
+        <div className="profile-hero-card">
+          <div className="ph-left">
+            <div className="ph-avatar-group">
+              <div className="ph-avatar-main">
+                {photoPreview ? (
+                  <img src={photoPreview} alt="Preview" />
+                ) : user?.profilePhoto ? (
+                  <img src={user.profilePhoto} alt={user?.name} />
+                ) : (
+                  <div className="ph-avatar-placeholder">{user?.name?.charAt(0)}</div>
+                )}
                 <button 
-                  className="btn-save-photo" 
-                  onClick={handlePhotoUpload}
+                  className="ph-camera-trigger" 
+                  onClick={() => fileInputRef.current.click()}
                   disabled={isUploading}
                 >
-                  {isUploading ? <Loader2 size={16} className="animate-spin" /> : "Save Photo"}
-                </button>
-                <button 
-                  className="btn-cancel-photo" 
-                  onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}
-                  disabled={isUploading}
-                >
-                  Cancel
-                </button>
-              </motion.div>
-            )}
-          </div>
-
-          <div className="user-details-read">
-            <div className="detail-item">
-              <label>Full Name</label>
-              <p>{user?.name}</p>
-            </div>
-            <div className="detail-item">
-              <label>Role</label>
-              <div className="role-pill">
-                <ShieldCheck size={14} />
-                {user?.role === 'owner' ? 'Business Owner' : (user?.roleTitle || 'Support Agent')}
-              </div>
-            </div>
-            <div className="detail-item">
-              <label>Email Address</label>
-              <p>{user?.email}</p>
-            </div>
-          </div>
-          </section>
-        )}
-
-        {/* Section 2: Password */}
-        {view === "security" && (
-          <section className="profile-card password-section full-width">
-          <div className="card-header">
-            <Lock size={20} className="header-icon" />
-            <h3>Change Password</h3>
-          </div>
-          
-          <form onSubmit={handlePasswordUpdate} className="password-form">
-            <div className={`input-group ${passwordErrors.currentPassword ? 'has-error' : ''}`}>
-              <label>Current Password</label>
-              <div className="password-input-wrap">
-                <input 
-                  type={showPasswords.current ? "text" : "password"}
-                  value={passwordData.currentPassword}
-                  onChange={e => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                  placeholder="Enter current password"
-                />
-                <button type="button" onClick={() => togglePasswordVisibility('current')} className="toggle-eye">
-                  {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
+                  <Camera size={16} />
                 </button>
               </div>
-              {passwordErrors.currentPassword && <span className="error-msg">{passwordErrors.currentPassword}</span>}
-            </div>
-
-            <div className={`input-group ${passwordErrors.newPassword ? 'has-error' : ''}`}>
-              <label>New Password</label>
-              <div className="password-input-wrap">
-                <input 
-                  type={showPasswords.new ? "text" : "password"}
-                  value={passwordData.newPassword}
-                  onChange={e => setPasswordData({...passwordData, newPassword: e.target.value})}
-                  placeholder="Enter new password"
-                />
-                <button type="button" onClick={() => togglePasswordVisibility('new')} className="toggle-eye">
-                  {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              
-              {/* Strength Indicator */}
-              {passwordData.newPassword && (
-                <div className="strength-meter">
-                  <div className="strength-bars">
-                    {[1, 2, 3, 4, 5].map(i => (
-                      <div 
-                        key={i} 
-                        className={`bar ${i <= strength.score ? 'active' : ''}`}
-                        style={{ backgroundColor: i <= strength.score ? strength.color : '#e2e8f0' }}
-                      />
-                    ))}
-                  </div>
-                  <span className="strength-label" style={{ color: strength.color }}>{strength.label}</span>
+              {photoFile && (
+                <div className="ph-photo-actions">
+                  <button className="ph-save-btn" onClick={handlePhotoUpload} disabled={isUploading}>
+                    {isUploading ? <Loader size={14} color="#fff" /> : "Update Identity"}
+                  </button>
+                  <button className="ph-cancel-btn" onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}>
+                    Discard
+                  </button>
                 </div>
               )}
-              
-              {/* Requirements list */}
-              <div className="pwd-requirements">
-                {["At least 8 chars", "Uppercase", "Lowercase", "Number", "Special symbol"].map((req, i) => {
-                  const rules = [
-                    passwordData.newPassword.length >= 8,
-                    /[A-Z]/.test(passwordData.newPassword),
-                    /[a-z]/.test(passwordData.newPassword),
-                    /[0-9]/.test(passwordData.newPassword),
-                    /[^A-Za-z0-9]/.test(passwordData.newPassword)
-                  ];
-                  return (
-                    <div key={i} className={`req-item ${rules[i] ? 'valid' : ''}`}>
-                      <Check size={12} />
-                      {req}
-                    </div>
-                  );
-                })}
-              </div>
+              <input type="file" ref={fileInputRef} onChange={handlePhotoSelect} accept="image/*" hidden />
             </div>
 
-            <div className={`input-group ${passwordErrors.confirmPassword ? 'has-error' : ''}`}>
-              <label>Confirm New Password</label>
-              <div className="password-input-wrap">
-                <input 
-                  type={showPasswords.confirm ? "text" : "password"}
-                  value={passwordData.confirmPassword}
-                  onChange={e => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                  placeholder="Repeat new password"
-                />
-                <button type="button" onClick={() => togglePasswordVisibility('confirm')} className="toggle-eye">
-                  {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+            <div className="ph-user-info">
+              <div className="ph-name-row">
+                {isEditingProfile ? (
+                  <div className="ph-name-edit">
+                    <input 
+                      value={profileName} 
+                      onChange={e => setProfileName(e.target.value)}
+                      autoFocus
+                    />
+                    <button onClick={handleUpdateProfile} disabled={isSavingProfile}>
+                      {isSavingProfile ? <Loader size={14} color="#fff" /> : <Save size={16} />}
+                    </button>
+                    <button onClick={() => { setIsEditingProfile(false); setProfileName(user?.name || ""); }}>
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <h2>{user?.name}</h2>
+                    <button className="ph-edit-btn" onClick={() => setIsEditingProfile(true)}>
+                      <Edit2 size={14} />
+                    </button>
+                  </>
+                )}
               </div>
-              {passwordErrors.confirmPassword && <span className="error-msg">{passwordErrors.confirmPassword}</span>}
+              <p className="ph-email"><Mail size={14} /> {user?.email}</p>
+              <div className="ph-role-tag">
+                <ShieldCheck size={14} />
+                <span>{user?.role === 'owner' ? 'System Administrator' : (user?.roleTitle || 'Support Agent')}</span>
+              </div>
             </div>
-
-            <button 
-              type="submit" 
-              className="btn-update-password" 
-              disabled={!isFormValid() || isUpdatingPassword}
-            >
-              {isUpdatingPassword ? (
-                <><Loader2 size={18} className="animate-spin" /> Updating...</>
-              ) : "Update Password"}
-            </button>
-          </form>
-        </section>
+          </div>
+        </div>
       )}
+
+      <div className="profile-main-grid">
+        <div className="profile-section-card">
+          <div className="psc-header">
+            <div className="psc-icon">
+              {view === "security" ? <KeyRound size={20} /> : <User size={20} />}
+            </div>
+            <div className="psc-text">
+              <h3>{view === "security" ? "Security Settings" : "My Profile"}</h3>
+              <p>{view === "security" ? "Manage your account password and security" : "Manage your account settings and preferences"}</p>
+            </div>
+          </div>
+
+          {view === "general" ? (
+            <div className="psc-content">
+              <div className="profile-info-grid">
+                <div className="info-item-box">
+                  <span className="info-label">Full Name</span>
+                  <div className="info-value-wrap">
+                    <User size={16} />
+                    <span className="info-value">{user?.name}</span>
+                  </div>
+                </div>
+                <div className="info-item-box">
+                  <span className="info-label">Email Node</span>
+                  <div className="info-value-wrap">
+                    <Mail size={16} />
+                    <span className="info-value">{user?.email}</span>
+                  </div>
+                </div>
+                <div className="info-item-box">
+                  <span className="info-label">Access Level</span>
+                  <div className="info-value-wrap">
+                    <Shield size={16} />
+                    <span className="info-value" style={{ textTransform: 'capitalize' }}>{user?.role}</span>
+                  </div>
+                </div>
+                <div className="info-item-box">
+                  <span className="info-label">Member Since</span>
+                  <div className="info-value-wrap">
+                    <Check size={16} />
+                    <span className="info-value">{new Date(user?.createdAt || Date.now()).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="psc-footer-hint">
+                <ShieldAlert size={14} />
+                <span>Basic account details are synchronized with system core.</span>
+              </div>
+            </div>
+          ) : (
+            <div className="psc-security-layout">
+              <form onSubmit={handlePasswordUpdate} className="psc-form">
+                <div className="form-field-group">
+                  <label>Current Password</label>
+                  <div className="field-input-wrap">
+                    <Lock size={18} className="field-icon" />
+                    <input 
+                      type={showPasswords.current ? "text" : "password"}
+                      value={passwordData.currentPassword}
+                      onChange={e => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                      placeholder="Enter current password"
+                    />
+                    <button type="button" onClick={() => togglePasswordVisibility('current')} className="field-toggle">
+                      {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {passwordErrors.currentPassword && <p className="field-error"><AlertCircle size={12} /> {passwordErrors.currentPassword}</p>}
+                </div>
+
+                <div className="form-field-group">
+                  <label>New Password</label>
+                  <div className="field-input-wrap">
+                    <Lock size={18} className="field-icon" />
+                    <input 
+                      type={showPasswords.new ? "text" : "password"}
+                      value={passwordData.newPassword}
+                      onChange={e => setPasswordData({...passwordData, newPassword: e.target.value})}
+                      placeholder="Create complex password"
+                    />
+                    <button type="button" onClick={() => togglePasswordVisibility('new')} className="field-toggle">
+                      {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  
+                  {passwordData.newPassword && (
+                    <div className="strength-meter">
+                      <div className="sm-bar-bg">
+                        <div 
+                          className="sm-bar-fill" 
+                          style={{ width: `${(strength.score / 5) * 100}%`, background: strength.color }}
+                        />
+                      </div>
+                      <span className="sm-label" style={{ color: strength.color }}>{strength.label}</span>
+                    </div>
+                  )}
+                  {passwordErrors.newPassword && <p className="field-error"><AlertCircle size={12} /> {passwordErrors.newPassword}</p>}
+                </div>
+
+                <div className="form-field-group">
+                  <label>Confirm New Password</label>
+                  <div className="field-input-wrap">
+                    <ShieldCheck size={18} className="field-icon" />
+                    <input 
+                      type={showPasswords.confirm ? "text" : "password"}
+                      value={passwordData.confirmPassword}
+                      onChange={e => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                      placeholder="Repeat new password"
+                    />
+                    <button type="button" onClick={() => togglePasswordVisibility('confirm')} className="field-toggle">
+                      {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {passwordErrors.confirmPassword && <p className="field-error"><AlertCircle size={12} /> {passwordErrors.confirmPassword}</p>}
+                </div>
+
+                <button className="form-submit-btn" type="submit" disabled={isUpdatingPassword || !passwordData.newPassword}>
+                  {isUpdatingPassword ? <Loader size={18} color="#fff" label="Synchronizing..." /> : (
+                    <>Update Access Protocol <ChevronRight size={18} /></>
+                  )}
+                </button>
+              </form>
+
+              <div className="psc-security-info">
+                <div className="security-info-box">
+                  <Fingerprint size={24} className="si-icon" />
+                  <h4>Security Guidelines</h4>
+                  <ul>
+                    <li>Use 8+ characters for depth</li>
+                    <li>Mix symbols & numbers</li>
+                    <li>Avoid common sequences</li>
+                    <li>Never share your credentials</li>
+                  </ul>
+                </div>
+                <div className="security-info-box secondary">
+                  <ShieldCheck size={24} className="si-icon" />
+                  <h4>Session Control</h4>
+                  <p>Updates will synchronize across all active sessions in real-time.</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <style>{`
-        .profile-page-wrapper {
-          padding: 40px 24px;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
+        .profile-container { padding: 24px; max-width: 1000px; margin: 0 auto; min-height: 100vh; }
+        @media (min-width: 768px) { .profile-container { padding: 40px; } }
 
-        .profile-header-main {
-          margin-bottom: 40px;
-        }
+        .profile-hero-card { background: white; border-radius: 24px; padding: 32px; border: 1px solid var(--outline-variant); box-shadow: var(--shadow-overlay); margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden; }
+        .profile-hero-card::before { content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: var(--primary); }
 
-        .profile-header-main h1 {
-          font-size: 1.5rem;
-          font-weight: 800;
-          color: #1e293b;
-          margin: 0 0 8px;
-        }
+        .ph-left { display: flex; align-items: center; gap: 32px; }
+        @media (max-width: 640px) { .ph-left { flex-direction: column; text-align: center; width: 100%; } }
 
-        @media (min-width: 768px) {
-          .profile-header-main h1 {
-            font-size: 2rem;
-          }
-        }
+        .ph-avatar-group { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .ph-avatar-main { position: relative; width: 100px; height: 100px; border-radius: 30px; background: var(--surface-container); border: 4px solid white; box-shadow: 0 8px 24px rgba(0,0,0,0.1); overflow: visible; }
+        .ph-avatar-main img { width: 100%; height: 100%; object-fit: cover; border-radius: 26px; }
+        .ph-avatar-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 800; color: var(--primary); background: var(--primary-low); border-radius: 26px; }
+        
+        .ph-camera-trigger { position: absolute; bottom: -8px; right: -8px; width: 36px; height: 36px; border-radius: 12px; background: var(--primary); color: white; border: 3px solid white; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-raised); transition: 0.2s; }
+        .ph-camera-trigger:hover { transform: scale(1.1); background: #2a1fb8; }
 
-        .profile-header-main p {
-          color: #64748b;
-          font-weight: 500;
-        }
+        .ph-photo-actions { display: flex; gap: 8px; margin-top: 8px; }
+        .ph-save-btn { padding: 6px 12px; border-radius: 8px; background: var(--primary); color: white; border: none; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .ph-cancel-btn { padding: 6px 12px; border-radius: 8px; background: var(--surface-container); color: var(--on-surface-variant); border: none; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
 
-        .profile-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 32px;
-          align-items: start;
-        }
+        .ph-user-info { display: flex; flex-direction: column; gap: 8px; }
+        .ph-name-row { display: flex; align-items: center; gap: 12px; }
+        @media (max-width: 640px) { .ph-name-row { justify-content: center; } }
+        .ph-name-row h2 { font-size: 1.75rem; font-weight: 800; color: var(--on-surface); letter-spacing: -0.02em; margin: 0; }
+        .ph-edit-btn { background: transparent; border: none; color: var(--outline); cursor: pointer; padding: 4px; border-radius: 6px; transition: 0.2s; }
+        .ph-edit-btn:hover { background: var(--surface-container); color: var(--primary); }
 
-        .profile-grid.single-column {
-          grid-template-columns: 1fr;
-          max-width: 800px;
-          margin: 0 auto;
-        }
+        .ph-name-edit { display: flex; align-items: center; gap: 8px; background: var(--surface-container-low); padding: 4px 8px; border-radius: 12px; border: 1px solid var(--outline-variant); }
+        .ph-name-edit input { border: none; background: transparent; font-size: 1.25rem; font-weight: 700; color: var(--on-surface); width: 180px; padding: 4px; outline: none; }
+        .ph-name-edit button { background: var(--primary); color: white; border: none; border-radius: 8px; padding: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .ph-name-edit button:last-child { background: var(--surface-container-highest); color: var(--on-surface); }
 
-        .profile-card.full-width {
-          width: 100%;
-        }
+        .ph-email { display: flex; align-items: center; gap: 6px; font-size: 0.95rem; color: var(--on-surface-variant); font-weight: 500; }
+        .ph-role-tag { display: flex; align-items: center; gap: 6px; background: var(--primary-low); color: var(--primary); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; width: fit-content; }
+        @media (max-width: 640px) { .ph-role-tag { margin: 0 auto; } }
 
-        .profile-card {
-          background: white;
-          border-radius: 24px;
-          border: 1px solid #e2e8f0;
-          padding: 32px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
+        .profile-main-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
+        
+        .profile-section-card { background: white; border-radius: 24px; border: 1px solid var(--outline-variant); padding: 32px; box-shadow: var(--shadow-raised); }
+        .psc-header { display: flex; gap: 20px; align-items: flex-start; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--surface-container); }
+        .psc-icon { width: 48px; height: 48px; border-radius: 14px; background: var(--surface-container-low); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .psc-text h3 { font-size: 1.25rem; font-weight: 800; color: var(--on-surface); margin-bottom: 4px; }
+        .psc-text p { font-size: 0.9rem; color: var(--on-surface-variant); font-weight: 500; }
 
-        /* Avatar Section */
-        .avatar-upload-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          margin-bottom: 32px;
-        }
+        .profile-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .info-item-box { background: var(--surface-container-lowest); border: 1px solid var(--surface-container-high); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 8px; transition: 0.2s; }
+        .info-item-box:hover { border-color: var(--primary-low); transform: translateY(-2px); }
+        .info-label { font-size: 0.7rem; font-weight: 700; color: var(--outline); text-transform: uppercase; letter-spacing: 0.05em; }
+        .info-value-wrap { display: flex; align-items: center; gap: 10px; color: var(--on-surface); }
+        .info-value-wrap svg { color: var(--primary); opacity: 0.7; }
+        .info-value { font-size: 1rem; font-weight: 700; }
 
-        .avatar-large {
-          width: 120px;
-          height: 120px;
-          border-radius: 50%;
-          background: var(--primary);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 3rem;
-          font-weight: 800;
-          color: white;
-          position: relative;
-          box-shadow: 0 10px 25px -5px rgba(53, 37, 205, 0.3);
-          border: 4px solid white;
-        }
+        .psc-footer-hint { display: flex; align-items: center; gap: 8px; margin-top: 24px; padding: 12px; background: var(--surface-container-low); border-radius: 12px; color: var(--on-surface-variant); font-size: 0.8rem; font-weight: 600; }
+        
+        .psc-security-layout { display: grid; grid-template-columns: 1fr; gap: 40px; }
+        @media (min-width: 900px) { .psc-security-layout { grid-template-columns: 1.2fr 0.8fr; } }
 
-        @media (max-width: 640px) {
-          .avatar-large {
-            width: 90px;
-            height: 90px;
-            font-size: 2.2rem;
-          }
-        }
+        .psc-form { display: flex; flex-direction: column; gap: 24px; width: 100%; }
+        .form-field-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-field-group label { font-size: 0.85rem; font-weight: 700; color: var(--on-surface-variant); margin-left: 4px; }
+        
+        .field-input-wrap { position: relative; display: flex; align-items: center; }
+        .field-icon { position: absolute; left: 16px; color: var(--outline); pointer-events: none; }
+        .field-input-wrap input { width: 100%; padding: 14px 48px 14px 48px; border-radius: 16px; border: 2px solid var(--surface-container-highest); background: var(--surface-container-lowest); font-weight: 600; font-size: 1rem; transition: 0.2s; outline: none; }
+        .field-input-wrap input:focus { border-color: var(--primary); background: white; }
+        .field-toggle { position: absolute; right: 12px; background: transparent; border: none; color: var(--outline); cursor: pointer; padding: 6px; border-radius: 8px; display: flex; }
+        .field-toggle:hover { background: var(--surface-container); color: var(--on-surface); }
 
-        .avatar-large img {
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          object-fit: cover;
-        }
+        .strength-meter { margin-top: 12px; }
+        .sm-bar-bg { height: 6px; background: var(--surface-container); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+        .sm-bar-fill { height: 100%; border-radius: 3px; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sm-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
 
-        .camera-btn {
-          position: absolute;
-          bottom: 0;
-          right: 0;
-          width: 36px;
-          height: 36px;
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          color: #1e293b;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-          transition: 0.2s;
-        }
+        .field-error { color: var(--error); font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 4px; margin-top: 4px; }
 
-        .camera-btn:hover {
-          background: #f8fafc;
-          transform: scale(1.1);
-        }
+        .form-submit-btn { margin-top: 8px; background: var(--primary); color: white; border: none; padding: 16px; border-radius: 18px; font-weight: 700; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; transition: 0.3s; box-shadow: 0 8px 24px rgba(53, 37, 205, 0.2); }
+        .form-submit-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(53, 37, 205, 0.3); }
+        .form-submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
 
-        .upload-actions {
-          display: flex;
-          gap: 12px;
-          margin-top: 20px;
-        }
-
-        .btn-save-photo {
-          padding: 8px 16px;
-          background: var(--primary);
-          color: white;
-          border: none;
-          border-radius: 12px;
-          font-weight: 700;
-          font-size: 0.85rem;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .btn-cancel-photo {
-          padding: 8px 16px;
-          background: #f1f5f9;
-          color: #64748b;
-          border: none;
-          border-radius: 12px;
-          font-weight: 700;
-          font-size: 0.85rem;
-          cursor: pointer;
-        }
-
-        .user-details-read {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-        }
-
-        .detail-item label {
-          display: block;
-          font-size: 0.75rem;
-          font-weight: 800;
-          color: #94a3b8;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          margin-bottom: 6px;
-        }
-
-        .detail-item p {
-          font-size: 1rem;
-          font-weight: 700;
-          color: #1e293b;
-          margin: 0;
-        }
-
-        .role-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 4px 12px;
-          background: #f1f5f9;
-          color: #475569;
-          border-radius: 20px;
-          font-size: 0.8rem;
-          font-weight: 700;
-        }
-
-        /* Password Section */
-        .card-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 32px;
-        }
-
-        .header-icon {
-          color: var(--primary);
-        }
-
-        .card-header h3 {
-          margin: 0;
-          font-size: 1.25rem;
-          font-weight: 800;
-          color: #1e293b;
-        }
-
-        .password-form {
-          display: flex;
-          flex-direction: column;
-          gap: 28px;
-        }
-
-        .input-group {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .input-group label {
-          font-size: 0.9rem;
-          font-weight: 700;
-          color: #475569;
-        }
-
-        .password-input-wrap {
-          position: relative;
-          display: flex;
-          align-items: center;
-        }
-
-        .password-input-wrap input {
-          width: 100%;
-          padding: 12px 16px;
-          padding-right: 48px;
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-radius: 14px;
-          font-size: 1rem;
-          font-weight: 500;
-          color: #1e293b;
-          transition: 0.2s;
-        }
-
-        .password-input-wrap input:focus {
-          background: white;
-          border-color: var(--primary);
-          box-shadow: 0 0 0 4px var(--primary-low);
-          outline: none;
-        }
-
-        .toggle-eye {
-          position: absolute;
-          right: 12px;
-          background: transparent;
-          border: none;
-          color: #94a3b8;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 4px;
-        }
-
-        .toggle-eye:hover {
-          color: var(--primary);
-        }
-
-        .error-msg {
-          font-size: 0.8rem;
-          color: #ef4444;
-          font-weight: 600;
-          margin-top: 4px;
-        }
-
-        /* Strength Meter */
-        .strength-meter {
-          margin-top: 12px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .strength-bars {
-          display: flex;
-          gap: 4px;
-          flex: 1;
-        }
-
-        .bar {
-          height: 4px;
-          flex: 1;
-          background: #e2e8f0;
-          border-radius: 2px;
-          transition: 0.3s;
-        }
-
-        .strength-label {
-          font-size: 0.75rem;
-          font-weight: 800;
-          text-transform: uppercase;
-          min-width: 60px;
-          text-align: right;
-        }
-
-        .pwd-requirements {
-          margin-top: 16px;
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-          gap: 8px;
-        }
-
-        .req-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 0.75rem;
-          font-weight: 600;
-          color: #94a3b8;
-        }
-
-        .req-item.valid {
-          color: #10b981;
-        }
-
-        .btn-update-password {
-          margin-top: 8px;
-          padding: 14px;
-          background: var(--primary);
-          color: white;
-          border: none;
-          border-radius: 16px;
-          font-size: 1rem;
-          font-weight: 700;
-          cursor: pointer;
-          transition: 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          box-shadow: 0 4px 12px rgba(53, 37, 205, 0.2);
-        }
-
-        .btn-update-password:hover:not(:disabled) {
-          transform: translateY(-2px);
-          filter: brightness(1.1);
-        }
-
-        .btn-update-password:disabled {
-          background: #e2e8f0;
-          color: #94a3b8;
-          cursor: not-allowed;
-          box-shadow: none;
-        }
-
-        @media (max-width: 640px) {
-          .profile-page-wrapper {
-            padding: 24px 16px;
-          }
-          
-          .profile-card {
-            padding: 24px;
-          }
-
-          .btn-update-password {
-            width: 100%;
-          }
-        }
+        .psc-security-info { display: flex; flex-direction: column; gap: 20px; }
+        .security-info-box { background: var(--surface-container-low); padding: 24px; border-radius: 20px; border: 1px solid var(--outline-variant); }
+        .security-info-box.secondary { background: var(--primary-low); border-color: var(--primary-fixed); }
+        .si-icon { color: var(--primary); margin-bottom: 12px; }
+        .security-info-box h4 { font-size: 1rem; font-weight: 800; color: var(--on-surface); margin-bottom: 12px; }
+        .security-info-box ul { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .security-info-box li { font-size: 0.85rem; color: var(--on-surface-variant); font-weight: 600; }
+        .security-info-box p { font-size: 0.85rem; color: var(--on-surface-variant); font-weight: 600; line-height: 1.5; }
       `}</style>
     </div>
   );

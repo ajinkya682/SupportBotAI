@@ -6,11 +6,11 @@ import {
   LogIn,
   Mail,
   Lock,
-  Loader2,
   Bot,
   ArrowRight,
   ChevronLeft,
 } from "lucide-react";
+import Loader from "../../../../shared/ui/components/Loader";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
 import { useGoogleLogin } from "@react-oauth/google";
@@ -123,8 +123,8 @@ export default function Login() {
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-primary auth-submit-btn">
-                  Continue <ArrowRight size={18} />
+                <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={isLoading}>
+                  {isLoading ? <Loader size={20} color="#fff" /> : "Verify Identity"}
                 </button>
               </form>
             </motion.div>
@@ -156,17 +156,13 @@ export default function Login() {
                 <div className="forgot-password-link">
                   <Link to="/forgot-password">Recovery options</Link>
                 </div>
-                <button
-                  type="submit"
-                  className="btn btn-primary auth-submit-btn"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : (
-                    "Access Neural Node"
-                  )}
-                </button>
+                <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={isLoading}>
+                {isLoading ? (
+                  <Loader size={20} color="#fff" />
+                ) : (
+                  <>Enter Workspace <ArrowRight size={18} /></>
+                )}
+              </button>
               </form>
             </motion.div>
           )}
