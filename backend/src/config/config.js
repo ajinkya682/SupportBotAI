@@ -41,8 +41,13 @@ if (!process.env.IMAGEKIT_URL_ENDPOINT) {
     throw new Error("IMAGEKIT_URL_ENDPOINT is not defined in environment variables")
 }
 
+if (!process.env.MISTRAL_API_KEY) {
+    throw new Error("MISTRAL_API_KEY is not defined in environment variables")
+}
+
+
 const config = {
-    PORT: process.env.PORT ? Number(process.env.PORT) : 3000,
+    PORT: process.env.PORT ? Number(process.env.PORT) : 3000, 
     MONGODB_URI: process.env.MONGODB_URI,
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_SECRET_EXPIRES_IN: process.env.JWT_SECRET_EXPIRES_IN || '30d',
@@ -56,6 +61,9 @@ const config = {
     IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY,
     IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY,
     IMAGEKIT_URL_ENDPOINT: process.env.IMAGEKIT_URL_ENDPOINT,
+    MISTRAL_API_KEY: process.env.MISTRAL_API_KEY,
+    AI_MODEL: process.env.AI_MODEL || 'mistral-large-latest',
+    AI_MAX_TOKENS: parseInt(process.env.AI_MAX_TOKENS) || 1024,
 }
 
 export default config;
