@@ -129,7 +129,10 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
               </button>
             </div>
           )}
-          
+          <div className="sa-brand-footer">
+            <Bot size={16} />
+            <span>SupportBot AI</span>
+          </div>
         </div>
 
         <style>{`
@@ -244,12 +247,29 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
           .sa-icon { flex-shrink: 0; }
 
           .sa-sidebar-footer { 
-            padding-top: 16px; 
-            border-top: 1px solid var(--outline-variant); 
+            padding: 24px;
+            border-top: 1px solid var(--outline-variant);
             margin-top: auto; 
             display: flex;
             flex-direction: column;
             gap: 12px;
+          }
+
+          .sa-brand-footer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--outline);
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding: 8px 4px;
+            opacity: 0.8;
+            transition: 0.3s;
+          }
+
+          .sa-brand-footer:hover {
+            opacity: 1;
+            color: var(--primary);
           }
 
           .sa-upgrade-card {

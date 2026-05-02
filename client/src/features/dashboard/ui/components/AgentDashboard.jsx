@@ -540,6 +540,10 @@ export default function AgentDashboard({ user: propUser }) {
         </nav>
 
         <div className="ag-sidebar-footer">
+          <div className="ag-brand-footer">
+            <Bot size={16} />
+            <span>SupportBot AI</span>
+          </div>
         </div>
       </aside>
 
@@ -736,7 +740,29 @@ export default function AgentDashboard({ user: propUser }) {
         .nav-badge-pill { margin-left: auto; background: var(--error); color: white; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 20px; box-shadow: 0 2px 8px rgba(186, 26, 26, 0.3); }
         .ag-nav-link.active .nav-badge-pill { background: white; color: var(--primary); }
 
-        .ag-sidebar-footer { padding-top: 16px; border-top: 1px solid var(--outline-variant); margin-top: auto; }
+        .ag-sidebar-footer {
+          padding: 24px;
+          border-top: 1px solid var(--outline-variant);
+          margin-top: auto;
+        }
+
+        .ag-brand-footer {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: var(--outline);
+          font-weight: 700;
+          font-size: 0.85rem;
+          padding: 8px 4px;
+          opacity: 0.8;
+          transition: 0.3s;
+        }
+
+        .ag-brand-footer:hover {
+          opacity: 1;
+          color: var(--primary);
+        }
+
         .ag-logout-btn { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 16px; border-radius: 12px; background: transparent; border: none; color: #ef4444; cursor: pointer; font-weight: 700; transition: 0.2s; font-size: 0.9rem; }
         .ag-logout-btn:hover { background: #fef2f2; }
         
