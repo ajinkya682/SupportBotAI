@@ -43,6 +43,7 @@ export default function AgentDashboard({ user }) {
   const [showProfileSetup, setShowProfileSetup] = useState(
     !user?.displayName && !localStorage.getItem(profileDoneKey)
   );
+  const [selectedConversationId, setSelectedConversationId] = useState(null);
 
   const { isPromptVisible, subscribeToPush, handleLater } = usePushNotifications(user);
 
@@ -215,8 +216,11 @@ export default function AgentDashboard({ user }) {
     dispatch(reset());
   };
 
-  const switchTab = (tab) => {
+  const switchTab = (tab, conversationId = null) => {
     setActiveTab(tab);
+    if (conversationId) {
+      setSelectedConversationId(conversationId);
+    }
     setIsSidebarOpen(false);
   };
 
@@ -238,6 +242,8 @@ export default function AgentDashboard({ user }) {
               socket={socket}
               onConversationsUpdate={setConversations}
               playSound={playSound}
+              initialSelectedId={selectedConversationId}
+              setSelectedConversationId={setSelectedConversationId}
               ownerInfo={business ? {
                 businessLogo: business.appearance?.companyLogo,
               } : null}
@@ -248,12 +254,16 @@ export default function AgentDashboard({ user }) {
         const unassignedTickets = conversations.filter(c => 
           (c.status === 'human_needed' || c.routingStatus === 'holding') && 
           !c.agent && 
-          !c.assignedAgentId
+          !c.assignedAgentId &&
+          c.status !== 'human_resolved' &&
+          c.status !== 'ai_resolved'
         );
         
         const assignedToMe = conversations.filter(c => 
           c.assignedAgentId === user._id && 
-          c.routingStatus === 'assigned'
+          c.routingStatus === 'assigned' &&
+          c.status !== 'human_resolved' &&
+          c.status !== 'ai_resolved'
         );
 
         const myActive = conversations.filter(c => 
@@ -295,7 +305,10 @@ export default function AgentDashboard({ user }) {
                 <h3><Zap size={18} color="#f59e0b" /> Active Workload</h3>
                 <div className="sh-right">
                   <span className="count-pill">{displayTickets.length} Total Needs Attention</span>
-                  <button className="refresh-btn-sm" onClick={() => dispatch(getConversations())}>
+                  <button className="refresh-btn-sm" onClick={() => {
+                    dispatch(getConversations());
+                    toast.success("Syncing tickets...");
+                  }}>
                     <Activity size={14} /> Refresh
                   </button>
                 </div>
@@ -352,7 +365,7 @@ export default function AgentDashboard({ user }) {
                                 ownerId: user.ownerId
                               });
                             }
-                            switchTab('conversations');
+                            switchTab('conversations', conv._id);
                           }}
                         >
                           {conv.routingStatus === 'assigned' ? 'Accept & Join' : isUnassigned ? 'Claim & View' : 'View Ticket'} <ChevronRight size={14} />
