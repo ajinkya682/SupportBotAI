@@ -57,6 +57,7 @@ export const updateBusiness = async (req, res) => {
     const { name, supportEmail, knowledge, faqs, appearance } = req.body;
     try {
         const updatePayload = {};
+        // Prepare the base payload
         if (typeof name === 'string') updatePayload.name = name;
         if (typeof supportEmail === 'string') updatePayload.supportEmail = supportEmail;
         if (Array.isArray(faqs)) updatePayload.faqs = faqs;
@@ -67,10 +68,23 @@ export const updateBusiness = async (req, res) => {
             updatePayload.knowledgeChunks = ragService.createKnowledgeChunksFromText(knowledge);
         }
 
-        const business = await Business.findOneAndUpdate(
+        // Check if business exists, if not, we will need to generate an apiKey for the upsert
+        let business = await Business.findOne({ owner: req.user._id });
+        
+        if (!business) {
+            updatePayload.apiKey = `sb_${crypto.randomBytes(16).toString('hex')}`;
+            updatePayload.owner = req.user._id;
+        }
+
+        business = await Business.findOneAndUpdate(
             { owner: req.user._id },
-            updatePayload,
-            { new: true, runValidators: true }
+            { $set: updatePayload },
+            { 
+                new: true, 
+                runValidators: true, 
+                upsert: true, 
+                setDefaultsOnInsert: true 
+            }
         );
 
         if (business) {
