@@ -64,6 +64,18 @@ const config = {
     MISTRAL_API_KEY: process.env.MISTRAL_API_KEY,
     AI_MODEL: process.env.AI_MODEL || 'mistral-large-latest',
     AI_MAX_TOKENS: parseInt(process.env.AI_MAX_TOKENS) || 1024,
+    scraper: {
+        MAX_PAGES: parseInt(process.env.SCRAPER_MAX_PAGES) || 8,
+        DELAY_MS: parseInt(process.env.SCRAPER_DELAY_MS) || 1000,
+        MAX_CHARS: parseInt(process.env.KNOWLEDGE_MAX_CHARS) || 8000,
+        USE_PUPPETEER: process.env.SCRAPER_USE_PUPPETEER !== 'false',
+        RAW_TEXT_MAX: 15000,
+        MIN_CONTENT_LENGTH: 400,
+        TIMEOUTS: { AXIOS: 5000, PUPPETEER: 25000 },
+        DEDUP_THRESHOLD: 0.85,
+        LINK_LIMIT: 10,
+        NODE_ENV: process.env.NODE_ENV
+    }
 }
 
 export default config;
