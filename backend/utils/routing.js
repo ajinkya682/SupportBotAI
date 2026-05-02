@@ -14,9 +14,8 @@ const Conversation = require('../models/Conversation');
  */
 const routeTicket = async (conversationId, io) => {
     try {
-        // Atomic check: Ensure ticket is still pending assignment
         const conversation = await Conversation.findOneAndUpdate(
-            { _id: conversationId, routingStatus: { $in: ['pending', 'holding'] } },
+            { _id: conversationId, routingStatus: { $in: ['pending', 'holding', 'unassigned'] } },
             { $set: { routingStatus: 'assigning' } },
             { new: true }
         ).populate('business');
@@ -30,41 +29,46 @@ const routeTicket = async (conversationId, io) => {
             return;
         }
 
-        // 1. Try to find FREE & ONLINE agents
-        const freeAgents = await User.find({
+        // 1. Get all agents for this owner
+        const agents = await User.find({
             ownerId: ownerId,
             role: 'agent',
-            status: 'online',
+            status: { $in: ['online', 'away'] } // Only route to online/away agents
         });
 
-        if (freeAgents.length > 0) {
-            const selectedAgent = freeAgents[Math.floor(Math.random() * freeAgents.length)];
-            return await assignToAgent(conversation, selectedAgent, 'assigned', io);
+        if (agents.length === 0) {
+            // No agents online -> Pending (Owner dashboard)
+            conversation.routingStatus = 'pending';
+            await conversation.save();
+            io.to(ownerId.toString()).emit('new_ticket_pending', conversation);
+            return null;
         }
 
-        // 2. No free agents? Try to find BUSY agents
-        const busyAgents = await User.find({
-            ownerId: ownerId,
-            role: 'agent',
-            status: 'in_conversation',
-        });
+        // 2. Workload-aware selection
+        // An agent is "free" if they have 0 conversations with routingStatus 'in_progress' or 'assigned'
+        const agentWorkloads = await Promise.all(agents.map(async (agent) => {
+            const count = await Conversation.countDocuments({
+                assignedAgentId: agent._id,
+                routingStatus: { $in: ['assigned', 'in_progress'] }
+            });
+            return { agent, count };
+        }));
 
-        if (busyAgents.length > 0) {
-            const selectedAgent = busyAgents[Math.floor(Math.random() * busyAgents.length)];
-            // routingStatus 'holding' means "Waiting for You" on the console
-            return await assignToAgent(conversation, selectedAgent, 'holding', io);
+        // Sort by workload (ascending)
+        agentWorkloads.sort((a, b) => a.count - b.count);
+
+        const bestOption = agentWorkloads[0];
+
+        if (bestOption.count === 0) {
+            // Free agent found!
+            return await assignToAgent(conversation, bestOption.agent, 'assigned', io);
+        } else {
+            // All online agents are busy -> Holding (Owner dashboard)
+            conversation.routingStatus = 'holding';
+            await conversation.save();
+            io.to(ownerId.toString()).emit('new_ticket_holding', conversation);
+            return null;
         }
-
-        // 3. All Offline or no agents exist
-        conversation.routingStatus = 'unassigned';
-        await conversation.save();
-
-        io.to(ownerId.toString()).emit('new_ticket_unassigned', {
-            conversationId: conversation._id,
-            reason: 'All agents are Offline',
-        });
-
-        return null;
     } catch (error) {
         console.error('Routing error:', error);
     }

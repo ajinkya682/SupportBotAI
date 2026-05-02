@@ -9,6 +9,9 @@ import {
   Code2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import TicketCard from './TicketCard';
+import { Ticket, Stamp, CheckCircle2, Trash2 } from 'lucide-react';
+import socket from "../../../../shared/services/socket";
 
 export default function Overview({ business, conversations = [], agents = [], setActiveTab, setSelectedConversationId, onUpgrade }) {
   if (!conversations) return <div className="loading-state">Synchronizing operational data...</div>;
@@ -58,25 +61,23 @@ export default function Overview({ business, conversations = [], agents = [], se
     return (now - lastUpdate) < 1 * 60 * 1000;
   });
 
-  const holdingTickets = conversations.filter(
-    c => c.routingStatus === 'holding' || (c.status === 'human_needed' && !c.assignedAgentId && !c.agent)
-  );
+  const pendingTickets = (conversations || []).filter(
+    c => c.routingStatus === 'pending' || c.routingStatus === 'holding' || (c.status === 'human_needed' && !c.assignedAgentId)
+  ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const handleTakeOver = (ticket) => {
+    socket.emit('join_conversation', {
+      conversationId: ticket._id,
+      agentId: business.owner,
+      ownerId: business.owner
+    });
+    setActiveTab('conversations');
+    setSelectedConversationId(ticket._id);
+  };
 
   return (
     <div className="animate-fade-in">
-      {/* Unassigned Tickets Alert */}
-      {holdingTickets.length > 0 && (
-        <div className="unassigned-alert section-spacing">
-          <div className="ua-left">
-            <div className="ua-icon">⚠️</div>
-            <div>
-              <div className="ua-title">{holdingTickets.length} Unassigned Ticket{holdingTickets.length > 1 ? 's' : ''}</div>
-              <div className="ua-sub">No agent was available for auto-assignment. Assign manually.</div>
-            </div>
-          </div>
-          <button className="btn btn-primary btn-sm" onClick={() => setActiveTab('conversations')}>View All</button>
-        </div>
-      )}
+      {/* The unassigned-alert is replaced by the Pending Queue below */}
       {/* Live Operational Status */}
       {activeChats.length > 0 && (
         <div className="section-spacing">
@@ -129,6 +130,26 @@ export default function Overview({ business, conversations = [], agents = [], se
               <Activity size={16} />
             </button>
             <button className="nab-btn" onClick={() => setActiveTab('team')}>Manage Team</button>
+          </div>
+        </div>
+      )}
+
+      {pendingTickets.length > 0 && (
+        <div className="pending-queue-section animate-fade-in section-spacing">
+          <div className="pq-header">
+            <h3><Ticket size={22} color="var(--primary)" /> Smart Routing Queue</h3>
+            <span className="pq-badge">{pendingTickets.length} Customer{pendingTickets.length > 1 ? 's' : ''} Waiting</span>
+          </div>
+          <p className="pq-desc">These requests are currently queued because agents are either offline or busy. As an owner, you can intercept these tickets to provide instant support.</p>
+          
+          <div className="pq-grid">
+            {pendingTickets.map(ticket => (
+              <TicketCard 
+                key={ticket._id} 
+                ticket={ticket} 
+                onTakeOver={handleTakeOver} 
+              />
+            ))}
           </div>
         </div>
       )}
@@ -472,6 +493,63 @@ export default function Overview({ business, conversations = [], agents = [], se
         .nab-actions { display: flex; align-items: center; gap: 8px; }
         .nab-refresh { background: white; border: none; color: #c53030; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
         .nab-refresh:hover { background: #fee2e2; transform: rotate(30deg); }
+
+        .pending-queue-section {
+          margin-top: 40px;
+          padding-top: 32px;
+          border-top: 1px solid var(--outline-variant);
+        }
+
+        .pq-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 8px;
+        }
+
+        .pq-header h3 {
+          font-size: 1.25rem;
+          font-weight: 800;
+          color: var(--on-surface);
+          margin: 0;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .pq-badge {
+          background: var(--primary-fixed);
+          color: var(--primary);
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 700;
+        }
+
+        .pq-desc {
+          font-size: 0.9rem;
+          color: var(--on-surface-variant);
+          margin-bottom: 24px;
+          max-width: 700px;
+        }
+
+        .pq-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+
+        @media (min-width: 1024px) {
+          .pq-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (min-width: 1440px) {
+          .pq-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
 
         .sf-left { display: flex; align-items: center; gap: 8px; }
         .session-agent-tag { display: flex; align-items: center; gap: 6px; background: #f0fdf4; border: 1px solid #d1fae5; padding: 2px 8px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; color: #065f46; }

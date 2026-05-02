@@ -82,24 +82,26 @@ const buildSystemPrompt = (business, visitorName, emotion, intent) => {
   `;
 };
 
-const generateConversationTitle = async (lastUserMessage, intent) => {
+const generateIssueSummary = async (messages) => {
   try {
-    const titleGen = await mistral.chat.complete({
+    const history = messages.slice(-5).map(m => `${m.role}: ${m.content}`).join('\n');
+    const summaryGen = await mistral.chat.complete({
       model: TITLE_MODEL,
       messages: [
         {
           role: 'system',
-          content:
-            'Create a ultra-short (2-3 words) descriptive title for this conversation based on the user\'s intent. Examples: "Pricing Query", "Login Help", "Refund Request". Reply ONLY with the title.',
+          content: 'Summarize the user\'s support issue in one concise sentence (max 12 words). Example: "User cannot log in due to password reset error."',
         },
-        { role: 'user', content: lastUserMessage },
+        { role: 'user', content: `Conversation history:\n${history}` },
       ],
     });
-    return titleGen.choices[0].message.content.replace(/['"]/g, '');
-  } catch {
-    return intent.replace('_', ' ').charAt(0).toUpperCase() + intent.replace('_', ' ').slice(1);
+    return summaryGen.choices[0].message.content.replace(/['"]/g, '').trim();
+  } catch (err) {
+    return "Support requested for general inquiry.";
   }
 };
+
+const generateConversationTitle = async (lastUserMessage, intent) => {
 
 const emitConversationUpdate = (io, ownerId, conversation, aiMsg) => {
   if (!io || !ownerId) return;
@@ -272,6 +274,7 @@ exports.handleChat = async (req, res) => {
       ) {
         conversation.status = 'human_needed';
         conversation.priority = emotion === 'angry' ? 'high' : 'medium';
+        conversation.issueSummary = await generateIssueSummary(conversation.messages);
 
         if (confidence === 'Low') {
           conversation.messages.push({
@@ -346,6 +349,7 @@ exports.handleChat = async (req, res) => {
         status: needsEscalation ? 'human_needed' : 'ai_resolved',
         routingStatus: needsEscalation ? 'pending' : 'resolved',
         priority: emotion === 'angry' ? 'high' : needsEscalation ? 'medium' : 'low',
+        issueSummary: needsEscalation ? await generateIssueSummary([userMsg, aiMsg]) : null,
         userName: extractedName || 'Anonymous',
         origin: req.body.origin || null,
         title:

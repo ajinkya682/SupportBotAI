@@ -70,7 +70,7 @@ module.exports = (io) => {
                         io.to(`session_${agent.currentConversationId}`).emit('agent_status_changed', { agentId, status });
                     }
                     
-                    if (status === 'online') {
+                    if (status === 'online' || status === 'away') {
                         await checkHoldingTickets(ownerId, io);
                     }
                 }
