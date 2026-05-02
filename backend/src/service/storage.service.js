@@ -23,3 +23,4 @@ export const upload = multer({
 
 // Helper for specific single photo uploads
 export const uploadSinglePhoto = upload.single('photo');
+export const uploadSingleLogo = upload.single('logo');
