@@ -1,12 +1,13 @@
 import { Navigate, Outlet } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 const SuperAdminProtectedRoute = () => {
-  const token = localStorage.getItem('superAdminToken');
+  const { user } = useSelector((state) => state.auth);
   
-  if (!token) {
-    return <Navigate to="/super-admin/login" replace />;
+  if (!user || user.role !== 'superadmin') {
+    return <Navigate to="/login" replace />;
   }
-  
+
   return <Outlet />;
 };
 

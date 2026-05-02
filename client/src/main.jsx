@@ -1,10 +1,18 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./app/App";
-import "./index.css"; // This imports all your global styles and variables
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './app/App.jsx'
+import './index.css'
+import { Provider } from 'react-redux'
+import { store } from './app/store/store'
+import { GoogleOAuthProvider } from '@react-oauth/google'
+import { GOOGLE_CLIENT_ID } from './shared/services/config'
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <Provider store={store}>
+        <App />
+      </Provider>
+    </GoogleOAuthProvider>
   </React.StrictMode>,
-);
+)

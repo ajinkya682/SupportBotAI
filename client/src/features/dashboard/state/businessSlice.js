@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../../shared/services/config';
 
-const BUSINESS_API = `${API_URL}/api/business`;
+const BUSINESS_API = `${API_URL}/business`;
 
 const initialState = {
   business: null,
