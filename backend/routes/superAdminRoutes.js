@@ -34,6 +34,10 @@ router.get('/subscriptions', superAdminController.getSubscriptions);
 router.get('/settings', superAdminController.getSettings);
 router.put('/settings', superAdminController.updateSettings);
 router.put('/settings/change-password', superAdminController.changePassword);
+
+// Reports
+router.get('/export-report', superAdminController.exportReport);
+
 // Notifications
 const notificationController = require('../controllers/notificationController');
 router.post('/notifications/broadcast', notificationController.broadcastNotification);

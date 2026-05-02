@@ -192,18 +192,19 @@ const SuperAdminDashboard = () => {
 
         .sa-header-main { display: flex; align-items: center; gap: 16px; }
         .sa-logo-wrapper { width: 40px; height: 40px; background: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(53, 37, 205, 0.3); }
-        .sa-sidebar-header h3 { color: white; margin: 0; font-size: 1.1rem; font-weight: 800; }
-        .sa-sidebar-header span { color: var(--outline); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        .sa-sidebar-header h3 { color: #f8fafc; margin: 0; font-size: 1.1rem; font-weight: 800; }
+        .sa-sidebar-header span { color: #94a3b8; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
         
         .mobile-close-btn { background: transparent; border: none; padding: 4px; display: flex; }
         @media (min-width: 1024px) { .mobile-close-btn { display: none; } }
-
+[diff_block_end]
+[diff_block_start]
         .sa-sidebar-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        .sa-nav-link { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 12px; color: var(--outline); text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: 0.2s; position: relative; }
+        .sa-nav-link { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: 0.2s; position: relative; }
         @media (min-width: 1024px) { .sa-nav-link { padding: 14px 16px; font-size: 0.95rem; } }
 
-        .sa-nav-link:hover { color: white; background: rgba(255,255,255,0.05); }
-        .sa-nav-link.active { color: white; background: var(--primary-container); }
+        .sa-nav-link:hover { color: #f8fafc; background: rgba(255,255,255,0.08); }
+        .sa-nav-link.active { color: white; background: var(--primary); }
         .active-pill { position: absolute; left: -16px; width: 4px; height: 24px; background: white; border-radius: 0 4px 4px 0; }
         
         .sa-sidebar-footer { padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: auto; }

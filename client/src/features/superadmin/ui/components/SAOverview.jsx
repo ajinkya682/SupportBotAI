@@ -1,19 +1,73 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Users, Building2, MessageSquare, ArrowUpRight, ArrowDownRight, Globe, Zap } from 'lucide-react';
+import { TrendingUp, Users, Building2, MessageSquare, ArrowUpRight, ArrowDownRight, Globe, Zap, Download, Loader2 } from 'lucide-react';
+import axios from 'axios';
+import { API_URL } from '../../../shared/services/config';
+import toast from 'react-hot-toast';
 
 const SAOverview = () => {
-  const stats = [
-    { label: 'Total Revenue', value: '$124,592', trend: '+14.2%', icon: TrendingUp, color: '#10b981' },
-    { label: 'Active Clients', value: '1,284', trend: '+8.1%', icon: Building2, color: 'var(--primary)' },
-    { label: 'Total Agents', value: '4,592', trend: '+12.4%', icon: Users, color: '#8b5cf6' },
-    { label: 'Global Volume', value: '1.2M', trend: '+24.5%', icon: MessageSquare, color: '#f59e0b' }
+  const [stats, setStats] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const { data } = await axios.get(`${API_URL}/super-admin/overview/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (data.success) {
+        setStats(data.stats);
+      }
+    } catch (err) {
+      toast.error('Failed to load global metrics');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDownloadReport = async () => {
+    setIsExporting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/super-admin/export-report`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'platform_report.csv');
+      document.body.appendChild(link);
+      link.click();
+      toast.success('Report downloaded successfully');
+    } catch (err) {
+      toast.error('Export failed');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const statCards = [
+    { label: 'Total Businesses', value: stats?.totalBusinesses || 0, trend: '+5.2%', icon: Building2, color: 'var(--primary)' },
+    { label: 'Pro Accounts', value: stats?.proBusinesses || 0, trend: '+12.1%', icon: Zap, color: '#10b981' },
+    { label: 'Global Agents', value: stats?.totalAgents || 0, trend: '+8.4%', icon: Users, color: '#8b5cf6' },
+    { label: 'Total Conversations', value: stats?.totalConversations || 0, trend: '+24.5%', icon: MessageSquare, color: '#f59e0b' }
   ];
 
-  const networkStatus = [
-    { region: 'North America', status: 'Operational', latency: '24ms', load: '42%' },
-    { region: 'Europe (West)', status: 'Operational', latency: '31ms', load: '38%' },
-    { region: 'Asia Pacific', status: 'Operational', latency: '85ms', load: '12%' }
-  ];
+  if (isLoading) {
+    return (
+      <div className="sa-loading-view">
+        <Loader2 className="animate-spin" size={40} color="var(--primary)" />
+        <p>Synchronizing Global Intelligence...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="sa-overview-page animate-fade-in">
@@ -23,12 +77,19 @@ const SAOverview = () => {
           <p>Real-time network performance and metrics across all clusters.</p>
         </div>
         <div className="sa-header-actions">
-          <button className="btn btn-primary sa-dl-btn">Download Report</button>
+          <button 
+            className="btn btn-primary sa-dl-btn" 
+            onClick={handleDownloadReport}
+            disabled={isExporting}
+          >
+            {isExporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+            <span>Download Report</span>
+          </button>
         </div>
       </header>
 
       <div className="sa-stats-grid">
-        {stats.map((stat, i) => (
+        {statCards.map((stat, i) => (
           <motion.div 
             key={i} 
             className="sa-stat-card"
@@ -47,7 +108,7 @@ const SAOverview = () => {
             </div>
             <div className="sa-stat-body">
               <span className="sa-stat-label">{stat.label}</span>
-              <h2 className="sa-stat-value">{stat.value}</h2>
+              <h2 className="sa-stat-value">{typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}</h2>
             </div>
           </motion.div>
         ))}

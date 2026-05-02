@@ -1,6 +1,7 @@
 const { Mistral } = require('@mistralai/mistralai');
 const Business = require('../models/Business');
 const Conversation = require('../models/Conversation');
+const PlatformConfig = require('../models/PlatformConfig');
 const cache = require('../utils/cache');
 
 // Named constants — no magic numbers
@@ -119,6 +120,13 @@ exports.handleChat = async (req, res) => {
   if (!apiKey) return res.status(400).json({ error: 'API Key missing' });
 
   try {
+    const config = await PlatformConfig.findOne();
+    if (config && config.maintenanceMode) {
+      return res.status(503).json({ 
+        error: 'System Maintenance', 
+        message: 'The platform is currently undergoing maintenance. Please try again later.' 
+      });
+    }
     let business = cache.get(apiKey);
     if (!business) {
       business = await Business.findOne({ apiKey });

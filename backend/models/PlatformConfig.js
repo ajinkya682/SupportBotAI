@@ -5,6 +5,7 @@ const platformConfigSchema = new mongoose.Schema({
     proPlanPrice: { type: Number, default: 29 },
     freeConversationLimit: { type: Number, default: 100 },
     proConversationLimit: { type: Number, default: 999999 },
+    maintenanceMode: { type: Boolean, default: false },
     superAdminPasswordHash: { type: String }
 });
 

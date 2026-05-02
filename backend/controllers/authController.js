@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Business = require('../models/Business');
+const PlatformConfig = require('../models/PlatformConfig');
 const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/email');
 const bcrypt = require('bcryptjs');
@@ -59,12 +60,16 @@ exports.googleLogin = async (req, res) => {
         googleId: profile.googleId,
       });
       // Create business with selected plan
+      const config = await PlatformConfig.findOne();
+      const freeLimit = config ? config.freeConversationLimit : 100;
+      const proLimit = config ? config.proConversationLimit : 999999;
+      
       const selectedPlan = plan === 'pro' ? 'pro' : 'free';
       await Business.create({ 
         owner: user._id, 
         name: `${user.name}'s Business`,
         plan: selectedPlan,
-        conversationLimit: selectedPlan === 'pro' ? 999999 : 100
+        conversationLimit: selectedPlan === 'pro' ? proLimit : freeLimit
       });
     }
 
@@ -99,12 +104,16 @@ exports.registerUser = async (req, res) => {
     const user = await User.create({ name, email, password });
     
     // Create business with selected plan
+    const config = await PlatformConfig.findOne();
+    const freeLimit = config ? config.freeConversationLimit : 100;
+    const proLimit = config ? config.proConversationLimit : 999999;
+    
     const selectedPlan = plan === 'pro' ? 'pro' : 'free';
     await Business.create({ 
       owner: user._id, 
       name: `${user.name}'s Business`,
       plan: selectedPlan,
-      conversationLimit: selectedPlan === 'pro' ? 999999 : 100
+      conversationLimit: selectedPlan === 'pro' ? proLimit : freeLimit
     });
 
     res.status(201).json({
