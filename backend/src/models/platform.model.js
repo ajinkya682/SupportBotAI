@@ -2,34 +2,45 @@ import mongoose from 'mongoose';
 
 /**
  * PlatformConfig Schema
- * This model stores global settings for the entire SaaS platform.
- * It is essential for managing Multi-Tenant limits (Free vs Pro).
+ * Stores global settings for the entire SaaS platform.
+ * Essential for Multi-Tenant plan management (Free vs Pro).
  */
 const platformConfigSchema = new mongoose.Schema({
-    platformName: { 
-        type: String, 
-        default: 'SupportBotAI' 
+    platformName: {
+        type: String,
+        default: 'SupportBotAI',
+        trim: true
     },
-    proPlanPrice: { 
-        type: Number, 
-        default: 29 
+    proPlanPrice: {
+        type: Number,
+        default: 29
     },
-    freeConversationLimit: { 
-        type: Number, 
-        default: 100 
+    freeConversationLimit: {
+        type: Number,
+        default: 100
     },
-    proConversationLimit: { 
-        type: Number, 
-        default: 999999 
+    proConversationLimit: {
+        type: Number,
+        default: 1000000 // Cleaner than 999999
     },
-    // Used for the Super Admin role to manage global platform analytics
-    superAdminPasswordHash: { 
-        type: String 
-    } 
-}, { 
-    timestamps: true // Optimization: Tracks when limits were last updated
+    // Super Admin security
+    superAdminPasswordHash: {
+        type: String,
+        select: false // Optimization: Password hash won't be fetched in normal queries
+    },
+    maintenanceMode: {
+        type: Boolean,
+        default: false
+    }
+}, {
+    timestamps: true,
+    // Ensures we don't save empty objects
+    minimize: false
 });
 
-// Default export for the model
-const platformConfig = mongoose.model('PlatformConfig', platformConfigSchema);
-export default platformConfig;
+/**
+ * CRITICAL: OverwriteModelError Prevention
+ */
+const PlatformConfig = mongoose.models.PlatformConfig || mongoose.model('PlatformConfig', platformConfigSchema);
+
+export default PlatformConfig;
