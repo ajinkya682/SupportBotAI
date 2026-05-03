@@ -89,7 +89,7 @@ export default function ChatWidgetPage() {
   useEffect(() => {
     if (!ownerId) return;
 
-    const sock = io(API_URL, {
+    const sock = io(API_URL.replace('/api', ''), {
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 5,

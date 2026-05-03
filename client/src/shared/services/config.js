@@ -1,5 +1,6 @@
 export const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5005/api";
+  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+export const BASE_URL = API_URL.replace(/\/api$/, "");
 export const APP_URL = import.meta.env.VITE_APP_URL || "http://localhost:5173";
 export const APP_NAME = import.meta.env.VITE_APP_NAME || "SupportBotAI";
 export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";

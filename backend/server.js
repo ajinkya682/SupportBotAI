@@ -14,6 +14,8 @@ const io = new Server(server, {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
   },
+  allowEIO3: true,
+  transports: ['polling', 'websocket']
 });
 
 app.use((req, res, next) => {
