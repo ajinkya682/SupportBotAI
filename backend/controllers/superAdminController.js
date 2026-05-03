@@ -437,25 +437,75 @@ const changePassword = async (req, res) => {
 const exportReport = async (req, res) => {
     try {
         const businesses = await Business.find().populate('owner', 'email name');
-        
-        // CSV Headers
-        let csv = 'Business Name,Owner Name,Owner Email,Plan,Conversations,Created At\n';
-        
+        const agents = await User.find({ role: 'agent' }).populate('ownerId', 'name');
+        const conversations = await Conversation.find().populate('business', 'name');
+        const notifications = await Notification.find().sort({ createdAt: -1 });
+        const config = await PlatformConfig.findOne() || { platformName: 'SupportBotAI', proPlanPrice: 49 };
+
+        let csv = `--- SUPPORTBOTAI PLATFORM MASTER REPORT ---\n`;
+        csv += `Generated At: ${new Date().toLocaleString()}\n\n`;
+
+        // 1. CONTROL CENTER (OVERVIEW)
+        csv += `SECTION: CONTROL CENTER (OVERVIEW)\n`;
+        csv += `Total Businesses,Pro Accounts,Free Accounts,Total Agents,Total Conversations,Platform Name\n`;
+        const proCount = businesses.filter(b => b.plan === 'pro').length;
+        csv += `${businesses.length},${proCount},${businesses.length - proCount},${agents.length},${conversations.length},"${config.platformName}"\n\n`;
+
+        // 2. CLIENT ACCOUNTS
+        csv += `SECTION: CLIENT ACCOUNTS\n`;
+        csv += `Business Name,Owner Name,Owner Email,Plan,Conversations,Created At,Last Active\n`;
         for (const b of businesses) {
-            const convCount = await Conversation.countDocuments({ business: b._id });
-            const row = [
-                `"${b.name}"`,
-                `"${b.owner?.name || 'N/A'}"`,
-                `"${b.owner?.email || 'N/A'}"`,
-                `"${b.plan}"`,
-                convCount,
-                `"${new Date(b.createdAt).toLocaleDateString()}"`
-            ].join(',');
-            csv += row + '\n';
+            const bConvCount = conversations.filter(c => c.business?.toString() === b._id.toString()).length;
+            csv += `"${b.name}","${b.owner?.name || 'N/A'}","${b.owner?.email || 'N/A'}","${b.plan}",${bConvCount},"${new Date(b.createdAt).toLocaleDateString()}","${new Date(b.lastActiveAt || b.createdAt).toLocaleDateString()}"\n`;
         }
+        csv += `\n`;
+
+        // 3. AGENT DIRECTORY
+        csv += `SECTION: AGENT DIRECTORY\n`;
+        csv += `Agent Name,Email,Parent Business,Status,Created At\n`;
+        for (const a of agents) {
+            const agentBusiness = businesses.find(b => b.owner?.toString() === a.ownerId?._id.toString());
+            csv += `"${a.name}","${a.email}","${agentBusiness ? agentBusiness.name : 'N/A'}","${a.status || 'offline'}","${new Date(a.createdAt).toLocaleDateString()}"\n`;
+        }
+        csv += `\n`;
+
+        // 4. GLOBAL LOGS (RECORDS)
+        csv += `SECTION: GLOBAL CONVERSATION LOGS (RECENT 100)\n`;
+        csv += `ID,Business,User,Status,Messages,AI Involved,Created At\n`;
+        const recentConvs = conversations.slice(0, 100);
+        for (const c of recentConvs) {
+            const aiInvolved = c.messages.some(m => m.senderType === 'ai') ? 'YES' : 'NO';
+            csv += `${c._id},"${c.business?.name || 'Unknown'}","${c.userEmail || 'Anonymous'}","${c.status}",${c.messages.length},${aiInvolved},"${new Date(c.createdAt).toLocaleString()}"\n`;
+        }
+        csv += `\n`;
+
+        // 5. REVENUE & PLANS
+        csv += `SECTION: REVENUE & PLANS\n`;
+        csv += `Metric,Value\n`;
+        csv += `Pro Plan Price,$${config.proPlanPrice}/mo\n`;
+        csv += `Total Pro Subscriptions,${proCount}\n`;
+        csv += `Estimated Monthly Revenue,$${proCount * config.proPlanPrice}\n`;
+        csv += `Free Plan Limit,${config.freeConversationLimit} convs\n`;
+        csv += `\n`;
+
+        // 6. BROADCAST HISTORY
+        csv += `SECTION: BROADCAST HISTORY\n`;
+        csv += `Subject,Recipient,Total,Read,Date\n`;
+        for (const n of notifications) {
+            csv += `"${n.subject}","${n.recipient}",${n.totalRecipients},${n.readCount},"${new Date(n.createdAt).toLocaleDateString()}"\n`;
+        }
+        csv += `\n`;
+
+        // 7. SYSTEM CONFIG
+        csv += `SECTION: SYSTEM CONFIGURATION\n`;
+        csv += `Parameter,Value\n`;
+        csv += `Platform Name,"${config.platformName}"\n`;
+        csv += `Pro Price,${config.proPlanPrice}\n`;
+        csv += `Free Limit,${config.freeConversationLimit}\n`;
+        csv += `Pro Limit,${config.proConversationLimit}\n`;
 
         res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename=platform_report.csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=SupportBotAI_Global_Report.csv');
         res.status(200).send(csv);
     } catch (error) {
         console.error('Error exporting report:', error);
