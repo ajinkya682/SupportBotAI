@@ -81,7 +81,7 @@ export default function Dashboard() {
     if (!user?._id || user?.role === "agent") return;
 
     const joinRooms = () => {
-      socket.emit("join_room", { ownerId: user._id, role: "owner" });
+      socket.emit("join_room", { userId: user._id, ownerId: user._id, role: "owner" });
       console.log("Dashboard joined room:", user._id);
     };
 

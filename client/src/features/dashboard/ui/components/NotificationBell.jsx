@@ -19,7 +19,17 @@ const NotificationBell = ({ onViewAll }) => {
   useEffect(() => {
     fetchNotifications();
 
+    const userStr = localStorage.getItem("user");
+    if (!userStr) return;
+    const user = JSON.parse(userStr);
+
     const socket = io(API_URL.replace('/api', ''));
+    
+    socket.emit('join_room', { 
+      role: user.role, 
+      userId: user._id, 
+      ownerId: user.role === 'agent' ? user.ownerId : user._id 
+    });
 
     socket.on("new_notification", (data) => {
       setNotifications((prev) => [
@@ -29,6 +39,7 @@ const NotificationBell = ({ onViewAll }) => {
           message: data.message,
           createdAt: data.createdAt,
           isRead: false,
+          senderRole: data.senderRole
         },
         ...prev,
       ]);

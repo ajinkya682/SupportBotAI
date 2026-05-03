@@ -65,10 +65,12 @@ export default function Conversations({
       const conv = conversations.find((c) => c._id === initialSelectedId);
       if (conv) {
         setSelectedConv(conv);
-        setShowThreadList(false);
+        if (window.innerWidth < 1024) {
+          setShowThreadList(false);
+        }
       }
     }
-  }, [initialSelectedId]);
+  }, [initialSelectedId, conversations]);
 
   useEffect(() => {
     if (chatEndRef.current) {

@@ -53,8 +53,8 @@ router.delete('/agents/:id', superAdminController.deleteAgent);
 
 // Notifications
 const notificationController = require('../controllers/notificationController');
-router.post('/notifications/broadcast', notificationController.broadcastNotification);
-router.post('/notifications/targeted', notificationController.targetedNotification);
+router.post('/notifications/broadcast', notificationController.broadcastToOwners);
+router.post('/notifications/targeted', notificationController.targetedToOwner);
 router.get('/notifications/history', notificationController.getNotificationHistory);
 
 module.exports = router;
