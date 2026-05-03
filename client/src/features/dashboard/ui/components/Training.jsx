@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useDispatch } from "react-redux";
 import { scrapeWebsite } from "../../state/businessSlice";
 import ConfirmModal from "../../../../shared/ui/components/ConfirmModal";
+import usePlan from "../../../../shared/hooks/usePlan";
 
 const FAQItem = ({ faq, index, onUpdate, onRemove }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -78,6 +79,7 @@ const FAQItem = ({ faq, index, onUpdate, onRemove }) => {
 
 export default function Training({ formData, setFormData, onSave, isLoading, business, onUpgrade }) {
   const dispatch = useDispatch();
+  const { isFree, goUpgrade } = usePlan();
   
   const [trainingMode, setTrainingMode] = useState('url'); 
   const [url, setUrl] = useState('');
@@ -204,7 +206,7 @@ export default function Training({ formData, setFormData, onSave, isLoading, bus
 
       {trainingMode === 'url' ? (
         <div className="automated-scan-view">
-          {business?.plan === 'free' && (
+          {isFree && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pro-lock-overlay">
               <div className="lock-icon-wrapper">
                 <Lock size={28} />
@@ -213,7 +215,7 @@ export default function Training({ formData, setFormData, onSave, isLoading, bus
               <p>Scan your entire website in seconds. Upgrade to Pro to unlock.</p>
               <div className="pro-actions">
                 <button className="btn btn-secondary btn-sm" onClick={() => setTrainingMode('manual')}>Manual Mode</button>
-                <button className="btn btn-primary btn-sm" onClick={onUpgrade}><Sparkles size={16} /> Upgrade</button>
+                <button className="btn btn-primary btn-sm" onClick={goUpgrade}><Sparkles size={16} /> Upgrade</button>
               </div>
             </motion.div>
           )}
@@ -222,7 +224,7 @@ export default function Training({ formData, setFormData, onSave, isLoading, bus
             className="card scan-card"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            style={{ filter: business?.plan === 'free' ? 'blur(4px)' : 'none' }}
+            style={{ filter: isFree ? 'blur(4px)' : 'none' }}
           >
             {!result ? (
               <>

@@ -16,6 +16,7 @@ import ForgotPassword from "../features/auth/ui/pages/ForgotPassword";
 
 import Dashboard from "../features/dashboard/ui/pages/Dashboard";
 import AdminPanel from "../features/dashboard/ui/pages/AdminPanel";
+import UpgradePage from "../features/dashboard/ui/pages/UpgradePage";
 
 import Home from "../features/public/ui/pages/Home";
 import Product from "../features/public/ui/pages/Product";
@@ -95,6 +96,10 @@ function AppContent() {
         <Route
           path="/dashboard"
           element={user ? <Dashboard /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/dashboard/upgrade"
+          element={user ? <UpgradePage /> : <Navigate to="/login" />}
         />
         <Route
           path="/admin"
