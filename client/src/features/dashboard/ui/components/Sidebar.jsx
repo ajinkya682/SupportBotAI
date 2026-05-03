@@ -215,9 +215,10 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
           .sa-nav-link:hover { background: var(--surface-container-low); color: var(--on-surface); }
           
           .sa-nav-link.active { 
-            color: var(--primary); 
-            background: var(--primary-low); 
+            color: white; 
+            background: var(--primary); 
             font-weight: 700;
+            box-shadow: 0 8px 16px -4px rgba(53, 37, 205, 0.3);
           }
 
           .active-pill { 

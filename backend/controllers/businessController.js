@@ -50,24 +50,43 @@ exports.uploadLogo = (req, res) => {
 exports.getBusiness = async (req, res, next) => {
     try {
         const ownerId = req.user.role === 'agent' ? req.user.ownerId : req.user._id;
-        let business = await Business.findOne({ owner: ownerId });
         
-        if (!business && req.user.role !== 'agent') {
-            business = await Business.create({
-                owner: req.user._id,
-                name: "My Business"
-            });
+        // Find existing business
+        let business = await Business.findOne({ owner: ownerId });
+
+        // If not found and user is an owner/admin, create it
+        if (!business && (req.user.role === 'owner' || req.user.role === 'admin')) {
+            try {
+                business = await Business.create({
+                    owner: ownerId,
+                    name: req.user.name ? `${req.user.name}'s Business` : 'My Support Node',
+                    plan: 'free',
+                    allowedDomains: []
+                });
+            } catch (createErr) {
+                // Handle potential race condition if another request created it simultaneously
+                business = await Business.findOne({ owner: ownerId });
+                if (!business) throw createErr;
+            }
         }
 
-        // Ensure apiKey exists for existing businesses that might have been created without one
-        if (business && !business.apiKey) {
+        if (!business) {
+            return res.status(404).json({ message: 'Business node not found. Please contact support.' });
+        }
+
+        // Ensure apiKey exists (redundant but safe)
+        if (!business.apiKey) {
             business.apiKey = `sb_${crypto.randomBytes(16).toString('hex')}`;
             await business.save();
         }
 
         res.json(business);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error(`[getBusiness] Error:`, error);
+        res.status(500).json({ 
+            message: 'Failed to sync business node', 
+            error: error.message 
+        });
     }
 };
 
@@ -125,6 +144,7 @@ exports.upgradePlan = async (req, res) => {
 };
 
 exports.scrapeAndTrain = async (req, res) => {
+    let { url } = req.body;
     const ownerId = req.user.role === 'agent' ? req.user.ownerId : req.user._id;
     const businessCheck = await Business.findOne({ owner: ownerId });
 

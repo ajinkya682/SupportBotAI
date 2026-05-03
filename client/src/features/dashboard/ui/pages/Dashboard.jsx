@@ -181,6 +181,7 @@ export default function Dashboard() {
         <div className="loading-state">
           <Loader2 size={48} className="animate-spin" />
           <p>Synchronizing neural nodes...</p>
+          {businessLoading && <p style={{fontSize: '12px', opacity: 0.6}}>Fetching your workspace profile...</p>}
         </div>
       );
     }
