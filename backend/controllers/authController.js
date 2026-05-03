@@ -40,7 +40,7 @@ const resolveGoogleUser = async (idToken, accessToken) => {
   return null;
 };
 
-exports.googleLogin = async (req, res) => {
+exports.googleLogin = async (req, res, next) => {
   const { idToken, accessToken, plan } = req.body;
   console.log("Google Login Request Received:", { hasIdToken: !!idToken, hasAccessToken: !!accessToken, plan });
   try {
@@ -68,10 +68,13 @@ exports.googleLogin = async (req, res) => {
       const proLimit = config ? config.proConversationLimit : 999999;
       
       const selectedPlan = plan === 'pro' ? 'pro' : 'free';
+      const apiKey = `sb_${crypto.randomBytes(16).toString('hex')}`;
+
       await Business.create({ 
         owner: user._id, 
         name: `${user.name}'s Business`,
         plan: selectedPlan,
+        apiKey: apiKey,
         conversationLimit: selectedPlan === 'pro' ? proLimit : freeLimit
       });
     }
@@ -97,7 +100,7 @@ exports.googleLogin = async (req, res) => {
   }
 };
 
-exports.registerUser = async (req, res) => {
+exports.registerUser = async (req, res, next) => {
   const { name, email, password, plan } = req.body;
   try {
     const userExists = await User.findOne({ email });
@@ -113,10 +116,13 @@ exports.registerUser = async (req, res) => {
     const proLimit = config ? config.proConversationLimit : 999999;
     
     const selectedPlan = plan === 'pro' ? 'pro' : 'free';
+    const apiKey = `sb_${crypto.randomBytes(16).toString('hex')}`;
+
     await Business.create({ 
       owner: user._id, 
       name: `${user.name}'s Business`,
       plan: selectedPlan,
+      apiKey: apiKey,
       conversationLimit: selectedPlan === 'pro' ? proLimit : freeLimit
     });
 
@@ -133,7 +139,7 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-exports.loginUser = async (req, res) => {
+exports.loginUser = async (req, res, next) => {
   const { email, password } = req.body;
   try {
     // 1. Check if it's the Super Admin (Hardcoded in .env)

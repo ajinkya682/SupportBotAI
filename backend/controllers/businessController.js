@@ -47,7 +47,7 @@ exports.uploadLogo = (req, res) => {
     });
 };
 
-exports.getBusiness = async (req, res) => {
+exports.getBusiness = async (req, res, next) => {
     try {
         const ownerId = req.user.role === 'agent' ? req.user.ownerId : req.user._id;
         let business = await Business.findOne({ owner: ownerId });

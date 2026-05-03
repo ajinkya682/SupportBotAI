@@ -38,7 +38,7 @@ const BusinessSchema = new mongoose.Schema({
     isBlocked: { type: Boolean, default: false }
 }, { timestamps: true });
 
-BusinessSchema.pre('save', function(next) {
+BusinessSchema.pre('save', async function(next) {
     if (!this.appearance.botName) {
         this.appearance.botName = this.name;
     }
