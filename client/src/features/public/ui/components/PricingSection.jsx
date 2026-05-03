@@ -18,7 +18,7 @@ export default function PricingSection() {
         'Community Support'
       ],
       cta: 'Start for Free',
-      link: '/signup',
+      link: '/signup?plan=free',
       highlight: false,
       icon: MessageSquare,
       color: 'var(--on-surface-variant)'
@@ -38,7 +38,7 @@ export default function PricingSection() {
         'Priority Email Support'
       ],
       cta: 'Get Started Pro',
-      link: '/signup',
+      link: '/signup?plan=pro',
       highlight: true,
       icon: Sparkles,
       color: 'var(--primary)'
@@ -58,7 +58,7 @@ export default function PricingSection() {
         'Custom Legal Compliance'
       ],
       cta: 'Contact Sales',
-      link: '/signup',
+      link: '/signup?plan=pro',
       highlight: false,
       icon: Shield,
       color: 'var(--inverse-surface)'

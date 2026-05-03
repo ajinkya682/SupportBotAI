@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { register, googleLogin, reset } from '../../state/authSlice';
 import { updateBusiness } from '../../../dashboard/state/businessSlice';
 import { 
@@ -30,6 +30,8 @@ export default function Signup() {
   const { name, email, password, businessName, knowledge } = formData;
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const plan = searchParams.get('plan') || 'free';
   const dispatch = useDispatch();
 
   const { user, isLoading, isError, isSuccess, message } = useSelector((state) => state.auth);
@@ -55,7 +57,7 @@ export default function Signup() {
 
   const handleRegister = (e) => {
     e.preventDefault();
-    dispatch(register({ name, email, password }));
+    dispatch(register({ name, email, password, plan }));
   };
 
   const handleBusinessSetup = (e) => {
@@ -72,7 +74,7 @@ export default function Signup() {
 
   const handleGoogleSignup = useGoogleLogin({
     onSuccess: (tokenResponse) => {
-      dispatch(googleLogin({ accessToken: tokenResponse.access_token }));
+      dispatch(googleLogin({ accessToken: tokenResponse.access_token, plan }));
     },
     onError: () => {
       toast.error('Google Signup Failed');

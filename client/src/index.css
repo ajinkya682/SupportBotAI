@@ -356,3 +356,17 @@ img, video, iframe {
 .chat-input-bar {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* Notification Fixes */
+.toast-custom {
+  background: white !important;
+  color: var(--on-surface) !important;
+  box-shadow: var(--shadow-modal) !important;
+  border: 1px solid var(--outline-variant) !important;
+}
+
+.toast-error {
+  background: var(--error-container) !important;
+  color: var(--on-error-container) !important;
+  border: 1px solid var(--error) !important;
+}

@@ -101,8 +101,33 @@ exports.markNotificationsRead = async (req, res) => {
     }
 };
 
+exports.upgradePlan = async (req, res) => {
+    try {
+        const business = await Business.findOneAndUpdate(
+            { owner: req.user._id },
+            { 
+                plan: 'pro',
+                conversationLimit: 999999
+            },
+            { new: true }
+        );
+        if (business) cache.del(business.apiKey);
+        res.json({ success: true, business });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 exports.scrapeAndTrain = async (req, res) => {
-    let { url } = req.body;
+    const ownerId = req.user.role === 'agent' ? req.user.ownerId : req.user._id;
+    const businessCheck = await Business.findOne({ owner: ownerId });
+
+    if (businessCheck && businessCheck.plan === 'free') {
+        return res.status(403).json({ 
+            message: "Website scanning is a Pro feature.",
+            isPlanRestricted: true 
+        });
+    }
 
     if (!url || url.trim() === "") {
         return res.status(400).json({ message: "URL is required" });
