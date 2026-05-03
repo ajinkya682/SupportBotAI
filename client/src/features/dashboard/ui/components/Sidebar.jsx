@@ -13,21 +13,20 @@ import {
 import { useDispatch } from "react-redux";
 import { logout, reset } from "../../../auth/state/authSlice";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 
 export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business }) {
   const dispatch = useDispatch();
   const isFree = business?.plan === 'free';
 
   const menuItems = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'conversations', label: 'Conversations', icon: MessageSquare },
-    { id: 'team', label: 'Team Members', icon: Users },
-    { id: 'training', label: 'AI Training', icon: Bot },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'appearance', label: 'Appearance', icon: Palette },
-    { id: 'integration', label: 'Integration', icon: Code2 },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'overview', label: 'Control Center', icon: LayoutDashboard },
+    { id: 'conversations', label: 'Global Logs', icon: MessageSquare },
+    { id: 'team', label: 'Team Directory', icon: Users },
+    { id: 'training', label: 'AI Intelligence', icon: Bot },
+    { id: 'analytics', label: 'Revenue & Metrics', icon: BarChart3 },
+    { id: 'appearance', label: 'Visual Design', icon: Palette },
+    { id: 'integration', label: 'Widget Config', icon: Code2 },
+    { id: 'settings', label: 'System Settings', icon: Settings },
   ];
 
   const onLogout = () => {
@@ -36,157 +35,211 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business }
   };
 
   return (
-    <aside style={{
-      background: 'var(--color-surface-container-low)',
-      width: '280px',
-      height: '100vh',
-      padding: 'var(--space-8) var(--space-6)',
-      display: 'flex',
-      flexDirection: 'column',
-      borderRight: '1px solid var(--color-surface-container)',
-      position: 'sticky',
-      top: 0,
-      flexShrink: 0,
-    }}>
-      {/* Brand */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--space-3)',
-        marginBottom: 'var(--space-10)',
-        paddingLeft: 'var(--space-2)',
-      }}>
-        <div style={{
-          width: '36px',
-          height: '36px',
-          background: 'var(--color-primary-gradient)',
-          borderRadius: 'var(--radius-xl)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: 'var(--shadow-sm)',
-        }}>
-          <Bot size={20} color="white" />
-        </div>
-        <Link to="/" style={{
-          fontFamily: 'var(--font-display)',
-          fontWeight: 'var(--weight-extrabold)',
-          fontSize: 'var(--text-lg)',
-          color: 'var(--color-on-surface)',
-          letterSpacing: 'var(--tracking-tight)',
-          textDecoration: 'none',
-        }}>
-          SupportBot<span style={{ color: 'var(--color-primary)' }}>AI</span>
+    <aside className="sidebar">
+      <div className="sidebar-header">
+        <Link to="/" className="sidebar-brand">
+          <div className="brand-icon">
+            <Bot size={22} color="white" />
+          </div>
+          <div className="brand-text">
+            <h3>Antigravity</h3>
+            <span>Enterprise AI</span>
+          </div>
         </Link>
       </div>
 
-      {/* Navigation */}
-      <div style={{
-        fontSize: '10px',
-        fontWeight: 'var(--weight-bold)',
-        color: 'var(--color-on-surface-muted)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.1em',
-        marginBottom: 'var(--space-3)',
-        paddingLeft: 'var(--space-4)',
-      }}>
-        Dashboard
-      </div>
-      
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        {menuItems.map((item) => {
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-3)',
-                padding: 'var(--space-3) var(--space-4)',
-                borderRadius: 'var(--radius-lg)',
-                cursor: 'pointer',
-                transition: 'all var(--duration-base) var(--ease-standard)',
-                color: isActive ? 'var(--color-primary)' : 'var(--color-on-surface-variant)',
-                fontSize: 'var(--text-sm)',
-                fontWeight: isActive ? 'var(--weight-bold)' : 'var(--weight-medium)',
-                background: isActive ? 'var(--color-primary-light)' : 'transparent',
-                border: 'none',
-                width: '100%',
-                textAlign: 'left',
-              }}
-              onMouseEnter={e => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'var(--color-surface-container)';
-                  e.currentTarget.style.color = 'var(--color-on-surface)';
-                }
-              }}
-              onMouseLeave={e => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--color-on-surface-variant)';
-                }
-              }}
-            >
-              <item.icon size={18} style={{ opacity: isActive ? 1 : 0.7 }} />
-              {item.label}
-              {isActive && (
-                <motion.div 
-                  layoutId="sidebar-indicator"
-                  style={{ marginLeft: 'auto', width: '4px', height: '16px', background: 'var(--color-primary)', borderRadius: 'var(--radius-full)' }} 
-                />
-              )}
-            </button>
-          );
-        })}
+      <nav className="sidebar-nav">
+        {menuItems.map((item) => (
+          <button
+            key={item.id}
+            className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+            onClick={() => setActiveTab(item.id)}
+          >
+            <item.icon size={18} className="nav-icon" />
+            <span>{item.label}</span>
+            {activeTab === item.id && <div className="active-accent" />}
+          </button>
+        ))}
       </nav>
 
-      {/* Footer */}
-      <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      <div className="sidebar-footer">
         {isFree && (
-          <div style={{
-            background: 'white',
-            borderRadius: 'var(--radius-2xl)',
-            padding: 'var(--space-5)',
-            border: '1px solid var(--color-surface-container)',
-            boxShadow: 'var(--shadow-sm)',
-          }}>
-            <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
-              <span style={{ fontSize: '10px', fontWeight: 'var(--weight-bold)', color: '#f59e0b', textTransform: 'uppercase' }}>Pro Plan</span>
+          <div className="upgrade-promo-card">
+            <div className="promo-header">
+              <Sparkles size={14} />
+              <span>PRO UPGRADE</span>
             </div>
-            <p style={{ fontSize: '11px', color: 'var(--color-on-surface-variant)', marginBottom: 'var(--space-4)', lineHeight: 1.5 }}>
-              Unlock advanced training and full analytics.
-            </p>
-            <button className="btn btn-primary btn-sm" onClick={onUpgrade} style={{ width: '100%' }}>Upgrade Now</button>
+            <p>Scale your intelligence with advanced URL scanning and custom branding.</p>
+            <button className="btn btn-primary" onClick={onUpgrade}>
+              Upgrade Now
+            </button>
           </div>
         )}
-
-        <button
-          onClick={onLogout}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-3)',
-            padding: 'var(--space-3) var(--space-4)',
-            borderRadius: 'var(--radius-lg)',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            color: '#ef4444',
-            fontSize: 'var(--text-sm)',
-            fontWeight: 'var(--weight-bold)',
-            background: 'transparent',
-            border: 'none',
-            width: '100%',
-            textAlign: 'left',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-        >
+        
+        <button onClick={onLogout} className="logout-btn">
           <LogOut size={18} />
-          Logout
+          <span>Sign Out</span>
         </button>
       </div>
+
+      <style>{`
+        .sidebar {
+          width: var(--sidebar-width);
+          height: 100vh;
+          background-color: var(--surface-container);
+          display: flex;
+          flex-direction: column;
+          padding: 32px 16px;
+          position: sticky;
+          top: 0;
+          z-index: 100;
+        }
+        
+        .sidebar-header {
+          margin-bottom: 40px;
+          padding: 0 8px;
+        }
+        
+        .sidebar-brand {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          text-decoration: none;
+        }
+        
+        .brand-icon {
+          width: 36px;
+          height: 36px;
+          background: var(--primary);
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: var(--shadow-raised);
+        }
+        
+        .brand-text h3 {
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: var(--on-surface);
+          margin: 0;
+          line-height: 1.1;
+        }
+        
+        .brand-text span {
+          font-size: 0.7rem;
+          font-weight: 700;
+          color: var(--outline);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        
+        .sidebar-nav {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          flex: 1;
+        }
+        
+        .nav-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 12px;
+          border-radius: var(--radius-btn-input);
+          border: none;
+          background: transparent;
+          color: var(--on-surface-variant);
+          font-weight: 500;
+          font-size: var(--text-label-md);
+          cursor: pointer;
+          transition: var(--transition-fast);
+          text-align: left;
+          position: relative;
+        }
+        
+        .nav-item:hover {
+          background-color: var(--surface-container-high);
+          color: var(--on-surface);
+        }
+        
+        .nav-item.active {
+          background-color: var(--surface-container-highest);
+          color: var(--primary);
+          font-weight: 600;
+        }
+        
+        .active-accent {
+          position: absolute;
+          left: -16px;
+          width: 3px;
+          height: 20px;
+          background-color: var(--primary);
+          border-radius: 0 4px 4px 0;
+        }
+        
+        .nav-icon {
+          flex-shrink: 0;
+        }
+        
+        .sidebar-footer {
+          margin-top: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        
+        .upgrade-promo-card {
+          padding: 20px;
+          background-color: var(--surface-container-low);
+          border: 1px solid var(--outline-variant);
+          border-radius: var(--radius-card-modal);
+        }
+        
+        .promo-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 8px;
+          color: var(--primary);
+          font-size: 0.75rem;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+        }
+        
+        .upgrade-promo-card p {
+          font-size: 0.75rem;
+          color: var(--on-surface-variant);
+          line-height: 1.4;
+          margin-bottom: 16px;
+        }
+        
+        .upgrade-promo-card .btn {
+          width: 100%;
+          min-height: 36px;
+          font-size: 0.8rem;
+        }
+        
+        .logout-btn {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 12px;
+          border-radius: var(--radius-btn-input);
+          border: none;
+          background: transparent;
+          color: var(--on-surface-variant);
+          font-weight: 500;
+          font-size: var(--text-label-md);
+          cursor: pointer;
+          transition: var(--transition-fast);
+        }
+        
+        .logout-btn:hover {
+          background-color: #ffdad6;
+          color: #93000a;
+        }
+      `}</style>
     </aside>
   );
 }

@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../../shared/services/config';
 
-const AUTH_API = `${API_URL}/api/auth`;
+const AUTH_API = `${API_URL}/auth`;
 
 const user = JSON.parse(localStorage.getItem('user'));
 
