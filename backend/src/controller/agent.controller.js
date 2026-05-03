@@ -12,17 +12,19 @@ import { uploadSinglePhoto } from '../service/storage.service.js';
 export const addAgent = async (req, res) => {
     const { name, email, password } = req.body;
     try {
-        const userExists = await User.findOne({ email });
+
+        const userExists = await User.findOne({ email }).select('_id').lean();
         if (userExists) return res.status(400).json({ message: 'User with this email already exists' });
 
         const agent = await User.create({
             name,
             email,
-            password, 
+            password,
             role: 'agent',
-            ownerId: req.user._id, // Link to the owner who created it
+            ownerId: req.user._id,
             status: 'inactive'
         });
+
 
         const { password: _, ...agentData } = agent.toObject();
         res.status(201).json({ message: 'Agent created successfully', agent: agentData });
@@ -45,14 +47,16 @@ export const listAgents = async (req, res) => {
         const agents = await User.find({ ownerId, role: 'agent' }).select('-password').lean();
         const agentIds = agents.map(a => a._id);
 
-        // Aggregation to fetch stats for all agents in one single DB query
+
         const stats = await Conversation.aggregate([
             { $match: { agent: { $in: agentIds }, business: business._id } },
-            { $group: {
-                _id: "$agent",
-                resolved: { $sum: { $cond: [{ $eq: ["$status", "human_resolved"] }, 1, 0] } },
-                handledToday: { $sum: { $cond: [{ $gte: ["$updatedAt", new Date(new Date().setHours(0,0,0,0))] }, 1, 0] } }
-            }}
+            {
+                $group: {
+                    _id: "$agent",
+                    resolved: { $sum: { $cond: [{ $eq: ["$status", "human_resolved"] }, 1, 0] } },
+                    handledToday: { $sum: { $cond: [{ $gte: ["$updatedAt", new Date(new Date().setHours(0, 0, 0, 0))] }, 1, 0] } }
+                }
+            }
         ]);
 
         const agentsWithStats = agents.map(agent => ({
@@ -72,7 +76,7 @@ export const listAgents = async (req, res) => {
  * @access  Private (Agent Only)
  */
 export const updateProfile = async (req, res) => {
-    // Manually invoking the storage service if not used as middleware in routes
+
     uploadSinglePhoto(req, res, async (err) => {
         if (err) return res.status(400).json({ message: err.message });
 
@@ -93,7 +97,7 @@ export const updateProfile = async (req, res) => {
             if (displayName) agent.displayName = displayName;
             if (roleTitle) agent.roleTitle = roleTitle;
 
-            // Activate profile once all mandatory data is filled
+
             if (agent.displayName && agent.roleTitle && agent.profilePhoto) {
                 agent.status = 'active';
                 agent.availability = agent.availability || 'online';
@@ -117,10 +121,10 @@ export const joinConversation = async (req, res) => {
         const ownerId = req.user.role === 'agent' ? req.user.ownerId : req.user._id;
         const business = await Business.findOne({ owner: ownerId }).lean();
 
-        // Atomic assignment using findOneAndUpdate to prevent race conditions
+
         const conversation = await Conversation.findOneAndUpdate(
-            { 
-                _id: req.params.id, 
+            {
+                _id: req.params.id,
                 business: business._id,
                 $or: [{ agent: { $exists: false } }, { agent: null }, { agent: req.user._id }]
             },
@@ -138,7 +142,7 @@ export const joinConversation = async (req, res) => {
 
         if (!conversation) return res.status(409).json({ message: 'Conversation already assigned to another agent' });
 
-        // Sync Agent Status
+
         await User.findByIdAndUpdate(req.user._id, { status: 'in_conversation', currentConversationId: conversation._id });
 
         const joinMessage = {
@@ -193,7 +197,7 @@ export const resolveConversation = async (req, res) => {
 
         if (!conversation) return res.status(404).json({ message: 'Conversation not found' });
 
-        // Release Agent
+
         await User.findByIdAndUpdate(req.user._id, { status: 'online', currentConversationId: null });
 
         if (req.io) {
@@ -238,12 +242,12 @@ export const updateAvailability = async (req, res) => {
             { availability },
             { new: true }
         );
-        
+
         if (req.io) {
             const ownerId = req.user.role === 'agent' ? req.user.ownerId : req.user._id;
-            req.io.to(ownerId.toString()).emit('agent_status_changed', { 
-                agentId: req.user._id, 
-                availability: agent.availability 
+            req.io.to(ownerId.toString()).emit('agent_status_changed', {
+                agentId: req.user._id,
+                availability: agent.availability
             });
         }
 

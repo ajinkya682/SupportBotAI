@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npx nodemon server.js"
+    "dev": "npx nodemon server.js",
+    "seed": "node scripts/seed_pro.js"
   },
   "keywords": [],
   "author": "",
@@ -17,11 +18,12 @@
     "@langchain/mistralai": "^1.0.8",
     "@langchain/openai": "^1.4.5",
     "@langchain/pinecone": "^1.0.2",
-    "@pinecone-database/pinecone": "^7.2.0",
+    "@pinecone-database/pinecone": "^5.1.2",
     "@sparticuz/chromium": "^148.0.0",
     "axios": "^1.15.2",
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
+    "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
