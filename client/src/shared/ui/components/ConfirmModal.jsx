@@ -114,24 +114,6 @@ const ConfirmModal = ({
             position: relative;
           }
 
-          @media (max-width: 767px) {
-            .premium-modal-overlay {
-              align-items: flex-end;
-              padding: 0;
-            }
-            .premium-modal-surface {
-              border-radius: 24px 24px 0 0;
-              margin-bottom: 0;
-            }
-            .modal-footer-premium {
-              flex-direction: column;
-            }
-            .btn-cancel-premium, .btn-confirm-premium {
-              width: 100%;
-              min-height: 48px;
-            }
-          }
-
           .modal-accent-bar {
             height: 6px;
             width: 100%;

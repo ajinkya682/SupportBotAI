@@ -145,8 +145,8 @@ h3 { font-size: var(--text-h3); font-weight: 600; }
   transition: var(--transition-fast);
   border: 1px solid transparent;
   white-space: nowrap;
-  min-height: 48px;
-  min-width: 48px;
+  min-height: 44px; /* Rule 4: Tap targets minimum 44px */
+  min-width: 44px;
   touch-action: manipulation;
 }
 
@@ -198,12 +198,12 @@ input, textarea, select {
   border-radius: var(--radius-btn-input);
   border: 1px solid var(--outline-variant);
   background-color: var(--surface-container-lowest);
-  font-size: 16px; /* Prevents iOS auto-zoom */
   color: var(--on-surface);
-  transition: var(--transition-fast);
   font-family: inherit;
+  font-size: var(--text-body); /* Minimum 16px for iOS to prevent zoom */
+  transition: var(--transition-fast);
   width: 100%;
-  min-height: 48px; /* Touch target minimum */
+  min-height: 44px; /* Rule 4 */
 }
 
 input:focus, textarea:focus, select:focus, button:focus {
@@ -391,46 +391,4 @@ img, video, iframe {
   background: var(--error-container) !important;
   color: var(--on-error-container) !important;
   border: 1px solid var(--error) !important;
-}
-
-/* Responsive Visibility Utilities */
-.mobile-only { display: none !important; }
-.tablet-only { display: none !important; }
-.desktop-only { display: none !important; }
-
-@media (max-width: 767px) {
-  .mobile-only { display: block !important; }
-  span.mobile-only, i.mobile-only { display: inline-block !important; }
-  .hide-on-mobile { display: none !important; }
-}
-
-@media (min-width: 768px) and (max-width: 1199px) {
-  .tablet-only { display: block !important; }
-  span.tablet-only, i.tablet-only { display: inline-block !important; }
-  .hide-on-tablet { display: none !important; }
-}
-
-@media (min-width: 1200px) {
-  .desktop-only { display: block !important; }
-  span.desktop-only, i.desktop-only { display: inline-block !important; }
-  .hide-on-desktop { display: none !important; }
-}
-
-/* Bottom Sheet Animations */
-@keyframes slideUpBottomSheet {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-@keyframes slideDownBottomSheet {
-  from { transform: translateY(0); }
-  to { transform: translateY(100%); }
-}
-
-.bottom-sheet-enter {
-  animation: slideUpBottomSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.bottom-sheet-exit {
-  animation: slideDownBottomSheet 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

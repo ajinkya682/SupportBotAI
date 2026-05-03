@@ -535,10 +535,9 @@ export default function Dashboard() {
       <style>{`
         .dashboard-root { display: flex; height: 100vh; height: 100dvh; background: var(--surface); position: relative; overflow: hidden; width: 100%; }
         .sa-layout { background: var(--surface); display: flex; flex-direction: column; width: 100%; min-height: 0; }
-        @media (min-width: 768px) { .sa-layout { flex-direction: row; } }
+        @media (min-width: 1024px) { .sa-layout { flex-direction: row; } }
 
-        .sa-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; overflow: hidden; padding-bottom: 70px; }
-        @media (min-width: 768px) { .sa-main-content { padding-bottom: 0; } }
+        .sa-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; overflow: hidden; }
         
         .sa-top-bar { 
           height: 64px; 
@@ -556,7 +555,7 @@ export default function Dashboard() {
 
         .sa-top-bar-left { display: flex; align-items: center; gap: 16px; }
         .mobile-menu-btn { background: transparent; border: none; padding: 4px; color: var(--on-surface); display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        @media (min-width: 768px) { .mobile-menu-btn { display: none; } }
+        @media (min-width: 1024px) { .mobile-menu-btn { display: none; } }
 
         .sa-breadcrumb { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.9rem; }
         .sa-root { color: var(--on-surface-variant); }
@@ -598,7 +597,7 @@ export default function Dashboard() {
         .feature-item svg { color: var(--primary); }
         
         .desktop-only { display: none; }
-        @media (min-width: 1200px) { .desktop-only { display: inline-flex; } }
+        @media (min-width: 1024px) { .desktop-only { display: inline-flex; } }
       `}</style>
     </div>
   );

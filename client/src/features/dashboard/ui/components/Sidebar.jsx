@@ -138,55 +138,29 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
         <style>{`
           .sa-sidebar { 
             position: fixed;
+            top: 0;
             bottom: 0;
             left: 0;
-            right: 0;
-            height: 70px;
-            width: 100%; 
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid var(--outline-variant);
+            width: 280px; 
+            background: white; 
+            border-right: 1px solid var(--outline-variant);
             display: flex; 
-            flex-direction: row;
-            padding: 0;
+            flex-direction: column; 
+            padding: 24px 16px; 
             z-index: 1000; 
-            transform: none;
-            transition: 0.3s;
-            overflow: visible;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           }
 
-          @media (min-width: 768px) and (max-width: 1199px) {
-            .sa-sidebar {
-              position: sticky;
-              top: 0;
-              width: 80px;
-              height: 100vh;
-              flex-direction: column;
-              border-top: none;
-              border-right: 1px solid var(--outline-variant);
-              padding: 24px 12px;
-              transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-              overflow: hidden;
-            }
-            .sa-sidebar:hover {
-              width: 300px;
-            }
-            .sa-sidebar:hover .sa-brand-text { display: block; }
-            .sa-sidebar:hover .sa-nav-link span { display: block; }
-            .sa-sidebar:hover .sa-upgrade-card { display: block; }
-            .sa-sidebar:hover .sa-logout-btn span { display: block; }
-          }
+          .sa-sidebar.open { transform: translateX(0); }
 
-          @media (min-width: 1200px) {
+          @media (min-width: 1024px) {
             .sa-sidebar {
               position: sticky;
-              top: 0;
               width: 300px;
-              height: 100vh;
-              flex-direction: column;
-              border-top: none;
-              border-right: 1px solid var(--outline-variant);
+              transform: none;
               padding: 32px 16px;
+              height: 100vh;
             }
           }
 
@@ -203,18 +177,14 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
           }
 
           .sa-sidebar-header { 
-            display: none; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            padding: 0 8px; 
+            margin-bottom: 32px; 
           }
 
-          @media (min-width: 768px) {
-            .sa-sidebar-header { 
-              display: flex; 
-              align-items: center; 
-              justify-content: space-between;
-              padding: 0 8px; 
-              margin-bottom: 40px; 
-            }
-          }
+          @media (min-width: 1024px) { .sa-sidebar-header { margin-bottom: 40px; } }
 
           .sa-header-main { display: flex; align-items: center; gap: 12px; }
           .sa-logo-wrapper { 
@@ -229,133 +199,68 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
             flex-shrink: 0;
           }
           
-          .sa-brand-text { display: none; }
-          @media (min-width: 1200px) { .sa-brand-text { display: block; } }
-
           .sa-brand-text h3 { color: var(--on-surface); margin: 0; font-size: 1rem; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
           .sa-brand-text span { color: var(--primary); font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
           
-          .mobile-close-btn { display: none; }
+          .mobile-close-btn { background: transparent; border: none; padding: 4px; display: flex; align-items: center; justify-content: center; }
+          @media (min-width: 1024px) { .mobile-close-btn { display: none; } }
 
-          .sa-sidebar-nav { 
-            display: flex; 
-            flex-direction: row; 
-            gap: 4px; 
-            flex: 1; 
-            overflow-x: auto; 
-            overflow-y: hidden;
-            -webkit-overflow-scrolling: touch; 
-            padding: 8px; 
-            align-items: center;
-          }
+          .sa-sidebar-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-right: 4px; }
           
-          @media (min-width: 768px) {
-            .sa-sidebar-nav {
-              flex-direction: column;
-              overflow-x: hidden;
-              overflow-y: auto;
-              padding: 0 4px 0 0;
-            }
-          }
-
           .sa-nav-link { 
             display: flex; 
-            flex-direction: column;
             align-items: center; 
-            justify-content: center;
-            gap: 4px; 
-            padding: 8px 12px; 
+            gap: 14px; 
+            padding: 12px 14px; 
             border-radius: 12px; 
             color: var(--on-surface-variant); 
             text-decoration: none; 
             font-weight: 600; 
-            font-size: 0.65rem; 
+            font-size: 0.9rem; 
             transition: 0.2s; 
             position: relative;
             background: transparent;
             border: none;
+            width: 100%;
             cursor: pointer;
-            text-align: center;
-            min-width: 72px;
-            flex-shrink: 0;
-          }
-
-          @media (min-width: 768px) {
-            .sa-nav-link {
-              flex-direction: row;
-              justify-content: flex-start;
-              gap: 14px;
-              padding: 12px 14px;
-              font-size: 0.9rem;
-              text-align: left;
-            }
-          }
-
-          .sa-nav-link span { display: block; white-space: nowrap; }
-          @media (min-width: 768px) and (max-width: 1199px) {
-            .sa-nav-link span { display: none; }
+            text-align: left;
           }
 
           .sa-nav-link:hover { background: var(--surface-container-low); color: var(--on-surface); }
           
           .sa-nav-link.active { 
-            color: var(--primary); 
+            color: white; 
+            background: var(--primary); 
             font-weight: 700;
+            box-shadow: 0 8px 16px -4px rgba(53, 37, 205, 0.3);
           }
 
-          @media (min-width: 768px) {
-            .sa-nav-link.active {
-              color: white; 
-              background: var(--primary); 
-              box-shadow: 0 8px 16px -4px rgba(53, 37, 205, 0.3);
-            }
-          }
-
-          .active-pill { display: none; }
-
-          @media (min-width: 768px) {
-            .active-pill { 
-              display: block;
-              position: absolute; 
-              left: -16px; 
-              width: 4px; 
-              height: 24px; 
-              background: var(--primary); 
-              border-radius: 0 4px 4px 0; 
-            }
+          .active-pill { 
+            position: absolute; 
+            left: -16px; 
+            width: 4px; 
+            height: 24px; 
+            background: var(--primary); 
+            border-radius: 0 4px 4px 0; 
           }
           
-          .sa-icon { flex-shrink: 0; margin-bottom: 2px; }
-          @media (min-width: 768px) { .sa-icon { margin-bottom: 0; } }
+          .sa-icon { flex-shrink: 0; }
 
           .sa-sidebar-footer { 
-            display: none; 
-          }
-
-          @media (min-width: 768px) {
-            .sa-sidebar-footer { 
-              display: flex;
-              flex-direction: column;
-              padding-top: 16px; 
-              border-top: 1px solid var(--outline-variant); 
-              margin-top: auto; 
-              gap: 12px;
-            }
+            padding-top: 16px; 
+            border-top: 1px solid var(--outline-variant); 
+            margin-top: auto; 
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
           }
 
           .sa-upgrade-card {
-            display: none;
-          }
-          
-          @media (min-width: 1200px) {
-            .sa-upgrade-card {
-              display: block;
-              background: linear-gradient(135deg, var(--primary-low), white);
-              border: 1px solid var(--primary-container);
-              padding: 16px;
-              border-radius: 16px;
-              margin-bottom: 8px;
-            }
+            background: linear-gradient(135deg, var(--primary-low), white);
+            border: 1px solid var(--primary-container);
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 8px;
           }
 
           .promo-header { display: flex; align-items: center; gap: 8px; color: var(--primary); font-size: 0.65rem; font-weight: 800; margin-bottom: 6px; }
@@ -395,11 +300,8 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
 
           .sa-logout-btn:hover { background: #fef2f2; }
 
-          .sa-logout-btn span { display: none; }
-          @media (min-width: 1200px) { .sa-logout-btn span { display: block; } }
-
           .desktop-only { display: none; }
-          @media (min-width: 1200px) { .desktop-only { display: inline-flex; } }
+          @media (min-width: 1024px) { .desktop-only { display: inline-flex; } }
           
           /* Custom scrollbar for nav */
           .sa-sidebar-nav::-webkit-scrollbar { width: 4px; }

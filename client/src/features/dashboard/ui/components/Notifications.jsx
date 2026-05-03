@@ -419,8 +419,8 @@ const Notifications = () => {
         </div>
       ) : (
         <div className="notifications-settings animate-fade-in">
-             <div className="settings-section card">
-                <h3><Bell size={18} /> Notification Channels</h3>
+             <div className="settings-section card shadow-sm">
+                <h3><Bell size={20} /> Notification Channels</h3>
                 <p className="section-desc">Choose which events trigger real-time desktop & mobile notifications.</p>
                 
                 <div className="pref-grid">
@@ -436,46 +436,496 @@ const Notifications = () => {
                                 <span className="slider round"></span>
                             </label>
                         </div>
-                        {/* ... more items ... */}
+                        <div className="pref-item">
+                            <div className="pref-info">
+                                <span className="pref-label">Assigned to Me</span>
+                                <span className="pref-sub">Alert when a ticket is specifically assigned to you.</span>
+                            </div>
+                            <label className="switch">
+                                <input type="checkbox" checked={prefs?.ticketAssigned} onChange={(e) => handleSavePrefs({...prefs, ticketAssigned: e.target.checked})} />
+                                <span className="slider round"></span>
+                            </label>
+                        </div>
+                        <div className="pref-item">
+                            <div className="pref-info">
+                                <span className="pref-label">New Messages</span>
+                                <span className="pref-sub">Notify on new customer messages in active chats.</span>
+                            </div>
+                            <label className="switch">
+                                <input type="checkbox" checked={prefs?.newMessages} onChange={(e) => handleSavePrefs({...prefs, newMessages: e.target.checked})} />
+                                <span className="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="pref-group">
+                        <h4>Team & System</h4>
+                        <div className="pref-item">
+                            <div className="pref-info">
+                                <span className="pref-label">Team Activity</span>
+                                <span className="pref-sub">Notifications for internal team messages and broadcasts.</span>
+                            </div>
+                            <label className="switch">
+                                <input type="checkbox" checked={prefs?.teamActivity} onChange={(e) => handleSavePrefs({...prefs, teamActivity: e.target.checked})} />
+                                <span className="slider round"></span>
+                            </label>
+                        </div>
+                        <div className="pref-item">
+                            <div className="pref-info">
+                                <span className="pref-label">Status Alerts</span>
+                                <span className="pref-sub">Notify when agents go offline or come back online.</span>
+                            </div>
+                            <label className="switch">
+                                <input type="checkbox" checked={prefs?.agentOfflineAlerts} onChange={(e) => handleSavePrefs({...prefs, agentOfflineAlerts: e.target.checked})} />
+                                <span className="slider round"></span>
+                            </label>
+                        </div>
+                        <div className="pref-item">
+                            <div className="pref-info">
+                                <span className="pref-label">Audio Alerts</span>
+                                <span className="pref-sub">Play a sound for every new notification received.</span>
+                            </div>
+                            <label className="switch">
+                                <input type="checkbox" checked={prefs?.enableSounds} onChange={(e) => handleSavePrefs({...prefs, enableSounds: e.target.checked})} />
+                                <span className="slider round"></span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
-            {/* ... more settings ... */}
+
+            <div className="settings-section card shadow-sm">
+                <h3><Clock size={20} /> Availability & Quiet Hours</h3>
+                <p className="section-desc">Manage when you're available to receive system-wide notifications.</p>
+                
+                <div className="pref-item">
+                    <div className="pref-info">
+                        <span className="pref-label">Enable Quiet Hours</span>
+                        <span className="pref-sub">Silence all notifications during a specific time range.</span>
+                    </div>
+                    <label className="switch">
+                        <input type="checkbox" checked={prefs?.quietHours?.enabled} onChange={(e) => handleSavePrefs({...prefs, quietHours: {...prefs.quietHours, enabled: e.target.checked}})} />
+                        <span className="slider round"></span>
+                    </label>
+                </div>
+            </div>
         </div>
       )}
 
       <style>{`
-        .notifications-container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
-        .header-actions { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
-        .tab-switcher { display: flex; background: var(--surface-container-low); padding: 4px; border-radius: 12px; border: 1px solid var(--outline-variant); }
-        .tab-btn { padding: 8px 20px; border-radius: 8px; border: none; background: transparent; font-size: 0.9rem; font-weight: 700; color: var(--on-surface-variant); cursor: pointer; transition: 0.2s; }
-        .tab-btn.active { background: white; color: var(--primary); box-shadow: var(--shadow-1); }
+        .notifications-container { 
+          max-width: 1000px; 
+          margin: 0 auto; 
+          display: flex; 
+          flex-direction: column; 
+          gap: 24px; 
+          padding: 20px;
+        }
 
-        .compose-card { padding: 32px; border-radius: 24px; }
-        .card-header-flex { display: flex; gap: 16px; align-items: center; margin-bottom: 32px; }
-        .header-icon { color: var(--primary); }
-        .card-header-flex h2 { margin: 0; font-size: 1.5rem; font-weight: 800; }
-        .card-header-flex p { margin: 4px 0 0; color: var(--on-surface-variant); font-size: 0.95rem; }
+        .header-actions { 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          gap: 20px; 
+        }
 
-        .audience-selector { display: flex; gap: 12px; margin-top: 8px; }
-        .audience-option { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px; border: 1.5px solid var(--outline-variant); border-radius: 12px; cursor: pointer; transition: 0.2s; font-weight: 700; color: var(--on-surface-variant); }
-        .audience-option input { display: none; }
-        .audience-option.active { border-color: var(--primary); background: var(--primary-fixed-dim); color: var(--primary); }
+        .tab-switcher { 
+          display: flex; 
+          background: #f1f5f9; 
+          padding: 4px; 
+          border-radius: 12px; 
+          border: 1px solid #e2e8f0; 
+        }
 
-        .compose-form { display: flex; flex-direction: column; gap: 20px; }
-        .form-group { display: flex; flex-direction: column; gap: 8px; }
-        .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--on-surface); }
-        .form-group input, .form-group select, .form-group textarea { padding: 12px 16px; border-radius: 12px; border: 1px solid var(--outline-variant); background: var(--surface-container-low); font-size: 0.95rem; transition: 0.2s; }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-low); background: white; }
+        .tab-btn { 
+          padding: 8px 24px; 
+          border-radius: 8px; 
+          border: none; 
+          background: transparent; 
+          font-size: 0.9rem; 
+          font-weight: 700; 
+          color: #64748b; 
+          cursor: pointer; 
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
 
-        .role-tag { font-size: 0.6rem; font-weight: 900; padding: 2px 6px; border-radius: 4px; margin-bottom: 4px; display: inline-block; }
-        .role-tag.superadmin { background: #fef2f2; color: #ef4444; }
-        .role-tag.owner { background: #eff6ff; color: #3b82f6; }
+        .tab-btn.active { 
+          background: white; 
+          color: var(--primary); 
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); 
+        }
+
+        .notifications-controls {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 20px;
+          margin-bottom: 8px;
+        }
+
+        .filter-group {
+          display: flex;
+          gap: 8px;
+          background: #f8fafc;
+          padding: 4px;
+          border-radius: 10px;
+        }
+
+        .filter-btn {
+          padding: 6px 16px;
+          border-radius: 6px;
+          border: none;
+          background: transparent;
+          font-size: 0.8rem;
+          font-weight: 700;
+          color: #94a3b8;
+          cursor: pointer;
+          transition: 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          position: relative;
+        }
+
+        .filter-btn.active {
+          background: white;
+          color: var(--on-surface);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .count-dot {
+          width: 6px;
+          height: 6px;
+          background: #ef4444;
+          border-radius: 50%;
+          display: inline-block;
+        }
+
+        .search-box {
+          position: relative;
+          flex: 1;
+          max-width: 400px;
+        }
+
+        .search-box svg {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #94a3b8;
+          pointer-events: none;
+        }
+
+        .search-box input {
+          width: 100%;
+          padding: 10px 16px 10px 40px;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          background: white;
+          font-size: 0.9rem;
+          transition: 0.2s;
+        }
+
+        .search-box input:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 4px var(--primary-low);
+        }
+
+        .notifications-list-detailed {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .notif-card {
+          display: flex;
+          gap: 20px;
+          padding: 20px;
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .notif-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+          border-color: var(--primary-low);
+        }
+
+        .notif-card.unread {
+          background: #fcfaff;
+          border-color: var(--primary-low);
+        }
+
+        .card-indicator {
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 4px;
+          background: transparent;
+          transition: 0.2s;
+        }
+
+        .notif-card.unread .card-indicator {
+          background: var(--primary);
+        }
+
+        .card-icon {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          min-width: 60px;
+        }
+
+        .role-tag {
+          font-size: 0.6rem;
+          font-weight: 900;
+          padding: 2px 8px;
+          border-radius: 4px;
+          letter-spacing: 0.05em;
+          text-align: center;
+        }
+
+        .role-tag.superadmin { background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; }
+        .role-tag.owner { background: #eff6ff; color: #3b82f6; border: 1px solid #dbeafe; }
+
+        .icon-unread { color: var(--primary); }
+        .icon-read { color: #94a3b8; }
+
+        .card-body {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .card-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 16px;
+        }
+
+        .card-subject {
+          margin: 0;
+          font-size: 1.05rem;
+          font-weight: 800;
+          color: #1e293b;
+          line-height: 1.3;
+        }
+
+        .card-meta {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.75rem;
+          color: #94a3b8;
+          font-weight: 600;
+          white-space: nowrap;
+        }
+
+        .card-message {
+          margin: 0;
+          font-size: 0.9rem;
+          line-height: 1.5;
+          color: #64748b;
+          font-weight: 500;
+        }
+
+        .empty-state {
+          text-align: center;
+          padding: 80px 20px;
+          background: white;
+          border: 1px dashed #e2e8f0;
+          border-radius: 24px;
+        }
+
+        .empty-illustration {
+          margin-bottom: 24px;
+          color: #cbd5e1;
+        }
+
+        .empty-state h2 {
+          margin: 0 0 8px;
+          font-size: 1.25rem;
+          font-weight: 800;
+          color: #1e293b;
+        }
+
+        .empty-state p {
+          margin: 0;
+          color: #64748b;
+          font-weight: 500;
+        }
 
         .animate-fade-in { animation: fadeIn 0.3s ease-out; }
         .animate-slide-down { animation: slideDown 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Settings specific styles */
+        .notifications-settings { 
+          display: flex; 
+          flex-direction: column; 
+          gap: 24px; 
+        }
+        
+        .settings-section { 
+          padding: 32px; 
+          border-radius: 20px; 
+          background: white;
+          border: 1px solid #e2e8f0;
+        }
+        
+        .settings-section h3 { 
+          display: flex; 
+          align-items: center; 
+          gap: 12px; 
+          margin: 0 0 8px; 
+          font-size: 1.25rem; 
+          font-weight: 800; 
+          color: #1e293b;
+        }
+        
+        .section-desc { 
+          color: #64748b; 
+          font-size: 0.9rem; 
+          margin: 0 0 32px; 
+          font-weight: 500;
+        }
+        
+        .pref-grid { 
+          display: grid; 
+          grid-template-columns: 1fr; 
+          gap: 40px; 
+        }
+        
+        @media (min-width: 768px) { 
+          .pref-grid { 
+            grid-template-columns: 1fr 1fr; 
+          } 
+        }
+        
+        .pref-group { 
+          display: flex; 
+          flex-direction: column; 
+          gap: 20px; 
+        }
+        
+        .pref-group h4 { 
+          font-size: 0.75rem; 
+          font-weight: 800; 
+          color: #94a3b8; 
+          text-transform: uppercase; 
+          letter-spacing: 0.1em; 
+          margin: 0; 
+          padding-bottom: 8px;
+          border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .pref-item { 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          gap: 20px; 
+        }
+        
+        .pref-info { 
+          display: flex; 
+          flex-direction: column; 
+          gap: 4px; 
+        }
+        
+        .pref-label { 
+          font-size: 1rem; 
+          font-weight: 700; 
+          color: #1e293b; 
+        }
+        
+        .pref-sub { 
+          font-size: 0.85rem; 
+          color: #64748b; 
+          font-weight: 500; 
+          line-height: 1.4;
+        }
+        
+        /* Switch styling */
+        .switch { 
+          position: relative; 
+          display: inline-block; 
+          width: 48px; 
+          height: 26px; 
+          flex-shrink: 0; 
+        }
+        
+        .switch input { 
+          opacity: 0; 
+          width: 0; 
+          height: 0; 
+        }
+        
+        .slider { 
+          position: absolute; 
+          cursor: pointer; 
+          top: 0; 
+          left: 0; 
+          right: 0; 
+          bottom: 0; 
+          background-color: #e2e8f0; 
+          transition: .4s; 
+          border-radius: 24px; 
+        }
+        
+        .slider:before { 
+          position: absolute; 
+          content: ""; 
+          height: 20px; 
+          width: 20px; 
+          left: 3px; 
+          bottom: 3px; 
+          background-color: white; 
+          transition: .4s; 
+          border-radius: 50%; 
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        }
+        
+        input:checked + .slider { 
+          background-color: var(--primary); 
+        }
+        
+        input:checked + .slider:before { 
+          transform: translateX(22px); 
+        }
+
+        @media (max-width: 640px) {
+          .notifications-controls {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          .search-box {
+            max-width: none;
+          }
+          .notif-card {
+            flex-direction: column;
+            gap: 12px;
+          }
+          .card-icon {
+            flex-direction: row;
+            justify-content: space-between;
+            min-width: 0;
+          }
+          .card-top {
+            flex-direction: column;
+            gap: 4px;
+          }
+        }
       `}</style>
     </div>
   );

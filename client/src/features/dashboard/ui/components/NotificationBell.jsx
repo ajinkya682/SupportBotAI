@@ -147,16 +147,11 @@ const NotificationBell = ({ onViewAll }) => {
                   <span className="new-tag">{unreadCount} New</span>
                 )}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                {unreadCount > 0 && (
-                  <button onClick={handleMarkAllAsRead} className="mark-all-btn hide-on-mobile">
-                    Mark all read
-                  </button>
-                )}
-                <button className="mobile-only btn btn-text" style={{ padding: '4px 8px', minHeight: '36px' }} onClick={() => setIsOpen(false)}>
-                  <X size={24} />
+              {unreadCount > 0 && (
+                <button onClick={handleMarkAllAsRead} className="mark-all-btn">
+                  Mark all as read
                 </button>
-              </div>
+              )}
             </div>
 
             <div className="notifications-list custom-scrollbar">
@@ -217,16 +212,16 @@ const NotificationBell = ({ onViewAll }) => {
         
         .notifications-dropdown { 
           position: fixed; 
-          top: 0; 
-          left: 0; 
-          right: 0; 
-          bottom: 0;
+          top: 64px; 
+          left: 16px; 
+          right: 16px; 
           background: var(--surface-container-lowest); 
-          border-radius: 0; 
-          z-index: 9999; 
+          border-radius: 20px; 
+          box-shadow: var(--shadow-4); 
+          border: 1px solid var(--outline-variant); 
+          z-index: 1000; 
           overflow: hidden; 
-          display: flex;
-          flex-direction: column;
+          transform-origin: top center;
         }
 
         @media (min-width: 768px) { 
@@ -235,29 +230,25 @@ const NotificationBell = ({ onViewAll }) => {
             top: 56px; 
             right: 0; 
             left: auto;
-            bottom: auto;
             width: 380px; 
             border-radius: 20px; 
             transform-origin: top right; 
-            box-shadow: var(--shadow-modal); 
-            border: 1px solid var(--outline-variant); 
-            display: block;
           } 
         }
 
-        .dropdown-header { padding: 16px 20px; border-bottom: 1px solid var(--outline-variant); display: flex; justify-content: space-between; align-items: center; background: var(--surface-container-lowest); }
-        @media (min-width: 768px) { .dropdown-header { padding: 20px 24px; background: var(--surface-container-low); } }
+        .dropdown-header { padding: 16px; border-bottom: 1px solid var(--outline-variant); display: flex; justify-content: space-between; align-items: center; background: var(--surface-container-low); }
+        @media (min-width: 768px) { .dropdown-header { padding: 20px 24px; } }
 
         .new-tag { background: var(--primary-fixed); color: var(--primary); font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; }
         
         .mark-all-btn { background: transparent; border: none; color: var(--primary); font-size: 0.75rem; font-weight: 700; cursor: pointer; }
         @media (min-width: 768px) { .mark-all-btn { font-size: 0.8rem; } }
         
-        .notifications-list { flex: 1; overflow-y: auto; max-height: calc(100vh - 140px); }
+        .notifications-list { max-height: 400px; overflow-y: auto; }
         @media (min-width: 768px) { .notifications-list { max-height: 420px; } }
 
-        .notification-item { padding: 16px 20px; display: flex; gap: 16px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid var(--outline-variant); min-height: 64px; }
-        @media (min-width: 768px) { .notification-item { padding: 16px 24px; min-height: auto; } }
+        .notification-item { padding: 12px 16px; display: flex; gap: 12px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid var(--outline-variant); }
+        @media (min-width: 768px) { .notification-item { padding: 16px 24px; gap: 16px; } }
 
         .notification-item:hover { background: var(--surface-container-low); }
         .notification-item.unread { background: var(--primary-fixed); }
