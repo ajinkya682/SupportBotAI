@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   Settings, Save, Lock, Globe, 
   Database, Shield, MessageSquare, 
-  DollarSign, Loader2, RefreshCcw
+  DollarSign, Loader2, RefreshCcw, Download 
 } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../../../../shared/services/config';
@@ -104,6 +104,28 @@ const SASettings = () => {
           <h1>System Config</h1>
           <p>Global platform constants, security parameters, and limits.</p>
         </div>
+        <button 
+          className="btn-download" 
+          onClick={async () => {
+            try {
+              const user = JSON.parse(localStorage.getItem('user'));
+              const response = await axios.get(`${API_URL}/super-admin/export-settings`, {
+                headers: { Authorization: `Bearer ${user.token}` },
+                responseType: 'blob'
+              });
+              const url = window.URL.createObjectURL(new Blob([response.data]));
+              const link = document.createElement('a');
+              link.href = url;
+              link.setAttribute('download', 'SupportBot_System_Config.csv');
+              document.body.appendChild(link);
+              link.click();
+              toast.success('System config exported');
+            } catch (err) { toast.error('Export failed'); }
+          }}
+        >
+          <Download size={18} />
+          <span>Export Config</span>
+        </button>
       </header>
 
       <div className="sa-settings-grid">
@@ -281,6 +303,10 @@ const SASettings = () => {
         .sa-toggle label:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         .sa-toggle input:checked + label { background-color: var(--primary); }
         .sa-toggle input:checked + label:before { transform: translateX(20px); }
+
+        .sa-view-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .btn-download { display: flex; align-items: center; gap: 10px; background: white; border: 1px solid #e2e8f0; padding: 10px 18px; border-radius: 12px; color: #1e293b; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .btn-download:hover { background: #f8fafc; border-color: #cbd5e1; transform: translateY(-1px); }
       `}</style>
     </div>
   );

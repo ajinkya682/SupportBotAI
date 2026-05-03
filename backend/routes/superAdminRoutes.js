@@ -37,6 +37,18 @@ router.put('/settings/change-password', superAdminController.changePassword);
 
 // Reports
 router.get('/export-report', superAdminController.exportReport);
+router.get('/export-businesses', superAdminController.exportBusinesses);
+router.get('/export-agents', superAdminController.exportAgents);
+router.get('/export-conversations', superAdminController.exportConversations);
+router.get('/export-subscriptions', superAdminController.exportSubscriptions);
+router.get('/export-notifications', superAdminController.exportNotifications);
+router.get('/export-settings', superAdminController.exportSettings);
+
+// Actions
+router.post('/businesses/:id/block', superAdminController.blockBusiness);
+router.delete('/businesses/:id', superAdminController.deleteBusiness);
+router.post('/agents/:id/block', superAdminController.blockAgent);
+router.delete('/agents/:id', superAdminController.deleteAgent);
 
 // Notifications
 const notificationController = require('../controllers/notificationController');

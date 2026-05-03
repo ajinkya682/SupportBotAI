@@ -16,6 +16,7 @@ const userSchema = new mongoose.Schema({
     currentConversationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Conversation' },
     resetPasswordOTP: { type: String },
     resetPasswordExpires: { type: Date },
+    isBlocked: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now }
 });
 

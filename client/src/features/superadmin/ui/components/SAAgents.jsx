@@ -3,17 +3,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Search, Filter, Mail, Building2, 
   Shield, CheckCircle2, XCircle, MoreVertical, 
-  MessageSquare, Loader2, Calendar
+  MessageSquare, Loader2, Calendar, Download,
+  ShieldBan, Trash2, CheckCircle
 } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../../../../shared/services/config';
 import toast from 'react-hot-toast';
+import ThreeDotMenu from '../../../../shared/ui/components/ThreeDotMenu';
+import ConfirmModal from '../../../../shared/ui/components/ConfirmModal';
 
 const SAAgents = () => {
   const [agents, setAgents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Modal State
+  const [modalConfig, setModalConfig] = useState({ isOpen: false, type: 'danger', title: '', message: '', onConfirm: () => {} });
 
   useEffect(() => {
     fetchAgents();
@@ -36,6 +43,77 @@ const SAAgents = () => {
     }
   };
 
+  const handleDownloadAgents = async () => {
+    setIsExporting(true);
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+      const response = await axios.get(`${API_URL}/super-admin/export-agents`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'SupportBot_Agents_Directory.csv');
+      document.body.appendChild(link);
+      link.click();
+      toast.success('Agent directory exported');
+    } catch (error) {
+      toast.error('Export failed');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleBlockAgent = (agent) => {
+    setModalConfig({
+      isOpen: true,
+      type: agent.isBlocked ? 'primary' : 'danger',
+      title: agent.isBlocked ? 'Unblock Agent' : 'Block Agent',
+      message: `Are you sure you want to ${agent.isBlocked ? 'unblock' : 'block'} ${agent.name}? ${agent.isBlocked ? 'They will regain access immediately.' : 'They will lose all access to the platform.'}`,
+      confirmText: agent.isBlocked ? 'Unblock' : 'Block',
+      onConfirm: async () => {
+        try {
+          const user = JSON.parse(localStorage.getItem('user'));
+          const { data } = await axios.post(`${API_URL}/super-admin/agents/${agent.id}/block`, {}, {
+            headers: { Authorization: `Bearer ${user.token}` }
+          });
+          if (data.success) {
+            toast.success(data.message);
+            fetchAgents();
+          }
+        } catch (err) {
+          toast.error('Action failed');
+        }
+      }
+    });
+  };
+
+  const handleDeleteAgent = (agent) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'danger',
+      title: 'Remove Agent',
+      message: `Warning: This will permanently delete agent ${agent.name} and all their history. This action cannot be undone.`,
+      confirmText: 'Remove Forever',
+      onConfirm: async () => {
+        try {
+          const user = JSON.parse(localStorage.getItem('user'));
+          const { data } = await axios.delete(`${API_URL}/super-admin/agents/${agent.id}`, {
+            headers: { Authorization: `Bearer ${user.token}` }
+          });
+          if (data.success) {
+            toast.success(data.message);
+            fetchAgents();
+          }
+        } catch (err) {
+          toast.error('Deletion failed');
+        }
+      }
+    });
+  };
+
   const filtered = agents.filter(a => {
     const matchesSearch = a.name.toLowerCase().includes(search.toLowerCase()) || 
                          a.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -55,11 +133,24 @@ const SAAgents = () => {
 
   return (
     <div className="sa-view-container animate-fade-in">
+      <ConfirmModal 
+        {...modalConfig} 
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} 
+      />
+
       <header className="sa-view-header">
         <div className="header-text-block">
           <h1>Agent Directory</h1>
           <p>Global view of all support agents active across the platform.</p>
         </div>
+        <button 
+          className="btn-download" 
+          onClick={handleDownloadAgents}
+          disabled={isExporting}
+        >
+          {isExporting ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
+          <span>Export Directory</span>
+        </button>
       </header>
 
       <div className="sa-filters-bar card">
@@ -100,13 +191,14 @@ const SAAgents = () => {
               </tr>
             </thead>
             <tbody>
-              <AnimatePresence>
+              <AnimatePresence mode='popLayout'>
                 {filtered.map((a) => (
                   <motion.tr 
                     key={a.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className={a.isBlocked ? 'row-blocked' : ''}
                   >
                     <td>
                       <div className="sa-agent-cell">
@@ -117,6 +209,7 @@ const SAAgents = () => {
                           <span className="name">{a.name}</span>
                           <span className="email">{a.email}</span>
                         </div>
+                        {a.isBlocked && <span className="blocked-badge">BLOCKED</span>}
                       </div>
                     </td>
                     <td>
@@ -149,7 +242,20 @@ const SAAgents = () => {
                       <span className="sa-date">{new Date(a.createdAt).toLocaleDateString()}</span>
                     </td>
                     <td>
-                      <button className="sa-action-btn"><MoreVertical size={18} /></button>
+                      <ThreeDotMenu actions={[
+                        {
+                          label: a.isBlocked ? 'Unblock Agent' : 'Block Agent',
+                          icon: a.isBlocked ? <CheckCircle /> : <ShieldBan />,
+                          type: a.isBlocked ? 'success' : 'danger',
+                          onClick: () => handleBlockAgent(a)
+                        },
+                        {
+                          label: 'Remove Agent',
+                          icon: <Trash2 />,
+                          type: 'danger',
+                          onClick: () => handleDeleteAgent(a)
+                        }
+                      ]} />
                     </td>
                   </motion.tr>
                 ))}
@@ -166,12 +272,20 @@ const SAAgents = () => {
       </div>
 
       <style>{`
-        .sa-agent-cell { display: flex; align-items: center; gap: 12px; }
+        .sa-view-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .btn-download { display: flex; align-items: center; gap: 10px; background: white; border: 1px solid #e2e8f0; padding: 10px 18px; border-radius: 12px; color: #1e293b; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .btn-download:hover { background: #f8fafc; border-color: #cbd5e1; transform: translateY(-1px); }
+        .btn-download:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .sa-agent-cell { display: flex; align-items: center; gap: 12px; position: relative; }
         .sa-avatar-sm { width: 32px; height: 32px; background: var(--primary-fixed); color: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.75rem; }
         .sa-agent-info { display: flex; flex-direction: column; }
         .sa-agent-info .name { font-weight: 700; font-size: 0.85rem; color: var(--on-surface); }
         .sa-agent-info .email { font-size: 0.75rem; color: var(--on-surface-variant); }
         
+        .row-blocked { background: #fef2f2; }
+        .blocked-badge { background: #ef4444; color: white; font-size: 0.55rem; font-weight: 900; padding: 2px 6px; border-radius: 4px; margin-left: 4px; }
+
         .sa-biz-affiliation { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: var(--on-surface-variant); }
         
         .sa-status-tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; }
@@ -193,3 +307,4 @@ const SAAgents = () => {
 };
 
 export default SAAgents;
+
