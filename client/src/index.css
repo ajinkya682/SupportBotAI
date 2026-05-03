@@ -96,6 +96,14 @@ body {
   overflow-x: hidden; /* Rule 2: Prevent horizontal page scroll */
 }
 
+a, button, .btn, .nav-link, .drawer-link, .login-link {
+  text-decoration: none !important;
+}
+
+a *, button *, .btn * {
+  text-decoration: none !important;
+}
+
 /* Typography */
 h1, h2, h3, h4 {
   font-family: var(--font-main);
