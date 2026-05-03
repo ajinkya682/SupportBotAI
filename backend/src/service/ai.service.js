@@ -83,11 +83,12 @@ export const getAiResponse = async (business, messages, userName, emotion, inten
             7. If [CONFIDENCE: Low], explicitly state you are escalating to a human.`
         ),
         
-        ...messages.map(m => 
-            m.role === 'user' 
-            ? HumanMessagePromptTemplate.fromTemplate(m.content) 
-            : SystemMessagePromptTemplate.fromTemplate(m.content)
-        )
+        ...messages.map(m => {
+            const sanitizedContent = m.content.replace(/{/g, '(').replace(/}/g, ')');
+            return m.role === 'user' 
+                ? HumanMessagePromptTemplate.fromTemplate(sanitizedContent) 
+                : SystemMessagePromptTemplate.fromTemplate(sanitizedContent);
+        })
     ]);
 
     

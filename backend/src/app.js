@@ -74,9 +74,16 @@ const limiter = rateLimit({
 app.use(
   cors({
     origin: (origin, callback) => {
+      // Allow if no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
+      
+      // Allow if it's one of our main admin/app domains
       if (config.ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-      return callback(new Error(`CORS: Origin ${origin} is not allowed`));
+      
+      // FOR THE WIDGET: We allow any origin to hit the server, 
+      // then we handle domain-specific security inside the chat controllers 
+      // (see getWidgetConfig logic).
+      return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

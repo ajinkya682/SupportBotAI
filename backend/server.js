@@ -10,7 +10,7 @@ import autoResolve from './src/utils/autoResolve.js';
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: config.ALLOWED_ORIGINS,
+    origin: "*",
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
   },
