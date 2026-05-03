@@ -49,6 +49,11 @@ const sendEmail = async (options) => {
         return result;
     } catch (error) {
         console.error("❌ Email Error:", error.message);
+        // In development, don't crash the request so we can still use console-logged OTPs
+        if (process.env.NODE_ENV !== 'production') {
+            console.warn("⚠️ Continuing without sending email because NODE_ENV is development.");
+            return { success: false, dev: true };
+        }
         throw new Error('Email could not be sent. ' + error.message);
     }
 };

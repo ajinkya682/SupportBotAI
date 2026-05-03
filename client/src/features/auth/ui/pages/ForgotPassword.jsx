@@ -14,24 +14,31 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { useDispatch } from "react-redux";
+import { login } from "../../state/authSlice";
 import { API_URL } from "../../../../shared/services/config";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [devOTP, setDevOTP] = useState("");
 
   const handleSendOTP = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await axios.post(`${API_URL}/auth/forgot-password`, { email });
+      const response = await axios.post(`${API_URL}/auth/forgot-password`, { email });
+      if (response.data.devOTP) {
+        setDevOTP(response.data.devOTP);
+      }
       setStep(2);
-      toast.success("Verification code sent to your email!");
+      toast.success("Verification code sent!");
     } catch (err) {
       toast.error(
         err.response?.data?.message || "Failed to send code. Check your email.",
@@ -65,13 +72,17 @@ export default function ForgotPassword() {
     }
     setIsLoading(true);
     try {
-      await axios.post(`${API_URL}/auth/reset-password`, {
+      const response = await axios.post(`${API_URL}/auth/reset-password`, {
         email,
         otp,
         newPassword,
       });
-      toast.success("Password updated successfully!");
-      setTimeout(() => navigate("/login"), 2000);
+      
+      // Auto-login with the returned user data and token
+      dispatch(login(response.data));
+      
+      toast.success("Password updated! Logging you in...");
+      setTimeout(() => navigate("/dashboard"), 1500);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to update password");
     } finally {
@@ -108,6 +119,19 @@ export default function ForgotPassword() {
           </div>
 
           <AnimatePresence mode="wait">
+            {devOTP && (
+              <motion.div 
+                className="dev-otp-banner"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                <Sparkles size={18} className="sparkle" />
+                <div className="content">
+                  <span className="label">DEVELOPMENT MODE</span>
+                  <span className="code">Your OTP is: <strong>{devOTP}</strong></span>
+                </div>
+              </motion.div>
+            )}
             <motion.div
               key={step}
               initial={{ opacity: 0, x: 20 }}
@@ -303,6 +327,24 @@ export default function ForgotPassword() {
 
         .btn-block { height: 52px; font-size: 1rem; width: 100%; }
         @media (min-width: 640px) { .btn-block { height: 56px; } }
+
+        .dev-otp-banner {
+          background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
+          border: 1px dashed #d97706;
+          border-radius: 16px;
+          padding: 16px;
+          margin-bottom: 24px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          color: #92400e;
+        }
+
+        .dev-otp-banner .sparkle { color: #d97706; }
+        .dev-otp-banner .content { display: flex; flex-direction: column; }
+        .dev-otp-banner .label { font-size: 10px; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px; opacity: 0.8; }
+        .dev-otp-banner .code { font-size: 1rem; font-weight: 500; }
+        .dev-otp-banner .code strong { font-weight: 800; font-size: 1.25rem; color: #b45309; margin-left: 4px; }
       `}</style>
     </div>
   );
