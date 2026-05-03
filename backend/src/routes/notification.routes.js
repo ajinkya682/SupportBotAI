@@ -1,13 +1,15 @@
 import express from 'express';
 const router = express.Router();
 
-import { 
-    getMyNotifications, 
-    markAllAsRead, 
-    markAsRead 
+import {
+    getMyNotifications,
+    markAllAsRead,
+    markAsRead
 } from '../controller/notification.controller.js';
 
 import { protect } from '../middlewares/auth.middleware.js';
+import validateRequest from '../validators/validateRequest.js';
+import { notificationIdValidator } from '../validators/notification.validator.js';
 
 /**
  * Notification Routes
@@ -34,6 +36,6 @@ router.patch('/read-all', markAllAsRead);
  * @desc    Mark a specific notification as read for the authenticated tenant
  * @access  Protected
  */
-router.patch('/:id/read', markAsRead);
+router.patch('/:id/read', notificationIdValidator, validateRequest, markAsRead);
 
 export default router;
