@@ -15,6 +15,9 @@ import Home from "../features/landing/ui/pages/HomePage";
 import ChatWidgetPage from "../features/chat/ui/pages/ChatWidgetPage";
 import Dashboard from "../features/dashboard/ui/pages/DashboardPage";
 import AdminPanel from "../features/dashboard/ui/pages/AdminPanelPage";
+import Product from "../features/public/ui/pages/ProductPage";
+import Pricing from "../features/public/ui/pages/PricingPage";
+import Docs from "../features/public/ui/pages/DocsPage";
 
 import "../App.css";
 
@@ -67,6 +70,9 @@ function AppContent() {
             user && user.role === "admin" ? <AdminPanel /> : <Navigate to="/" />
           }
         />
+        <Route path="/product" element={<Product />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/docs" element={<Docs />} />
       </Routes>
     </div>
   );
