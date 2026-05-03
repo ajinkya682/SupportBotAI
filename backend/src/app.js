@@ -153,8 +153,14 @@ app.get('/metrics/cache', (req, res) => {
 
 
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Internal Server Error', error: err.message });
+  const status = err.status || 500;
+  console.error(`❌ [${req.id}] Error: ${err.message}`);
+  if (status === 500) console.error(err.stack);
+  
+  res.status(status).json({ 
+    message: err.message || 'Internal Server Error',
+    requestId: req.id
+  });
 });
 
 export default app;
