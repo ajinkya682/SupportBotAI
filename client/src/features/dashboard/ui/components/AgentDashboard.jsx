@@ -352,7 +352,7 @@ export default function AgentDashboard({ user }) {
                     <h4>No active tickets</h4>
                     <p>You're all caught up! New tickets will appear here automatically.</p>
                     <div className="empty-actions" style={{display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '16px'}}>
-                      <button className="nav-action-btn" onClick={() => {
+                      <button className="btn btn-secondary btn-sm" onClick={() => {
                         fetchInitialData();
                         toast.success("Syncing tickets...");
                       }} title="Refresh Workload">
@@ -370,15 +370,46 @@ export default function AgentDashboard({ user }) {
         );
       case 'notifications':
         return <Notifications />;
-      default: return (
-        <div className="empty-workload">
-          <div className="empty-icon-wrap">
-            <History size={48} />
+      case 'history':
+        const resolvedTickets = conversations.filter(c => 
+          (c.status === 'human_resolved' || c.status === 'ai_resolved') &&
+          (c.agent?._id === user._id || c.assignedAgentId === user._id)
+        );
+        
+        return (
+          <div className="agent-console animate-fade-in">
+            <div className="ag-ticket-section" style={{ marginTop: 0 }}>
+              <div className="section-header">
+                <h3><History size={18} color="#64748b" /> Session Archive</h3>
+                <div className="sh-right">
+                  <span className="count-pill">{resolvedTickets.length} Past Sessions</span>
+                </div>
+              </div>
+              
+              <div className="ticket-grid">
+                {resolvedTickets.length > 0 ? (
+                  resolvedTickets.sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt)).map((conv) => (
+                    <TicketCard 
+                      key={conv._id} 
+                      ticket={conv} 
+                      actionLabel="View Details"
+                      onAction={(t) => handleJoinConversation(t)}
+                    />
+                  ))
+                ) : (
+                  <div className="empty-workload" style={{ gridColumn: '1 / -1' }}>
+                    <div className="empty-icon-wrap">
+                      <History size={48} />
+                    </div>
+                    <h3>No archived sessions</h3>
+                    <p>When you resolve customer tickets, they will appear here for future reference.</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          <h3>Session Archive</h3>
-          <p>This feature is coming soon. You'll be able to review all past customer interactions here.</p>
-        </div>
-      );
+        );
+
     }
   };
 
@@ -637,6 +668,11 @@ export default function AgentDashboard({ user }) {
         .avatar { width: 32px; height: 32px; border-radius: 8px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; overflow: hidden; border: 1px solid var(--outline-variant); }
         @media (min-width: 768px) { .avatar { width: 36px; height: 36px; border-radius: 10px; font-size: 0.9rem; } }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .ag-profile { display: flex; align-items: center; gap: 12px; padding-left: 12px; border-left: 1px solid var(--outline-variant); }
+        .profile-text { display: flex; flex-direction: column; align-items: flex-end; }
+        .profile-text .name { font-size: 0.85rem; font-weight: 800; color: var(--on-surface); line-height: 1.2; }
+        .profile-text .role { font-size: 0.65rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; }
         
         .ag-viewport { flex: 1; padding: 16px; overflow-y: auto; background: var(--surface-container-low); }
         @media (min-width: 768px) { .ag-viewport { padding: 32px; } }
