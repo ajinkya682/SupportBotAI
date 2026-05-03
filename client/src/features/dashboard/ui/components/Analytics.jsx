@@ -23,6 +23,11 @@ import usePlan from '../../../../shared/hooks/usePlan';
 export default function Analytics({ conversations = [], business, onUpgrade }) {
   const { isFree, goUpgrade } = usePlan();
 
+  const answeredCount = (conversations || []).filter(c => c.aiGroundedStatus === 'answered').length;
+  const emptyCount = (conversations || []).filter(c => c.aiGroundedStatus === 'fallback-empty').length;
+  const irrelevantCount = (conversations || []).filter(c => c.aiGroundedStatus === 'fallback-irrelevant').length;
+  const totalQueries = answeredCount + emptyCount + irrelevantCount;
+
   const data = [
     { name: 'Mon', conversations: 45, resolved: 38 },
     { name: 'Tue', conversations: 52, resolved: 48 },
@@ -34,16 +39,16 @@ export default function Analytics({ conversations = [], business, onUpgrade }) {
   ];
 
   const pieData = [
-    { name: 'AI Resolved', value: 75, color: 'var(--primary)' },
-    { name: 'Human Handover', value: 15, color: '#f59e0b' },
-    { name: 'Unresolved', value: 10, color: 'var(--error)' },
+    { name: 'Grounded Answer', value: totalQueries > 0 ? Math.round((answeredCount / totalQueries) * 100) : 100, color: 'var(--primary)' },
+    { name: 'Blocked (Empty)', value: totalQueries > 0 ? Math.round((emptyCount / totalQueries) * 100) : 0, color: '#f59e0b' },
+    { name: 'Blocked (Irrelevant)', value: totalQueries > 0 ? Math.round((irrelevantCount / totalQueries) * 100) : 0, color: 'var(--error)' },
   ];
 
   const metrics = [
-    { label: 'Total Volume', value: '1,284', trend: '+14%', icon: MessageSquare, color: 'var(--primary)' },
-    { label: 'AI Success', value: '88.5%', trend: '+2%', icon: Zap, color: '#10b981' },
-    { label: 'Avg. Time', value: '1m 42s', trend: '-12s', icon: Clock, color: '#8b5cf6' },
-    { label: 'Satisfied', value: '94%', trend: '+1%', icon: Users, color: '#06b6d4' },
+    { label: 'Total Volume', value: totalQueries.toLocaleString(), trend: 'Real-time', icon: MessageSquare, color: 'var(--primary)' },
+    { label: 'Grounded Rate', value: `${totalQueries > 0 ? ((answeredCount / totalQueries) * 100).toFixed(1) : 100}%`, trend: '+2%', icon: Zap, color: '#10b981' },
+    { label: 'Tokens Saved', value: ((emptyCount + irrelevantCount) * 150).toLocaleString(), trend: 'Est.', icon: Clock, color: '#8b5cf6' },
+    { label: 'Blocked Total', value: (emptyCount + irrelevantCount).toString(), trend: 'Protected', icon: Users, color: '#06b6d4' },
   ];
 
   return (

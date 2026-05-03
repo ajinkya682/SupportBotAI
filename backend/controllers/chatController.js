@@ -55,6 +55,30 @@ const extractNameFromMessage = (text) => {
   return null;
 };
 
+const isKnowledgeBaseEmpty = (business) => {
+  const hasKnowledge = business.knowledge && business.knowledge.trim().length > 0;
+  const hasFaqs = business.faqs && business.faqs.length > 0;
+  return !hasKnowledge && !hasFaqs;
+};
+
+const isMessageRelevant = (text, business) => {
+  const lowerText = text.toLowerCase();
+  const knowledge = (business.knowledge || '').toLowerCase();
+  const faqs = (business.faqs || []).map(f => `${f.question} ${f.answer}`).join(' ').toLowerCase();
+  const allContent = `${knowledge} ${faqs}`;
+
+  // Simple keyword matching: filter out very common words (stop words)
+  const stopWords = ['is', 'the', 'a', 'an', 'and', 'or', 'but', 'how', 'what', 'where', 'when', 'who', 'why', 'can', 'you', 'i', 'me', 'my', 'your', 'it', 'they', 'them', 'this', 'that', 'with', 'for', 'about', 'to', 'of', 'in', 'on', 'at', 'by', 'from'];
+  const words = lowerText.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
+
+  if (words.length === 0) return true; // Allow short/simple greetings
+
+  // Check if at least one meaningful word exists in the KB
+  return words.some(word => allContent.includes(word));
+};
+
+const FALLBACK_MESSAGE = "That's outside what I can help with right now. For more details please reach out to our support team directly.";
+
 const buildSystemPrompt = (business, visitorName, emotion, intent) => {
   const botName = business.appearance?.botName || business.name || 'SupportBotAI';
   const faqContext = business.faqs.map((f) => `Q: ${f.question}\nA: ${f.answer}`).join('\n');
@@ -65,16 +89,30 @@ const buildSystemPrompt = (business, visitorName, emotion, intent) => {
 
   return `
     You are "${botName}", a professional and friendly AI support assistant for "${business.name}".
+    
+    STRICT OPERATING MODE: GROUNDED.
+    - You must ONLY answer questions using the information provided in the KNOWLEDGE BASE and FAQS sections below.
+    - If the user asks something not covered in the knowledge base or unrelated to "${business.name}", you MUST politely decline.
+    - NEVER pull answers from your general training knowledge or the internet.
+    - NEVER make up information.
+    - If you cannot find the answer, respond with: "${FALLBACK_MESSAGE}"
+    
     GOAL: Resolve customer issues instantly with high empathy. Sound like a warm, knowledgeable human — never robotic.
     VISITOR NAME: ${visitorInstruction}
-    KNOWLEDGE BASE:\n${business.knowledge}
-    FAQS:\n${faqContext}
+    
+    KNOWLEDGE BASE:
+    ${business.knowledge || 'No specific knowledge base content provided.'}
+    
+    FAQS:
+    ${faqContext || 'No specific FAQs provided.'}
+    
     USER CONTEXT:
     - Detected Intent: ${intent}
     - Detected Emotion: ${emotion}
     - Support Email: ${business.supportEmail}
+    
     STRICT GUIDELINES:
-    1. Be professional, concise, warm, and helpful. Sound human.
+    1. Be professional, concise, warm, and helpful.
     2. If the user is ${emotion === 'angry' ? 'angry, acknowledge their frustration with genuine empathy first' : emotion}.
     3. Start your response with [CONFIDENCE: High] if you know the EXACT answer from your knowledge base.
     4. Start your response with [CONFIDENCE: Low] if you are unsure. DO NOT GUESS.
@@ -228,6 +266,25 @@ exports.handleChat = async (req, res) => {
     }
 
     // ── AI CHAT (AI is Active) ──────────────────────────────────────────────
+    
+    // 1. Check if Knowledge Base is Empty
+    if (isKnowledgeBaseEmpty(business)) {
+      const fallbackReply = "Our support assistant is not configured yet. Please contact us directly for help.";
+      const aiGroundedStatus = 'fallback-empty';
+      
+      const responseData = await handleFallbackResponse(req, business, conversation, lastUserMessage, fallbackReply, aiGroundedStatus, botName, botAvatar, emotion, intent);
+      return res.json(responseData);
+    }
+
+    // 2. Intent Relevance Check
+    if (!isMessageRelevant(lastUserMessage, business)) {
+      const aiGroundedStatus = 'fallback-irrelevant';
+      
+      const responseData = await handleFallbackResponse(req, business, conversation, lastUserMessage, FALLBACK_MESSAGE, aiGroundedStatus, botName, botAvatar, emotion, intent);
+      return res.json(responseData);
+    }
+
+    // 3. AI Generation
     const systemPrompt = buildSystemPrompt(business, visitorName, emotion, intent);
     const chatResponse = await mistral.chat.complete({
       model: AI_MODEL,
@@ -246,9 +303,10 @@ exports.handleChat = async (req, res) => {
       emotion === 'angry' ||
       intent === 'account_management';
 
-    if (conversationId) {
-      // (Conversation already found above)
+    // Determine Grounded Status based on AI response content
+    const aiGroundedStatus = aiReply.includes(FALLBACK_MESSAGE) ? 'fallback-irrelevant' : 'answered';
 
+    if (conversationId) {
       if (extractedName && (!conversation.userName || conversation.userName === 'Anonymous')) {
         conversation.userName = extractedName;
       }
@@ -272,6 +330,7 @@ exports.handleChat = async (req, res) => {
       conversation.messages.push(userMsg, aiMsg);
       conversation.emotion = emotion;
       conversation.intent = intent;
+      conversation.aiGroundedStatus = aiGroundedStatus;
       conversation.updatedAt = new Date();
 
       const isUntitled =
@@ -362,6 +421,7 @@ exports.handleChat = async (req, res) => {
         messages: [userMsg, aiMsg],
         emotion,
         intent,
+        aiGroundedStatus,
         status: needsEscalation ? 'human_needed' : 'ai_resolved',
         routingStatus: needsEscalation ? 'pending' : 'resolved',
         priority: emotion === 'angry' ? 'high' : needsEscalation ? 'medium' : 'low',
@@ -396,6 +456,71 @@ exports.handleChat = async (req, res) => {
     console.error('AI Chat Error:', error);
     res.status(500).json({ error: 'AI Assistant Error', details: error.message });
   }
+};
+
+const handleFallbackResponse = async (req, business, conversation, lastUserMessage, fallbackReply, aiGroundedStatus, botName, botAvatar, emotion, intent) => {
+  const extractedName = extractNameFromMessage(lastUserMessage);
+  
+  if (conversation) {
+    const userMsg = {
+      role: 'user',
+      content: lastUserMessage,
+      timestamp: new Date(),
+      senderType: 'user',
+      senderName: conversation.userName || 'User',
+    };
+    const aiMsg = {
+      role: 'assistant',
+      content: fallbackReply,
+      timestamp: new Date(),
+      senderType: 'ai',
+      senderName: botName,
+      senderAvatar: botAvatar,
+    };
+    conversation.messages.push(userMsg, aiMsg);
+    conversation.aiGroundedStatus = aiGroundedStatus;
+    await conversation.save();
+    emitConversationUpdate(req.io, business.owner, conversation, aiMsg);
+  } else {
+    conversation = await Conversation.create({
+      business: business._id,
+      messages: [
+        {
+          role: 'user',
+          content: lastUserMessage,
+          timestamp: new Date(),
+          senderType: 'user',
+          senderName: extractedName || 'Anonymous',
+        },
+        {
+          role: 'assistant',
+          content: fallbackReply,
+          timestamp: new Date(),
+          senderType: 'ai',
+          senderName: botName,
+          senderAvatar: botAvatar,
+        }
+      ],
+      emotion,
+      intent,
+      aiGroundedStatus,
+      status: 'ai_resolved',
+      userName: extractedName || 'Anonymous',
+      origin: req.body.origin || null,
+      title: intent.replace('_', ' ').charAt(0).toUpperCase() + intent.replace('_', ' ').slice(1),
+    });
+    await Business.findByIdAndUpdate(business._id, { $inc: { conversationCount: 1 } });
+    cache.del(business.apiKey);
+  }
+
+  return {
+    content: fallbackReply,
+    conversationId: conversation._id,
+    ownerId: business.owner.toString(),
+    status: conversation.status,
+    userName: conversation.userName,
+    title: conversation.title,
+  };
 };
 
 // ── Agent Suggestion ──────────────────────────────────────────────────────────
