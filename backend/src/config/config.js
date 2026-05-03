@@ -44,6 +44,17 @@ if (!process.env.MISTRAL_API_KEY) {
     throw new Error("MISTRAL_API_KEY is not defined in environment variables")
 }
 
+if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is not defined in environment variables")
+}
+
+const hasPineconeConfig = Boolean(process.env.PINECONE_API_KEY || process.env.PINECONE_ENVIRONMENT || process.env.PINECONE_INDEX_NAME);
+if (hasPineconeConfig) {
+    if (!process.env.PINECONE_API_KEY || !process.env.PINECONE_ENVIRONMENT || !process.env.PINECONE_INDEX_NAME) {
+        throw new Error("Incomplete Pinecone configuration. Set PINECONE_API_KEY, PINECONE_ENVIRONMENT, and PINECONE_INDEX_NAME.")
+    }
+}
+
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 const FRONTEND_URL = process.env.FRONTEND_URL?.trim() || '';
 const ADDITIONAL_ORIGINS = process.env.ADDITIONAL_ORIGINS
@@ -68,8 +79,12 @@ const config = {
     IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY,
     IMAGEKIT_URL_ENDPOINT: process.env.IMAGEKIT_URL_ENDPOINT,
     MISTRAL_API_KEY: process.env.MISTRAL_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     AI_MODEL: process.env.AI_MODEL || 'mistral-large-latest',
     AI_MAX_TOKENS: parseInt(process.env.AI_MAX_TOKENS) || 1024,
+    PINECONE_API_KEY: process.env.PINECONE_API_KEY || '',
+    PINECONE_ENVIRONMENT: process.env.PINECONE_ENVIRONMENT || '',
+    PINECONE_INDEX_NAME: process.env.PINECONE_INDEX_NAME || '',
     SERVER_BASE_URL: process.env.SERVER_BASE_URL || '',
     API_URL: process.env.API_URL || `http://localhost:${PORT}`,
     ALLOWED_ORIGINS,

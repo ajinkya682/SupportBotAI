@@ -137,6 +137,7 @@ export const scrapeWebsite = async (startUrl) => {
         pagesScanned: results.length,
         totalChars: combined.length,
         knowledge: combined,
-        pagesList: results.map(r => r.url)
+        pagesList: results.map(r => r.url),
+        pages: results
     };
 };

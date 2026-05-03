@@ -1,6 +1,7 @@
 import { ChatMistralAI } from "@langchain/mistralai";
 import { ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate } from "@langchain/core/prompts";
 import config from '../config/config.js';
+import * as ragService from './rag.service.js';
 
 
 const model = new ChatMistralAI({
@@ -54,6 +55,10 @@ export const extractNameFromMessage = (text) => {
 export const getAiResponse = async (business, messages, userName, emotion, intent) => {
     const botName = business.appearance?.botName || business.name || 'SupportBotAI';
     const faqContext = business.faqs.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n');
+    const knowledgeSource = Array.isArray(business.knowledgeChunks) && business.knowledgeChunks.length
+        ? business.knowledgeChunks
+        : business.knowledge;
+    const knowledgeContext = await ragService.buildRetrievalContext(knowledgeSource, messages, business._id);
     
     const visitorInstruction = userName === 'the user' 
         ? 'Unknown. On your FIRST reply ONLY, naturally ask for their name.'
@@ -65,14 +70,17 @@ export const getAiResponse = async (business, messages, userName, emotion, inten
             `You are "{botName}", a professional AI assistant for "{businessName}".
             GOAL: Resolve customer issues with high empathy. Sound warm and human.
             VISITOR: {visitorInstruction}
-            KNOWLEDGE BASE: {knowledge}
+            KNOWLEDGE SNIPPETS: {knowledge}
             FAQS: {faqs}
             CONTEXT: Intent: {intent} | Emotion: {emotion} | Support Email: {supportEmail}
             GUIDELINES:
-            1. Concise and helpful.
-            2. If user is angry, acknowledge frustration first.
-            3. Start response with [CONFIDENCE: High] or [CONFIDENCE: Low]. 
-            4. If [CONFIDENCE: Low], explicitly state you are escalating to a human.`
+            1. Use only the information contained in the provided knowledge snippets and FAQs.
+            2. If the answer is not present in the knowledge snippets or FAQs, say you do not know and escalate to a human.
+            3. Do not hallucinate features, pricing, or support policies that are not present in the knowledge.
+            4. Concise and helpful.
+            5. If user is angry, acknowledge frustration first.
+            6. Start response with [CONFIDENCE: High] or [CONFIDENCE: Low].
+            7. If [CONFIDENCE: Low], explicitly state you are escalating to a human.`
         ),
         
         ...messages.map(m => 
@@ -89,7 +97,7 @@ export const getAiResponse = async (business, messages, userName, emotion, inten
         botName,
         businessName: business.name,
         visitorInstruction,
-        knowledge: business.knowledge,
+        knowledge: knowledgeContext || 'No relevant knowledge was found for this query.',
         faqs: faqContext,
         intent,
         emotion,
@@ -125,16 +133,22 @@ export const generateConversationTitle = async (lastUserMessage, intent) => {
 /**
  * Suggests a reply for human agent
  */
-export const getAgentSuggestion = async (businessName, knowledge, history) => {
+export const getAgentSuggestion = async (businessName, business, history) => {
+    const knowledgeSource = Array.isArray(business.knowledgeChunks) && business.knowledgeChunks.length
+        ? business.knowledgeChunks
+        : business.knowledge;
+
+    const knowledgeContext = await ragService.buildRetrievalContext(knowledgeSource, [{ role: 'user', content: history }], business._id, 2);
     const prompt = ChatPromptTemplate.fromMessages([
-        ["system", "Suggest a concise human reply for {businessName}. KB: {knowledge}"],
+        ["system", "Suggest a concise human reply for {businessName}. Use only the provided knowledge if available."],
+        ["system", "Knowledge: {knowledge}"],
         ["human", "History:\n{history}"]
     ]);
 
     const chain = prompt.pipe(titleModel);
     const res = await chain.invoke({
         businessName,
-        knowledge,
+        knowledge: knowledgeContext || 'No directly relevant knowledge found.',
         history
     });
 

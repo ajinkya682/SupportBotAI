@@ -163,7 +163,7 @@ export const getAgentSuggestion = async (req, res) => {
         const history = conv.messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n');
         const suggestion = await aiService.getAgentSuggestion(
             conv.business.name,
-            conv.business.knowledge,
+            conv.business,
             history
         );
 
