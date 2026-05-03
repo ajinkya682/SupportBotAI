@@ -146,32 +146,13 @@ exports.handleChat = async (req, res) => {
     const lastUserMessage = messages[messages.length - 1].content;
     const { emotion, intent } = analyzeMessage(lastUserMessage);
     const visitorName = userName || 'the user';
-    const systemPrompt = buildSystemPrompt(business, visitorName, emotion, intent);
-
-    const chatResponse = await mistral.chat.complete({
-      model: AI_MODEL,
-      maxTokens: AI_MAX_TOKENS,
-      messages: [{ role: 'system', content: systemPrompt }, ...messages],
-    });
-
-    const aiReplyRaw = chatResponse.choices[0].message.content;
-    const confidenceMatch = aiReplyRaw.match(/\[CONFIDENCE:\s*(.*?)\]/i);
-    const confidence = confidenceMatch ? confidenceMatch[1].trim() : 'High';
-    const aiReply = aiReplyRaw.replace(/\[CONFIDENCE:\s*(.*?)\]/i, '').trim();
-
-    const extractedName = extractNameFromMessage(lastUserMessage);
-    const needsEscalation =
-      confidence.toLowerCase() === 'low' ||
-      emotion === 'angry' ||
-      intent === 'account_management';
 
     let conversation;
-
     if (conversationId) {
       conversation = await Conversation.findById(conversationId);
       if (!conversation) return res.status(404).json({ error: 'Conversation not found' });
 
-      // Human has taken over — append user message only and notify agent
+      // ── ESCALATED CHAT (Human Agent is Active) ──────────────────────────
       if (conversation.isAiActive === false) {
         const userMsg = {
           role: 'user',
@@ -190,6 +171,21 @@ exports.handleChat = async (req, res) => {
             ...userMsg,
           });
           req.io.to(room).emit('update_conversation', conversation);
+
+          // ── PUSH NOTIFICATION FOR ASSIGNED AGENT ────────────────────────
+          if (conversation.agent) {
+              const pushService = require('../utils/pushService');
+              await pushService.sendNotification(conversation.agent, {
+                  type: 'message',
+                  title: `💬 New message from ${conversation.userName || 'User'}`,
+                  body: lastUserMessage.substring(0, 60) + (lastUserMessage.length > 60 ? '...' : ''),
+                  sound: 'message',
+                  data: {
+                      url: `/dashboard`,
+                      conversationId: conversation._id
+                  }
+              });
+          }
         }
 
         return res.json({
@@ -201,6 +197,29 @@ exports.handleChat = async (req, res) => {
           userName: conversation.userName,
         });
       }
+    }
+
+    // ── AI CHAT (AI is Active) ──────────────────────────────────────────────
+    const systemPrompt = buildSystemPrompt(business, visitorName, emotion, intent);
+    const chatResponse = await mistral.chat.complete({
+      model: AI_MODEL,
+      maxTokens: AI_MAX_TOKENS,
+      messages: [{ role: 'system', content: systemPrompt }, ...messages],
+    });
+
+    const aiReplyRaw = chatResponse.choices[0].message.content;
+    const confidenceMatch = aiReplyRaw.match(/\[CONFIDENCE:\s*(.*?)\]/i);
+    const confidence = confidenceMatch ? confidenceMatch[1].trim() : 'High';
+    const aiReply = aiReplyRaw.replace(/\[CONFIDENCE:\s*(.*?)\]/i, '').trim();
+
+    const extractedName = extractNameFromMessage(lastUserMessage);
+    const needsEscalation =
+      confidence.toLowerCase() === 'low' ||
+      emotion === 'angry' ||
+      intent === 'account_management';
+
+    if (conversationId) {
+      // (Conversation already found above)
 
       if (extractedName && (!conversation.userName || conversation.userName === 'Anonymous')) {
         conversation.userName = extractedName;
@@ -271,6 +290,21 @@ exports.handleChat = async (req, res) => {
           const { routeTicket } = require('../utils/routing');
           await routeTicket(conversation._id, req.io);
           req.io.to(business.owner.toString()).emit('new_ticket', conversation);
+
+          // ── PUSH NOTIFICATION FOR OWNER ──────────────────────────────────
+          const pushService = require('../utils/pushService');
+          const isHighIntent = conversation.priority === 'high';
+          
+          await pushService.sendNotification(business.owner, {
+              type: isHighIntent ? 'high_intent' : 'new_ticket',
+              title: isHighIntent ? '🔴 High Intent Ticket Created' : '🎫 New Support Ticket',
+              body: `${conversation.userName || 'Guest'} needs help with ${intent.replace('_', ' ')}.`,
+              sound: isHighIntent ? 'high_intent' : 'new_ticket',
+              data: {
+                  url: `/dashboard`,
+                  conversationId: conversation._id
+              }
+          });
         }
       } else {
         await conversation.save();
@@ -303,6 +337,7 @@ exports.handleChat = async (req, res) => {
         routingStatus: needsEscalation ? 'pending' : 'resolved',
         priority: emotion === 'angry' ? 'high' : needsEscalation ? 'medium' : 'low',
         userName: extractedName || 'Anonymous',
+        origin: req.body.origin || null,
         title:
           intent.replace('_', ' ').charAt(0).toUpperCase() + intent.replace('_', ' ').slice(1),
       });

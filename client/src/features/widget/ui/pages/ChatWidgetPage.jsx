@@ -17,6 +17,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { io } from "socket.io-client";
 import { API_URL } from "../../../../shared/services/config";
+import { usePushNotifications } from "../../../../shared/hooks/usePushNotifications";
 
 function extractName(text) {
   const patterns = [
@@ -78,6 +79,7 @@ export default function ChatWidgetPage() {
   const [starRating, setStarRating] = useState(0);
   const [starHover, setStarHover] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
+  const { subscribeToPush, isSubscribed } = usePushNotifications(null);
 
   // 3. Sync Refs with State
   useEffect(() => { conversationIdRef.current = conversationId; }, [conversationId]);
@@ -96,7 +98,7 @@ export default function ChatWidgetPage() {
           timestamp: new Date(),
           senderType: "ai",
           senderName: data.appearance?.botName || data.name || "SupportBotAI",
-          senderAvatar: data.appearance?.botAvatar || data.appearance?.companyLogo || null,
+          senderAvatar: data.appearance?.companyLogo || null,
         }]);
       } catch (err) { console.error("Config fetch failed", err); }
     };
@@ -241,7 +243,6 @@ export default function ChatWidgetPage() {
   const botName =
     business?.appearance?.botName || business?.name || "SupportBotAI";
   const logoUrl = business?.appearance?.companyLogo || null;
-  const botAvatarUrl = business?.appearance?.botAvatar || null;
 
   const scrollToBottom = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -303,6 +304,7 @@ export default function ChatWidgetPage() {
         })),
         conversationId: currentConvId,
         userName: capturedName || undefined,
+        origin: window.location.href
       });
 
       if (!conversationId && data.conversationId) {
@@ -324,7 +326,7 @@ export default function ChatWidgetPage() {
           timestamp: new Date(),
           senderType: "ai",
           senderName: botName,
-          senderAvatar: botAvatarUrl || logoUrl,
+          senderAvatar: logoUrl,
         };
         // Mark this content so the socket listener skips it if it arrives after us
         pendingAiRef.current = data.content;
@@ -428,10 +430,10 @@ export default function ChatWidgetPage() {
     return <Sparkles size={12} style={{ color: themeColor }} />;
   };
 
-  const headerName = !isAiActive && agent ? (agent.displayName || agent.name) : botName;
-  const headerAvatar = !isAiActive && agent?.profilePhoto 
-    ? agent.profilePhoto 
-    : (botAvatarUrl || logoUrl);
+  const headerName = !isAiActive && agent ? (agent.displayName || agent.name) : (business?.appearance?.botName || business?.name || "SupportBotAI");
+  const headerAvatar = !isAiActive && agent?.profilePhoto ? agent.profilePhoto : (business?.appearance?.companyLogo || null);
+
+  const showBranding = business?.plan !== 'pro' || !business?.appearance?.hideBranding;
 
   return (
     <div className="cw-root">
@@ -447,7 +449,7 @@ export default function ChatWidgetPage() {
           <div className="cw-avatar-ring" style={{'--rc': themeColor}}>
             <div className="cw-header-av">
               {headerAvatar
-                ? <img src={headerAvatar} alt="" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} />
+                ? <img key={headerAvatar} src={headerAvatar} alt="" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%',animation:'cwFadeIn 0.3s ease'}} />
                 : <Sparkles size={15} color={themeColor} />}
             </div>
             <div className="cw-online-dot" />
@@ -464,8 +466,13 @@ export default function ChatWidgetPage() {
           <button className="cw-icon-btn" onClick={()=>setIsMuted(m=>!m)} title={isMuted?'Unmute':'Mute'}>
             {isMuted ? <VolumeX size={14} color="#94a3b8"/> : <Volume2 size={14} color="#94a3b8"/>}
           </button>
-          <button className="cw-icon-btn" onClick={()=>window.parent.postMessage({ type: "close-chat" },"*")} title="Close Chat">
-            <X size={22} color="#94a3b8"/>
+          {!isSubscribed && (
+            <button className="cw-icon-btn" onClick={() => subscribeToPush(conversationId)} title="Enable Notifications">
+              <Bell size={14} color={themeColor} />
+            </button>
+          )}
+          <button className="cw-icon-btn" onClick={()=>window.parent.postMessage("close-supportbot","*")}>
+            <X size={15} color="#94a3b8"/>
           </button>
         </div>
       </div>
@@ -606,10 +613,19 @@ export default function ChatWidgetPage() {
 
       {business?.faqs?.length > 0 && messages.length === 1 && !loading && (
         <div className="cw-faqs">
-          <div className="cw-faqs-label">Suggested Questions</div>
+          <div className="cw-faqs-label">SUGGESTED QUESTIONS</div>
           <div className="cw-faqs-list">
-            {business.faqs.map((faq, i) => (
-              <button key={i} className="cw-faq-btn" onClick={() => handleSend(faq.question)} style={{borderColor:`${themeColor}44`,color:themeColor}}>
+            {business.faqs.slice(0, 5).map((faq, i) => (
+              <button 
+                key={i} 
+                className="cw-faq-btn" 
+                onClick={() => handleSend(faq.question)} 
+                style={{
+                  borderColor: '#DDD8FE',
+                  color: themeColor,
+                  animationDelay: `${i * 0.1}s`
+                }}
+              >
                 {faq.question}
               </button>
             ))}
@@ -631,10 +647,12 @@ export default function ChatWidgetPage() {
             autoComplete="off"
           />
           <button type="submit" className="cw-send-btn" disabled={!input.trim() || loading} style={{background: input.trim() && !loading ? themeColor : '#d1d5db'}}>
-            {loading ? <Loader2 size={15} className="spin"/> : <MessageSquare size={15}/>}
+            {loading ? <Loader2 size={15} className="spin"/> : <Send size={15} fill={input.trim() ? "currentColor" : "none"}/>}
           </button>
         </form>
-        <div className="cw-powered">Powered by&nbsp;<strong style={{color:themeColor}}>SupportBotAI</strong></div>
+        {showBranding && (
+          <div className="cw-powered">POWERED BY&nbsp;<strong style={{color:themeColor}}>SUPPORTBOTAI</strong></div>
+        )}
       </div>
 
       <style>{`
@@ -647,14 +665,11 @@ export default function ChatWidgetPage() {
         /* Header */
         .cw-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1.5px solid #f0f0f5;flex-shrink:0;}
         .cw-header-left{display:flex;align-items:center;gap:10px;}
-        .cw-avatar-ring{position:relative;width:40px;height:40px;flex-shrink:0;animation:cwFloat 3s ease-in-out infinite;}
-        @keyframes cwFloat {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-4px); }
-        }
-        .cw-avatar-ring::before{content:'';position:absolute;inset:-2px;border-radius:50%;background:conic-gradient(var(--rc,#7c3aed),#818cf8,var(--rc,#7c3aed));animation:cwRing 3s linear infinite;z-index:0;opacity:0.6;}
+        .cw-avatar-ring{position:relative;width:40px;height:40px;flex-shrink:0;}
+        .cw-avatar-ring::before{content:'';position:absolute;inset:-2px;border-radius:50%;background:conic-gradient(var(--rc,#7c3aed),#818cf8,var(--rc,#7c3aed));animation:cwRing 3s linear infinite;z-index:0;}
         @keyframes cwRing{to{transform:rotate(360deg);}}
-        .cw-header-av{position:relative;z-index:1;width:36px;height:36px;border-radius:50%;background:#f3f0ff;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:2px;box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
+        @keyframes cwFadeIn{from{opacity:0;}to{opacity:1;}}
+        .cw-header-av{position:relative;z-index:1;width:36px;height:36px;border-radius:50%;background:#f3f0ff;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:2px;}
         .cw-online-dot{position:absolute;bottom:1px;right:1px;width:10px;height:10px;background:#22c55e;border-radius:50%;border:2px solid #fff;z-index:2;animation:cwPulse 2s infinite;}
         @keyframes cwPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4);}50%{box-shadow:0 0 0 4px rgba(34,197,94,0);}}
         .cw-header-text{display:flex;flex-direction:column;gap:2px;}
@@ -717,12 +732,12 @@ export default function ChatWidgetPage() {
         .cw-fb-btn--primary{color:#fff;} .cw-fb-btn--secondary{background:#fff;}
         .cw-fb-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.08);}
         /* FAQs */
-        .cw-faqs{flex-shrink:0;padding:8px 12px;background:#fff;display:flex;flex-direction:column;gap:6px;border-top:1px solid #f1f5f9;}
-        .cw-faqs-label{font-size:0.6rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;}
-        .cw-faqs-list{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
+        .cw-faqs{flex-shrink:0;padding:12px 14px 10px;background:#fff;display:flex;flex-direction:column;gap:10px;border-top:1px solid #f1f5f9;}
+        .cw-faqs-label{font-size:0.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-left:4px;}
+        .cw-faqs-list{display:flex;gap:8px;overflow-x:auto;padding:2px 4px 6px;scrollbar-width:none;-ms-overflow-style:none;}
         .cw-faqs-list::-webkit-scrollbar{display:none;}
-        .cw-faq-btn{white-space:nowrap;padding:6px 13px;border-radius:18px;border:1.5px solid;background:#fff;font-size:0.73rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
-        .cw-faq-btn:hover{background:#faf5ff;transform:translateY(-1px);}
+        .cw-faq-btn{white-space:nowrap;padding:8px 16px;border-radius:24px;border:1.5px solid #DDD8FE;background:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;animation:cwFadeUp 0.4s ease-out both;}
+        .cw-faq-btn:hover{background:#F5F3FF;transform:translateY(-2px);box-shadow:0 4px 12px rgba(124,58,237,0.08);}
         /* Input bar */
         .cw-inputbar{flex-shrink:0;padding:8px 10px 6px;background:#fff;border-top:1px solid #e5e7eb;}
         .cw-conn-label{font-size:0.68rem;color:#7c3aed;font-weight:700;text-align:center;margin-bottom:6px;}

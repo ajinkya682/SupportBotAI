@@ -7,7 +7,10 @@ import {
   Search, 
   Filter,
   Loader2,
-  X
+  X,
+  Bell,
+  Clock,
+  Send
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
@@ -24,10 +27,51 @@ export default function TeamMembers() {
   const [isInviting, setIsInviting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, agentId: null, agentName: '' });
+  
+  // Notification states
+  const [showNotifyModal, setShowNotifyModal] = useState(false);
+  const [notifyTarget, setNotifyTarget] = useState(null);
+  const [notifyMessage, setNotifyMessage] = useState("You have pending support tickets. Please come online.");
+  const [isNotifying, setIsNotifying] = useState(false);
+  const [cooldowns, setCooldowns] = useState({});
 
   useEffect(() => {
     fetchAgents();
+    const interval = setInterval(fetchAgents, 30000); // Refresh status/cooldowns every 30s
+    return () => clearInterval(interval);
   }, []);
+
+  const handleNotify = async (e) => {
+    e.preventDefault();
+    if (!notifyTarget) return;
+    setIsNotifying(true);
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        await axios.post(`${API_URL}/agents/notify/${notifyTarget._id}`, { message: notifyMessage }, {
+            headers: { Authorization: `Bearer ${user.token}` }
+        });
+        toast.success(`Notification sent to ${notifyTarget.name}`);
+        setShowNotifyModal(false);
+        fetchAgents(); // Refresh to show cooldown
+    } catch (err) {
+        toast.error(err.response?.data?.message || 'Failed to notify agent');
+    } finally {
+        setIsNotifying(false);
+    }
+  };
+
+  const handleNotifyAll = async () => {
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        await axios.post(`${API_URL}/agents/notify-all`, {}, {
+            headers: { Authorization: `Bearer ${user.token}` }
+        });
+        toast.success('Notification sent to all offline agents');
+        fetchAgents();
+    } catch (err) {
+        toast.error(err.response?.data?.message || 'Failed to notify team');
+    }
+  };
 
   const fetchAgents = async () => {
     try {
@@ -84,6 +128,24 @@ export default function TeamMembers() {
     });
   };
 
+  const getCooldownInfo = (agent) => {
+    if (!agent.lastNotifiedAt) return null;
+    const last = new Date(agent.lastNotifiedAt);
+    const now = new Date();
+    const diff = now - last;
+    const tenMins = 10 * 60 * 1000;
+    
+    if (diff < tenMins) {
+        return {
+            remaining: Math.ceil((tenMins - diff) / 60000),
+            ago: Math.floor(diff / 60000)
+        };
+    }
+    return null;
+  };
+
+  const allOffline = agents.length > 0 && !agents.some(a => a.status === 'online' || a.status === 'away');
+
   const filteredAgents = agents.filter(a => 
     a.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     a.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -104,6 +166,25 @@ export default function TeamMembers() {
           <UserPlus size={18} /> <span>Add Member</span>
         </button>
       </div>
+
+      {allOffline && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="all-offline-banner"
+          >
+            <div className="banner-content">
+                <div className="banner-icon">⚠️</div>
+                <div>
+                    <strong>All support agents are currently offline</strong>
+                    <p>Tickets might be waiting with no one to handle them.</p>
+                </div>
+            </div>
+            <button className="btn btn-warning" onClick={handleNotifyAll}>
+                Notify All Offline Agents
+            </button>
+          </motion.div>
+      )}
 
       <div className="team-stats-row">
         <div className="card stat-mini">
@@ -159,7 +240,9 @@ export default function TeamMembers() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAgents.map((agent) => (
+                  {filteredAgents.map((agent) => {
+                    const cooldown = getCooldownInfo(agent);
+                    return (
                     <tr key={agent._id}>
                       <td>
                         <div className="member-info">
@@ -179,28 +262,64 @@ export default function TeamMembers() {
                         </div>
                       </td>
                       <td>
-                        <div className={`status-pill ${agent.status || 'offline'}`}>
-                          <span className="dot"></span>
-                          {agent.status || 'Offline'}
+                        <div className="status-group">
+                            <div className={`status-pill ${agent.status || 'offline'}`}>
+                                <span className="dot"></span>
+                                {agent.status || 'Offline'}
+                            </div>
+                            {agent.status === 'offline' && !cooldown && (
+                                <button 
+                                    className="btn btn-text btn-xs notify-link"
+                                    onClick={() => {
+                                        setNotifyTarget(agent);
+                                        setShowNotifyModal(true);
+                                    }}
+                                >
+                                    Notify to Go Online
+                                </button>
+                            )}
+                            {cooldown && (
+                                <span className="notified-label">
+                                    <Clock size={10} /> Notified {cooldown.ago}m ago
+                                </span>
+                            )}
                         </div>
                       </td>
                       <td>
                         <span className="join-date">{new Date(agent.createdAt).toLocaleDateString()}</span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <button className="icon-btn delete" onClick={() => openConfirmModal(agent)}>
-                          <Trash2 size={18} />
-                        </button>
+                        <div className="action-row">
+                            {agent.status === 'offline' && (
+                                <button 
+                                    className={`icon-btn notify ${cooldown ? 'disabled' : ''}`}
+                                    onClick={() => {
+                                        if (cooldown) return;
+                                        setNotifyTarget(agent);
+                                        setShowNotifyModal(true);
+                                    }}
+                                    title={cooldown ? `Wait ${cooldown.remaining}m` : "Notify to Go Online"}
+                                >
+                                    <Bell size={18} />
+                                </button>
+                            )}
+                            <button className="icon-btn delete" onClick={() => openConfirmModal(agent)}>
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* Mobile Stacked View */}
             <div className="mobile-team-list mobile-only">
-              {filteredAgents.map((agent) => (
+              {filteredAgents.map((agent) => {
+                const cooldown = getCooldownInfo(agent);
+                return (
                 <div key={agent._id} className="mobile-agent-card">
                   <div className="mobile-agent-header">
                     <div className="member-info">
@@ -212,28 +331,96 @@ export default function TeamMembers() {
                         <div className="member-email">{agent.email}</div>
                       </div>
                     </div>
-                    <button className="icon-btn delete" onClick={() => openConfirmModal(agent)}>
-                      <Trash2 size={18} />
-                    </button>
+                    <div className="action-row">
+                        {agent.status === 'offline' && (
+                            <button 
+                                className={`icon-btn notify ${cooldown ? 'disabled' : ''}`}
+                                onClick={() => {
+                                    if (cooldown) return;
+                                    setNotifyTarget(agent);
+                                    setShowNotifyModal(true);
+                                }}
+                            >
+                                <Bell size={18} />
+                            </button>
+                        )}
+                        <button className="icon-btn delete" onClick={() => openConfirmModal(agent)}>
+                            <Trash2 size={18} />
+                        </button>
+                    </div>
                   </div>
                   <div className="mobile-agent-footer">
                     <div className="role-tag">
                       <Shield size={12} />
                       {agent.roleTitle || 'Support Agent'}
                     </div>
-                    <div className={`status-pill ${agent.status || 'offline'}`}>
-                      <span className="dot"></span>
-                      {agent.status || 'Offline'}
+                    <div className="status-group-mobile">
+                        <div className={`status-pill ${agent.status || 'offline'}`}>
+                            <span className="dot"></span>
+                            {agent.status || 'Offline'}
+                        </div>
+                        {cooldown && (
+                            <span className="notified-label">
+                                <Clock size={10} /> Notified {cooldown.ago}m ago
+                            </span>
+                        )}
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
       </div>
 
-      {/* Invite Modal */}
+      {/* Notify Modal */}
+      <AnimatePresence>
+        {showNotifyModal && (
+          <div className="modal-overlay" onClick={() => setShowNotifyModal(false)}>
+            <motion.div 
+              className="modal-card"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header">
+                <div className="modal-title-group">
+                  <div className="modal-icon notify-icon"><Bell size={20} /></div>
+                  <div>
+                    <h3>Notify Agent — {notifyTarget?.name}</h3>
+                    <p>Send a desktop notification to wake up this agent.</p>
+                  </div>
+                </div>
+                <button className="close-btn" onClick={() => setShowNotifyModal(false)}><X size={20} /></button>
+              </div>
+
+              <form onSubmit={handleNotify}>
+                <div className="form-group">
+                  <label>Message to Agent</label>
+                  <textarea 
+                    className="notify-textarea"
+                    placeholder="Enter message..."
+                    value={notifyMessage}
+                    onChange={(e) => setNotifyMessage(e.target.value)}
+                    maxLength={160}
+                    required
+                  />
+                  <div className="char-counter">{notifyMessage.length}/160</div>
+                </div>
+
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowNotifyModal(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" disabled={isNotifying}>
+                    {isNotifying ? <Loader2 size={18} className="animate-spin" /> : <><Send size={18} /> Send Notification</>}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {showInviteModal && (
           <div className="modal-overlay" onClick={() => setShowInviteModal(false)}>
@@ -328,6 +515,43 @@ export default function TeamMembers() {
           gap: 16px; 
           margin-bottom: 24px; 
         }
+
+        .all-offline-banner {
+            background: #fffbeb;
+            border: 1px solid #fef3c7;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+        }
+
+        @media (min-width: 640px) {
+            .all-offline-banner { flex-direction: row; justify-content: space-between; padding: 20px 24px; }
+        }
+
+        .banner-content { display: flex; gap: 16px; align-items: center; }
+        .banner-icon { font-size: 1.5rem; }
+        .banner-content strong { color: #92400e; display: block; margin-bottom: 4px; }
+        .banner-content p { color: #b45309; font-size: 13px; margin: 0; }
+
+        .status-group { display: flex; flex-direction: column; gap: 4px; }
+        .notify-link { padding: 0; height: auto; font-size: 11px; text-decoration: underline; color: var(--primary); font-weight: 700; width: fit-content; }
+        .notified-label { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--on-surface-variant); font-weight: 600; margin-top: 2px; }
+
+        .status-group-mobile { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+
+        .action-row { display: flex; gap: 8px; justify-content: flex-end; }
+        .icon-btn.notify { color: var(--primary); background: var(--primary-fixed); }
+        .icon-btn.notify:hover { background: var(--primary-fixed-dim); }
+        .icon-btn.notify.disabled { opacity: 0.3; cursor: not-allowed; background: var(--surface-container-low); color: var(--outline); }
+
+        .notify-icon { background: #fffbeb !important; color: #d97706 !important; }
+        .notify-textarea { width: 100%; min-height: 100px; padding: 12px; border-radius: 12px; border: 1px solid var(--outline-variant); font-size: 14px; font-family: inherit; resize: none; margin-bottom: 8px; }
+        .notify-textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
+        .char-counter { font-size: 11px; color: var(--outline); text-align: right; }
 
         @media (min-width: 768px) {
           .team-header { flex-direction: row; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }

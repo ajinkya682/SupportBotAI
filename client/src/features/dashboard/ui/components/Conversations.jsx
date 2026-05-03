@@ -80,6 +80,17 @@ export default function Conversations({
         {},
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
+      
+      // Update agent status to busy
+      socket.emit("agent_status_change", { 
+        agentId: user._id, 
+        status: 'in_conversation', 
+        ownerId 
+      });
+
+      // Play whoosh sound if playSound prop provided
+      if (typeof playSound === 'function') playSound('whoosh');
+
       // Optimistically update local state
       setSelectedConv(prev => ({
         ...prev,
@@ -109,6 +120,15 @@ export default function Conversations({
       resolvedByName: user.displayName || user.name,
       resolvedByType: user.role === "owner" ? "owner" : "agent",
     });
+
+    // Reset agent status to online (free)
+    socket.emit("agent_status_change", { 
+      agentId: user._id, 
+      status: 'online', 
+      ownerId 
+    });
+    
+    if (typeof playSound === 'function') playSound('success');
 
     setSelectedConv((prev) => ({ ...prev, status: "human_resolved" }));
   };

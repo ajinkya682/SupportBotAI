@@ -92,6 +92,7 @@ exports.googleLogin = async (req, res, next) => {
       email: user.email,
       role: user.role,
       ownerId: user.ownerId,
+      notificationPreferences: user.notificationPreferences,
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -175,6 +176,7 @@ exports.loginUser = async (req, res, next) => {
         email: user.email,
         role: user.role,
         ownerId: user.ownerId,
+        notificationPreferences: user.notificationPreferences,
         token: generateToken(user._id),
       });
     } else {
@@ -186,7 +188,14 @@ exports.loginUser = async (req, res, next) => {
 };
 
 exports.getUserProfile = (req, res) => {
-  res.json(req.user);
+  res.json({
+    _id: req.user._id,
+    name: req.user.name,
+    email: req.user.email,
+    role: req.user.role,
+    ownerId: req.user.ownerId,
+    notificationPreferences: req.user.notificationPreferences
+  });
 };
 
 exports.changePassword = async (req, res) => {

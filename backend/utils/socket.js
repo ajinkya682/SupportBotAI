@@ -48,14 +48,41 @@ module.exports = (io) => {
                     agent.lastHeartbeat = new Date();
                     await agent.save();
 
-                    io.to(ownerId.toString()).emit('agent_status_changed', { agentId, status });
+                    // If agent was notified to go online, track the response
+                    if (status === 'online' && agent.pendingGoOnlineRequest) {
+                        const pushService = require('./pushService');
+                        await pushService.sendNotification(ownerId, {
+                            type: 'team',
+                            title: `✅ ${agent.name} is now online`,
+                            body: `${agent.name} came online after your notification. Tickets can now be assigned.`,
+                            sound: 'success',
+                            data: { url: '/dashboard/team' }
+                        });
+                        agent.pendingGoOnlineRequest = false;
+                        await agent.save();
+                    }
 
+                    // Notify owner dashboard
+                    io.to(ownerId.toString()).emit('agent_status_changed', { agentId, status });
+                    
+                    // If agent is in a conversation, notify that specific session room too
+                    if (agent.currentConversationId) {
+                        io.to(`session_${agent.currentConversationId}`).emit('agent_status_changed', { agentId, status });
+                    }
+                    
                     if (status === 'online') {
                         await checkHoldingTickets(ownerId, io);
                     }
                 }
             } catch (error) {
                 console.error('Error updating agent status:', error);
+            }
+        });
+
+        // ── Sound Triggers ──────────────────────────────────────────────────────
+        socket.on('trigger_sound', ({ type, roomId }) => {
+            if (roomId) {
+                io.to(roomId).emit('play_sound', { type });
             }
         });
 
@@ -130,6 +157,21 @@ module.exports = (io) => {
             // Broadcast to all parties:
             // 1. Widget user (joined session room)
             io.to(`session_${conversationId}`).emit('new_message', messagePayload);
+            
+            // 1b. Send Push Notification to Customer if it's from agent/owner
+            if (senderType === 'agent' || senderType === 'owner') {
+                const conversation = await Conversation.findById(conversationId);
+                if (conversation && conversation.origin) {
+                    const pushService = require('./pushService');
+                    await pushService.sendToSession(conversationId, {
+                        type: 'message',
+                        title: `Reply from ${senderName}`,
+                        body: content.substring(0, 100),
+                        data: { url: conversation.origin }
+                    });
+                }
+            }
+
             // 2. Owner dashboard + all agents in owner room
             if (ownerId) io.to(ownerId.toString()).emit('new_message', messagePayload);
         });
@@ -154,7 +196,7 @@ module.exports = (io) => {
 
                     const joinMessage = {
                         role: 'assistant',
-                        content: `✅ AI has disconnected. You are now talking with ${agent.displayName || agent.name} — Real Human 🟢`,
+                        content: `Hello! I've joined the chat. How can I help you today? 😊`,
                         timestamp: new Date(),
                         senderType: 'agent',
                         senderName: agent.displayName || agent.name,
@@ -186,6 +228,18 @@ module.exports = (io) => {
 
                     // Emit to widget session room
                     io.to(`session_${conversationId}`).emit('agent_joined', payload);
+
+                    // Send Push Notification to Customer
+                    const pushService = require('./pushService');
+                    if (conversation.origin) {
+                        await pushService.sendToSession(conversationId, {
+                            type: 'message',
+                            title: 'Human Agent Joined',
+                            body: `${agent.displayName || agent.name} has joined the chat to help you.`,
+                            data: { url: conversation.origin }
+                        });
+                    }
+
                     // Emit to owner dashboard + all agents
                     if (ownerId) {
                         io.to(ownerId.toString()).emit('agent_joined', payload);
@@ -277,6 +331,32 @@ module.exports = (io) => {
                 console.error('Toggle AI error:', error);
             }
         });
+
+        // ── Auto-Offline Stale Agents ───────────────────────────────────────────
+        setInterval(async () => {
+            try {
+                const twoMinsAgo = new Date(Date.now() - 2 * 60 * 1000);
+                const staleAgents = await User.find({
+                    role: 'agent',
+                    status: { $ne: 'offline' },
+                    lastHeartbeat: { $lt: twoMinsAgo }
+                });
+
+                for (const agent of staleAgents) {
+                    agent.status = 'offline';
+                    await agent.save();
+                    if (agent.ownerId) {
+                        io.to(agent.ownerId.toString()).emit('agent_status_changed', { 
+                            agentId: agent._id, 
+                            status: 'offline' 
+                        });
+                    }
+                    console.log(`Agent ${agent._id} auto-offline (stale heartbeat)`);
+                }
+            } catch (err) {
+                console.error('Auto-offline check error:', err);
+            }
+        }, 60000); // Check every minute
 
         // ── Disconnect ──────────────────────────────────────────────────────────
         socket.on('disconnect', () => {

@@ -17,6 +17,29 @@ const userSchema = new mongoose.Schema({
     resetPasswordOTP: { type: String },
     resetPasswordExpires: { type: Date },
     isBlocked: { type: Boolean, default: false },
+    notificationPreferences: {
+        newTickets: { type: Boolean, default: true },
+        agentOfflineAlerts: { type: Boolean, default: true },
+        conversationResolved: { type: Boolean, default: true },
+        teamActivity: { type: Boolean, default: true },
+        subscriptionAlerts: { type: Boolean, default: true },
+        monthlyReports: { type: Boolean, default: true },
+        ticketAssigned: { type: Boolean, default: true },
+        newMessages: { type: Boolean, default: true },
+        reassignmentAlerts: { type: Boolean, default: true },
+        enableSounds: { type: Boolean, default: true },
+        quietHours: {
+            enabled: { type: Boolean, default: false },
+            start: { type: String, default: '23:00' },
+            end: { type: String, default: '07:00' }
+        }
+    },
+    lastNotifiedAt: Date,
+    pendingGoOnlineRequest: {
+        type: Boolean,
+        default: false
+    },
+    goOnlineRequestTime: Date,
     createdAt: { type: Date, default: Date.now }
 });
 

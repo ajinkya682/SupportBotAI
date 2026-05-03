@@ -208,13 +208,7 @@ exports.joinConversation = async (req, res) => {
         const conversation = await Conversation.findOneAndUpdate(
             { 
                 _id: req.params.id, 
-                business: business._id,
-                // Only join if not already assigned to someone else
-                $or: [
-                    { agent: { $exists: false } },
-                    { agent: null },
-                    { agent: req.user._id } // re-joining is allowed for self
-                ]
+                business: business._id
             },
             {
                 $set: {
@@ -230,7 +224,7 @@ exports.joinConversation = async (req, res) => {
         ).populate('agent', 'displayName profilePhoto roleTitle');
 
         if (!conversation) {
-            return res.status(409).json({ message: 'Conversation already assigned to another agent or not found' });
+            return res.status(404).json({ message: 'Conversation not found' });
         }
 
         // Update Agent Status
@@ -252,7 +246,7 @@ exports.joinConversation = async (req, res) => {
         const agentRoleTitle = req.user.roleTitle || 'Support Agent';
         const joinMessage = {
             role: 'assistant',
-            content: `✅ AI has disconnected. You are now talking with ${agentDisplayName} — Real Human 🟢`,
+            content: `AI has stepped aside. You are now chatting with ${agentDisplayName} — Real Human 🟢`,
             timestamp: new Date(),
             senderType: 'agent',
             senderName: agentDisplayName,
@@ -287,10 +281,9 @@ exports.joinConversation = async (req, res) => {
             req.io.to(`session_${conversation._id.toString()}`).emit('agent_joined', joinPayload);
             req.io.to(ownerId.toString()).emit('agent_joined', { ...joinPayload, messages: conversation.messages });
 
-            // new_message → delivers the join message bubble to the widget chat
+            // new_message → delivers the join message bubble to BOTH widget and dashboard
             const newMsgPayload = { conversationId: conversation._id.toString(), ...joinMessage };
             req.io.to(`session_${conversation._id.toString()}`).emit('new_message', newMsgPayload);
-            // Also to dashboard so the message appears in Conversations panel
             req.io.to(ownerId.toString()).emit('new_message', newMsgPayload);
         }
 
@@ -362,6 +355,104 @@ exports.resolveConversation = async (req, res) => {
         }
 
         res.json({ message: 'Conversation resolved', conversation });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Business Owner: Notify specific offline agent to go online
+exports.notifyAgent = async (req, res) => {
+    const { message } = req.body;
+    try {
+        const agent = await User.findOne({ _id: req.params.id, ownerId: req.user._id });
+        if (!agent) return res.status(404).json({ message: 'Agent not found' });
+
+        // Cooldown check (10 mins)
+        const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000);
+        if (agent.lastNotifiedAt && agent.lastNotifiedAt > tenMinsAgo) {
+            return res.status(429).json({ message: 'Agent was recently notified. Please wait before notifying again.' });
+        }
+
+        const pushService = require('../utils/pushService');
+        const Business = require('../models/Business');
+        const business = await Business.findOne({ owner: req.user._id });
+
+        await pushService.sendNotification(agent._id, {
+            type: 'go_online_request',
+            title: `${business?.name || 'SupportBotAI'} — Action Required`,
+            body: message || "You have pending support tickets. Please come online.",
+            sound: 'urgent',
+            data: { url: '/dashboard' }
+        });
+
+        agent.lastNotifiedAt = new Date();
+        agent.pendingGoOnlineRequest = true;
+        agent.goOnlineRequestTime = new Date();
+        await agent.save();
+
+        // Schedule check in 30 minutes
+        const agenda = require('../utils/agenda');
+        await agenda.schedule('30 minutes', 'monitor go online request', { 
+            agentId: agent._id, 
+            ownerId: req.user._id 
+        });
+
+        res.json({ message: `Notification sent to ${agent.name}` });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Business Owner: Notify all offline agents
+exports.notifyAllAgents = async (req, res) => {
+    try {
+        const offlineAgents = await User.find({ 
+            ownerId: req.user._id, 
+            role: 'agent', 
+            status: 'offline' 
+        });
+
+        if (offlineAgents.length === 0) {
+            return res.status(400).json({ message: 'No offline agents found.' });
+        }
+
+        // Bulk cooldown check (15 mins)
+        // We'll use the first agent's lastNotifiedAt as a proxy for the whole team bulk notification
+        const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+        const recentlyNotified = offlineAgents.some(a => a.lastNotifiedAt && a.lastNotifiedAt > fifteenMinsAgo);
+        
+        if (recentlyNotified) {
+            return res.status(429).json({ message: 'Team was recently notified. Please wait.' });
+        }
+
+        const pushService = require('../utils/pushService');
+        const Business = require('../models/Business');
+        const agenda = require('../utils/agenda');
+        const business = await Business.findOne({ owner: req.user._id });
+
+        const notifyPromises = offlineAgents.map(async (agent) => {
+            await pushService.sendNotification(agent._id, {
+                type: 'go_online_request',
+                title: `${business?.name || 'SupportBotAI'} — Action Required`,
+                body: "Multiple tickets are waiting. Please come online now.",
+                sound: 'urgent',
+                data: { url: '/dashboard' }
+            });
+            agent.lastNotifiedAt = new Date();
+            agent.pendingGoOnlineRequest = true;
+            agent.goOnlineRequestTime = new Date();
+            await agent.save();
+
+            // Schedule check in 30 minutes
+            await agenda.schedule('30 minutes', 'monitor go online request', { 
+                agentId: agent._id, 
+                ownerId: req.user._id 
+            });
+        });
+
+        await Promise.all(notifyPromises);
+
+        res.json({ message: `Notification sent to ${offlineAgents.length} offline agents` });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

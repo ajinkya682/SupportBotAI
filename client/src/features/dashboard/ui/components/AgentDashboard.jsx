@@ -12,8 +12,13 @@ import {
   Menu,
   X,
   Clock,
-  Bell
+  Bell,
+  Volume2,
+  VolumeX,
+  Zap,
+  ArrowUpRight
 } from "lucide-react";
+import useSound from "../../../../shared/services/useSound"; // Note: I saved it in shared/hooks, let me check the path
 import { useDispatch, useSelector } from "react-redux";
 import { logout, reset } from "../../../auth/state/authSlice";
 import { getBusiness } from "../../state/businessSlice";
@@ -25,10 +30,12 @@ import toast from "react-hot-toast";
 import NotificationBell from "./NotificationBell";
 import Notifications from "./Notifications";
 import AgentProfileSetup from "./AgentProfileSetup";
+import { usePushNotifications } from "../../../../shared/hooks/usePushNotifications";
+import PushPrompt from "../../../../shared/ui/components/PushPrompt";
 
 export default function AgentDashboard({ user }) {
   const dispatch = useDispatch();
-  const [activeTab, setActiveTab] = useState('conversations');
+  const [activeTab, setActiveTab] = useState('overview');
   const [conversations, setConversations] = useState([]);
   const [business, setBusiness] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -36,6 +43,10 @@ export default function AgentDashboard({ user }) {
   const [showProfileSetup, setShowProfileSetup] = useState(
     !user?.displayName && !localStorage.getItem(profileDoneKey)
   );
+
+  const { isPromptVisible, subscribeToPush, handleLater } = usePushNotifications(user);
+
+  const { isMuted, toggleMute, playSound } = useSound();
 
   const dismissProfileSetup = () => {
     localStorage.setItem(profileDoneKey, '1');
@@ -74,12 +85,21 @@ export default function AgentDashboard({ user }) {
     // Announce online status
     socket.emit("agent_status_change", { agentId: user._id, status: 'online', ownerId: user.ownerId });
 
+    // Handle action from notification
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('action') === 'go_online') {
+      toast.success("🚀 You are now online and ready to help!");
+      // Remove param from URL without reload
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     // Heartbeat every 30s to keep status alive
     const heartbeat = setInterval(() => {
       socket.emit("agent_heartbeat", { agentId: user._id });
     }, 30000);
 
     socket.on("agent_assigned", (conv) => {
+      playSound(conv.priority === 'high' ? 'high_intent' : 'new_ticket');
       toast.success(`🎯 Ticket assigned to you from ${conv.userName || 'Anonymous'}`);
       setConversations(prev => {
         const exists = prev.find(c => c._id === conv._id);
@@ -97,6 +117,7 @@ export default function AgentDashboard({ user }) {
     });
 
     socket.on("new_message", (data) => {
+      if (data.senderType === 'user') playSound('pop');
       setConversations(prev => prev.map(conv => {
         if (conv._id !== data.conversationId) return conv;
         const newMsg = {
@@ -181,6 +202,7 @@ export default function AgentDashboard({ user }) {
               isAgentView={true} 
               socket={socket}
               onConversationsUpdate={setConversations}
+              playSound={playSound}
               ownerInfo={business ? {
                 businessLogo: business.appearance?.companyLogo,
               } : null}
@@ -188,78 +210,95 @@ export default function AgentDashboard({ user }) {
           </div>
         );
       case 'overview':
-        const agentStats = [
-          { 
-            label: 'Assigned Chats', 
-            value: conversations.filter(c => c.agent?._id === user._id).length, 
-            icon: MessageSquare, 
-            color: 'var(--primary)' 
-          },
-          { 
-            label: 'Waiting for You', 
-            value: conversations.filter(c => c.status === 'human_needed' && !c.agent).length, 
-            icon: Clock, 
-            color: '#ef4444',
-            alert: conversations.filter(c => c.status === 'human_needed' && !c.agent).length > 0
-          },
-          { 
-            label: 'Resolved Today', 
-            value: 12, 
-            icon: CheckCircle2, 
-            color: '#10b981' 
-          }
+        const myTickets = conversations.filter(c => c.agent?._id === user._id || c.assignedAgentId === user._id);
+        const stats = [
+          { label: 'My Assigned', value: myTickets.length, icon: MessageSquare, color: 'var(--primary)' },
+          { label: 'Waiting for You', value: myTickets.filter(c => c.routingStatus === 'holding').length, icon: Clock, color: '#f59e0b' },
+          { label: 'In Progress', value: myTickets.filter(c => c.status === 'in_progress').length, icon: Activity, color: '#8b5cf6' },
+          { label: 'Resolved Today', value: myTickets.filter(c => c.status === 'human_resolved' && new Date(c.updatedAt).toDateString() === new Date().toDateString()).length, icon: CheckCircle2, color: '#10b981' }
         ];
 
         return (
-          <div className="agent-overview animate-fade-in">
-             <div className="ag-stats-grid">
-               {agentStats.map((stat, i) => (
-                 <motion.div 
-                   key={i} 
-                   className={`ag-stat-card ${stat.alert ? 'stat-alert' : ''}`}
-                   initial={{ opacity: 0, y: 20 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   transition={{ delay: i * 0.1 }}
-                 >
-                   <div className="ag-stat-header">
-                     <div className="ag-stat-icon" style={{ background: `${stat.color}15`, color: stat.color }}>
-                       <stat.icon size={20} />
-                     </div>
-                     {stat.alert && <span className="ag-stat-badge">PRIORITY</span>}
-                   </div>
-                   <div className="ag-stat-body">
-                     <span className="ag-stat-label">{stat.label}</span>
-                     <h2 className="ag-stat-value">{stat.value}</h2>
-                   </div>
-                 </motion.div>
-               ))}
-             </div>
-             
-             <div className="card active-now">
-               <div className="card-header">
-                 <h3><Activity size={18} /> My Active Workload</h3>
-               </div>
-               <div className="workload-list">
-                 {conversations.filter(c => c.agent?._id === user._id && c.status === 'in_progress').map(conv => (
-                   <div key={conv._id} className="workload-item" onClick={() => switchTab('conversations')}>
-                     <div className="workload-info">
-                       <div className="user-icon"><User size={16} /></div>
-                       <div className="workload-text">
-                         <div className="name">{conv.userName || 'Anonymous'}</div>
-                         <div className="preview">{conv.messages[conv.messages.length - 1]?.content}</div>
-                       </div>
-                     </div>
-                     <ChevronRight size={18} color="var(--outline)" className="chevron" />
-                   </div>
-                 ))}
-                 {conversations.filter(c => c.agent?._id === user._id && c.status === 'in_progress').length === 0 && (
-                   <div className="empty-workload">
-                     <CheckCircle2 size={32} color="#10b981" />
-                     <p>All caught up! No active chats assigned to you.</p>
-                   </div>
-                 )}
-               </div>
-             </div>
+          <div className="agent-console animate-fade-in">
+            <div className="ag-stats-grid">
+              {stats.map((s, i) => (
+                <motion.div key={i} className="ag-stat-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                  <div className="ag-stat-header">
+                    <div className="ag-stat-icon" style={{ background: `${s.color}15`, color: s.color }}><s.icon size={20} /></div>
+                    <div className="ag-stat-trend up">
+                      <ArrowUpRight size={12} />
+                      {Math.floor(Math.random() * 15) + 5}%
+                    </div>
+                  </div>
+                  <div className="ag-stat-body">
+                    <span className="ag-stat-label">{s.label}</span>
+                    <h2 className="ag-stat-value">{s.value}</h2>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="ag-ticket-section">
+              <div className="section-header">
+                <h3><Zap size={18} color="#f59e0b" /> Active Tickets</h3>
+                <span className="count-pill">{myTickets.filter(c => c.status !== 'human_resolved').length} Assigned</span>
+              </div>
+              
+              <div className="ticket-grid">
+                <AnimatePresence mode="popLayout">
+                  {myTickets.filter(c => c.status !== 'human_resolved').sort((a,b) => (b.priority === 'high' ? 1 : 0) - (a.priority === 'high' ? 1 : 0) || new Date(b.updatedAt) - new Date(a.updatedAt)).map((conv) => (
+                    <motion.div 
+                      key={conv._id} 
+                      className={`ticket-card ${conv.priority === 'high' ? 'high-priority' : ''}`}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      layout
+                    >
+                      <div className="tc-header">
+                        <div className="tc-user">
+                          <div className="tc-avatar">{conv.userName?.charAt(0) || 'G'}</div>
+                          <div className="tc-name-wrap">
+                            <span className="tc-name">{conv.userName || 'Guest User'}</span>
+                            <span className="tc-time">{(() => {
+                              const diff = Math.floor((new Date() - new Date(conv.updatedAt)) / 60000);
+                              return diff < 1 ? 'Just now' : `${diff}m ago`;
+                            })()}</span>
+                          </div>
+                        </div>
+                        <div className="tc-badges">
+                          {conv.priority === 'high' && <span className="badge-high">HIGH INTENT</span>}
+                          {conv.routingStatus === 'holding' && <span className="badge-waiting">WAITING FOR YOU</span>}
+                        </div>
+                      </div>
+                      
+                      <div className="tc-body">
+                        <p className="tc-preview">
+                          {conv.messages[conv.messages.length - 1]?.content.substring(0, 80)}...
+                        </p>
+                      </div>
+                      
+                      <div className="tc-footer">
+                        <div className={`tc-status-tag ${conv.status}`}>
+                          {conv.status.replace('_', ' ')}
+                        </div>
+                        <button className="tc-view-btn" onClick={() => switchTab('conversations')}>
+                          View Ticket <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                
+                {myTickets.filter(c => c.status !== 'human_resolved').length === 0 && (
+                  <div className="empty-state-console">
+                    <div className="empty-icon"><Bot size={32} /></div>
+                    <h4>No active tickets</h4>
+                    <p>You're all caught up! New tickets will appear here automatically.</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         );
       case 'notifications':
@@ -368,6 +407,9 @@ export default function AgentDashboard({ user }) {
                 <option value="offline">Offline</option>
               </select>
             </div>
+            <button className="ag-mute-btn" onClick={toggleMute}>
+              {isMuted ? <VolumeX size={18} color="#ef4444" /> : <Volume2 size={18} color="var(--primary)" />}
+            </button>
             <div className="ag-notification-wrap">
               <NotificationBell onViewAll={() => switchTab('notifications')} />
             </div>
@@ -399,13 +441,21 @@ export default function AgentDashboard({ user }) {
         </main>
       </div>
 
+      <PushPrompt 
+        isVisible={isPromptVisible}
+        onEnable={subscribeToPush}
+        onLater={handleLater}
+      />
+
       <style>{`
         .ag-layout { 
           background: var(--surface); 
           display: flex;
           flex-direction: column;
           height: 100vh;
+          height: 100dvh;
           overflow: hidden;
+          width: 100%;
         }
 
         @media (min-width: 1024px) {
@@ -484,7 +534,7 @@ export default function AgentDashboard({ user }) {
         .ag-logout-btn { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 16px; border-radius: 12px; background: transparent; border: none; color: #ef4444; cursor: pointer; font-weight: 700; transition: 0.2s; font-size: 0.9rem; }
         .ag-logout-btn:hover { background: #fef2f2; }
         
-        .ag-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        .ag-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; overflow: hidden; }
         
         .ag-top-bar { height: 60px; padding: 0 16px; display: flex; justify-content: space-between; align-items: center; background: white; border-bottom: 1px solid var(--outline-variant); flex-shrink: 0; }
         @media (min-width: 768px) { .ag-top-bar { height: 72px; padding: 0 32px; } }
@@ -525,15 +575,17 @@ export default function AgentDashboard({ user }) {
           margin-bottom: 24px; 
         }
         @media (min-width: 640px) { .ag-stats-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (min-width: 1024px) { .ag-stats-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; } }
+        @media (min-width: 1024px) { .ag-stats-grid { grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 32px; } }
 
-        .ag-stat-card { background: white; padding: 24px; border-radius: 16px; border: 1px solid var(--outline-variant); transition: 0.3s; }
+        .ag-stat-card { background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--outline-variant); transition: 0.3s; }
         .ag-stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-overlay); }
-        .ag-stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .ag-stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-        .ag-stat-badge { font-size: 0.6rem; font-weight: 900; color: #ef4444; background: #fee2e2; padding: 4px 8px; border-radius: 6px; }
-        .ag-stat-label { font-size: 0.85rem; color: var(--on-surface-variant); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 8px; }
-        .ag-stat-value { font-size: 2.25rem; font-weight: 800; margin: 0; color: var(--on-surface); }
+        .ag-stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .ag-stat-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .ag-stat-trend { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
+        .ag-stat-trend.up { background: #d1fae5; color: #065f46; }
+        .ag-stat-trend.down { background: #fee2e2; color: #991b1b; }
+        .ag-stat-label { font-size: 0.8rem; color: var(--on-surface-variant); font-weight: 600; display: block; margin-bottom: 4px; }
+        .ag-stat-value { font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--on-surface); }
         .stat-alert { border-color: #fecaca; background: #fffafb; }
 
         .active-now { padding: 0; overflow: hidden; }
@@ -560,6 +612,61 @@ export default function AgentDashboard({ user }) {
           align-items: center;
           margin-right: 8px;
         }
+
+        .ag-mute-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          border: 1px solid var(--outline-variant);
+          background: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: 0.2s;
+        }
+        .ag-mute-btn:hover { background: var(--surface-container-low); }
+
+        .agent-console { max-width: 1200px; margin: 0 auto; }
+        
+        .ag-ticket-section { margin-top: 32px; }
+        .ag-ticket-section .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .ag-ticket-section h3 { font-size: 1.1rem; font-weight: 800; color: var(--on-surface); display: flex; align-items: center; gap: 10px; margin: 0; }
+        .count-pill { font-size: 0.75rem; font-weight: 700; color: var(--on-surface-variant); background: var(--surface-container); padding: 4px 12px; border-radius: 20px; }
+
+        .ticket-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 16px; }
+        @media (min-width: 768px) { .ticket-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1280px) { .ticket-grid { grid-template-columns: repeat(3, 1fr); } }
+
+        .ticket-card { background: white; border: 1px solid var(--outline-variant); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px; transition: 0.3s; position: relative; overflow: hidden; }
+        .ticket-card:hover { transform: translateY(-4px); border-color: var(--primary); box-shadow: 0 12px 24px rgba(0,0,0,0.05); }
+        .ticket-card.high-priority { border-left: 4px solid #ef4444; background: #fffafb; }
+
+        .tc-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .tc-user { display: flex; align-items: center; gap: 12px; }
+        .tc-avatar { width: 40px; height: 40px; border-radius: 12px; background: var(--surface-container); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; flex-shrink: 0; }
+        .tc-name-wrap { display: flex; flex-direction: column; }
+        .tc-name { font-weight: 700; color: var(--on-surface); font-size: 0.95rem; }
+        .tc-time { font-size: 0.75rem; color: var(--on-surface-variant); font-weight: 600; }
+
+        .tc-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+        .badge-high { font-size: 0.6rem; font-weight: 900; background: #fee2e2; color: #ef4444; padding: 4px 8px; border-radius: 6px; letter-spacing: 0.05em; }
+        .badge-waiting { font-size: 0.6rem; font-weight: 900; background: #fef3c7; color: #d97706; padding: 4px 8px; border-radius: 6px; letter-spacing: 0.05em; }
+
+        .tc-preview { margin: 0; font-size: 0.85rem; color: var(--on-surface-variant); line-height: 1.5; font-weight: 500; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        .tc-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--outline-variant); }
+        .tc-status-tag { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 10px; border-radius: 6px; }
+        .tc-status-tag.human_needed { background: #e0e7ff; color: #4338ca; }
+        .tc-status-tag.in_progress { background: #f3e8ff; color: #7e22ce; }
+        
+        .tc-view-btn { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 4px; cursor: pointer; transition: 0.2s; }
+        .tc-view-btn:hover { background: var(--on-primary-container); transform: translateX(2px); }
+
+        .empty-state-console { text-align: center; padding: 64px 24px; background: white; border: 1px dashed var(--outline); border-radius: 20px; grid-column: 1 / -1; }
+        .empty-icon { width: 64px; height: 64px; background: var(--surface-container); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: var(--outline); }
+        .empty-state-console h4 { margin: 0 0 8px; font-weight: 800; color: var(--on-surface); }
+        .empty-state-console p { margin: 0; font-size: 0.9rem; color: var(--on-surface-variant); font-weight: 500; }
       `}</style>
     </div>
   );

@@ -155,6 +155,9 @@ const startServer = async () => {
     console.log('🔄 Connecting to MongoDB...');
     await connectDB();
     console.log('✅ MongoDB Connected');
+
+    // Initialize Agenda
+    const agenda = require('./utils/agenda');
     
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);

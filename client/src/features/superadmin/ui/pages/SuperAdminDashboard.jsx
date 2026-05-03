@@ -136,6 +136,10 @@ const SuperAdminDashboard = () => {
           background: var(--surface); 
           display: flex;
           flex-direction: column;
+          height: 100vh;
+          height: 100dvh;
+          overflow: hidden;
+          width: 100%;
         }
 
         @media (min-width: 1024px) {
@@ -214,7 +218,7 @@ const SuperAdminDashboard = () => {
         @media (min-width: 1024px) { .sa-logout-btn { padding: 14px 16px; font-size: 0.95rem; } }
         .sa-logout-btn:hover { background: #fef2f2; }
         
-        .sa-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        .sa-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; overflow: hidden; }
         
         .sa-top-bar { height: 60px; padding: 0 16px; display: flex; justify-content: space-between; align-items: center; background: white; border-bottom: 1px solid var(--outline-variant); flex-shrink: 0; }
         @media (min-width: 768px) { .sa-top-bar { height: 72px; padding: 0 32px; } }
