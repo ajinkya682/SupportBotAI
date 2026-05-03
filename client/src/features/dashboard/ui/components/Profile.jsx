@@ -18,7 +18,7 @@ import toast from "react-hot-toast";
 import { API_URL } from "../../../../shared/services/config";
 import { updateUserProfile } from "../../../auth/state/authSlice";
 
-export default function Profile() {
+export default function Profile({ view = "general" }) {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   
@@ -192,13 +192,14 @@ export default function Profile() {
   return (
     <div className="profile-page-wrapper animate-fade-in">
       <div className="profile-header-main">
-        <h1>My Profile</h1>
-        <p>Manage your account settings and preferences</p>
+        <h1>{view === "security" ? "Security Settings" : "My Profile"}</h1>
+        <p>{view === "security" ? "Manage your account password and security" : "Manage your account settings and preferences"}</p>
       </div>
 
-      <div className="profile-grid">
+      <div className="profile-grid single-column">
         {/* Section 1: Photo & Info */}
-        <section className="profile-card info-section">
+        {view === "general" && (
+          <section className="profile-card info-section full-width">
           <div className="avatar-upload-container">
             <div className="avatar-large">
               {photoPreview ? (
@@ -267,10 +268,12 @@ export default function Profile() {
               <p>{user.email}</p>
             </div>
           </div>
-        </section>
+          </section>
+        )}
 
         {/* Section 2: Password */}
-        <section className="profile-card password-section">
+        {view === "security" && (
+          <section className="profile-card password-section full-width">
           <div className="card-header">
             <Lock size={20} className="header-icon" />
             <h3>Change Password</h3>
@@ -408,10 +411,14 @@ export default function Profile() {
           align-items: start;
         }
 
-        @media (min-width: 1024px) {
-          .profile-grid {
-            grid-template-columns: 400px 1fr;
-          }
+        .profile-grid.single-column {
+          grid-template-columns: 1fr;
+          max-width: 800px;
+          margin: 0 auto;
+        }
+
+        .profile-card.full-width {
+          width: 100%;
         }
 
         .profile-card {

@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { getBusiness, updateBusiness } from "../../state/businessSlice";
 import { getConversations } from "../../../conversations/state/conversationSlice";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, Sparkles, Loader2, Bell, ChevronRight, Menu, Volume2, VolumeX } from "lucide-react";
+import { X, Check, Sparkles, Loader2, Bell, ChevronRight, Menu, Volume2, VolumeX, ChevronDown, User, Key, LogOut } from "lucide-react";
 import axios from "axios";
 import socket from "../../../../shared/services/socket";
 import toast from "react-hot-toast";
@@ -22,6 +22,7 @@ import NotificationBell from "../components/NotificationBell";
 import SystemSettings from "../components/SystemSettings";
 import Notifications from "../components/Notifications";
 import Profile from "../components/Profile";
+import { logout, reset } from "../../../auth/state/authSlice";
 import { usePushNotifications } from "../../../../shared/hooks/usePushNotifications";
 import useSound from "../../../../shared/services/useSound";
 import PushPrompt from "../../../../shared/ui/components/PushPrompt";
@@ -40,6 +41,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -379,7 +381,9 @@ export default function Dashboard() {
       case "notifications":
         return <Notifications />;
       case "profile":
-        return <Profile />;
+        return <Profile view="general" />;
+      case "security":
+        return <Profile view="security" />;
       default:
         return <Overview business={business} conversations={conversations} />;
     }
@@ -431,13 +435,60 @@ export default function Dashboard() {
             <div className="sa-admin-badge">
               {business?.plan?.toUpperCase() || 'STARTER'}
             </div>
-            <div className="header-user">
-              <div className="user-text desktop-only">
-                <span className="user-name">{user?.name}</span>
-              </div>
-              <div className="sa-avatar">
-                {user?.name?.charAt(0).toUpperCase()}
-              </div>
+            <div className="sa-profile-wrapper">
+              <button 
+                className={`sa-profile-trigger ${isProfileDropdownOpen ? 'active' : ''}`}
+                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+              >
+                <div className="header-user">
+                  <div className="user-text desktop-only">
+                    <span className="user-name">{user?.name}</span>
+                    <span className="user-role-label">{user?.role === 'owner' ? 'Business Owner' : 'Administrator'}</span>
+                  </div>
+                  <div className="sa-avatar">
+                    {user?.profilePhoto ? (
+                      <img src={user.profilePhoto} alt="" />
+                    ) : (
+                      user?.name?.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <ChevronDown size={14} className={`ag-chevron ${isProfileDropdownOpen ? 'open' : ''}`} />
+                </div>
+              </button>
+
+              <AnimatePresence>
+                {isProfileDropdownOpen && (
+                  <>
+                    <div className="ag-dropdown-overlay" onClick={() => setIsProfileDropdownOpen(false)} />
+                    <motion.div 
+                      className="ag-profile-dropdown"
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.15, ease: "easeOut" }}
+                    >
+                      <div className="dropdown-header">
+                        <span className="user-email">{user?.email}</span>
+                      </div>
+                      <div className="dropdown-body">
+                        <button onClick={() => { setActiveTab('profile'); setIsProfileDropdownOpen(false); }}>
+                          <User size={16} />
+                          <span>My Profile</span>
+                        </button>
+                        <button onClick={() => { setActiveTab('security'); setIsProfileDropdownOpen(false); }}>
+                          <Key size={16} />
+                          <span>Security Settings</span>
+                        </button>
+                        <div className="dropdown-divider" />
+                        <button className="logout-item" onClick={onLogout}>
+                          <LogOut size={16} />
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </header>
@@ -574,7 +625,32 @@ export default function Dashboard() {
         .sa-admin-badge { font-size: 0.6rem; font-weight: 900; background: var(--inverse-surface); color: white; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.05em; }
         
         .header-user { display: flex; align-items: center; gap: 12px; }
-        .user-name { font-size: 0.85rem; font-weight: 700; color: var(--on-surface); }
+        .user-text { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+        .user-name { font-size: 0.85rem; font-weight: 800; color: var(--on-surface); }
+        .user-role-label { font-size: 0.65rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .sa-profile-wrapper { position: relative; display: flex; align-items: center; }
+        .sa-profile-trigger { display: flex; align-items: center; padding: 4px 8px; border-radius: 12px; background: transparent; border: none; cursor: pointer; transition: 0.2s; border-left: 1px solid var(--outline-variant); margin-left: 8px; }
+        @media (min-width: 768px) { .sa-profile-trigger { padding: 6px 12px; margin-left: 12px; } }
+        .sa-profile-trigger:hover { background: var(--surface-container-low); }
+        .sa-profile-trigger.active { background: var(--surface-container-low); }
+
+        .ag-chevron { color: var(--on-surface-variant); transition: transform 0.2s; margin-left: 4px; }
+        .ag-chevron.open { transform: rotate(180deg); }
+
+        .ag-profile-dropdown { position: absolute; top: calc(100% + 8px); right: 0; width: 220px; background: white; border-radius: 16px; border: 1px solid var(--outline-variant); box-shadow: var(--shadow-lg); z-index: 1000; overflow: hidden; padding: 8px; }
+        .dropdown-header { padding: 12px 16px; border-bottom: 1px solid var(--outline-variant); margin-bottom: 8px; }
+        .user-email { font-size: 0.75rem; font-weight: 600; color: var(--on-surface-variant); display: block; overflow: hidden; text-overflow: ellipsis; }
+        
+        .dropdown-body { display: flex; flex-direction: column; gap: 2px; }
+        .dropdown-body button { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: transparent; border: none; width: 100%; color: var(--on-surface); font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.2s; text-align: left; }
+        .dropdown-body button:hover { background: var(--surface-container-low); color: var(--primary); }
+        .dropdown-body button.logout-item { color: #ef4444; }
+        .dropdown-body button.logout-item:hover { background: #fef2f2; }
+        
+        .dropdown-divider { height: 1px; background: var(--outline-variant); margin: 6px 4px; }
+        .ag-dropdown-overlay { position: fixed; inset: 0; z-index: 999; }
+        
         .sa-avatar { width: 32px; height: 32px; background: var(--primary-low); color: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; }
         @media (min-width: 768px) { .sa-avatar { width: 36px; height: 36px; border-radius: 10px; } }
         

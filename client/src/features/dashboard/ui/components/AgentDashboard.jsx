@@ -18,7 +18,11 @@ import {
   Zap,
   ArrowUpRight,
   Ticket,
-  ArrowRight
+  ArrowRight,
+  Lock,
+  Shield,
+  Key,
+  ChevronDown
 } from "lucide-react";
 import useSound from "../../../../shared/services/useSound"; 
 import { useDispatch, useSelector } from "react-redux";
@@ -79,6 +83,7 @@ export default function AgentDashboard({ user }) {
   };
 
   const [agentStatus, setAgentStatus] = useState('online');
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (!user?._id) return;
@@ -294,8 +299,7 @@ export default function AgentDashboard({ user }) {
     { id: 'overview', icon: LayoutDashboard, label: 'Agent Console' },
     { id: 'conversations', icon: MessageSquare, label: 'Live Inbox', badge: conversations.filter(c => c.status === 'human_needed' && !c.agent).length },
     { id: 'notifications', icon: Bell, label: 'Notifications' },
-    { id: 'history', icon: History, label: 'Session Archive' },
-    { id: 'profile', icon: User, label: 'My Profile' }
+    { id: 'history', icon: History, label: 'Session Archive' }
   ];
 
   const renderContent = () => {
@@ -469,7 +473,9 @@ export default function AgentDashboard({ user }) {
           </div>
         );
       case 'profile':
-        return <Profile />;
+        return <Profile view="general" />;
+      case 'security':
+        return <Profile view="security" />;
     }
   };
 
@@ -532,10 +538,6 @@ export default function AgentDashboard({ user }) {
         </nav>
 
         <div className="ag-sidebar-footer">
-          <button onClick={onLogout} className="ag-logout-btn">
-            <LogOut size={18} />
-            <span>Sign Out</span>
-          </button>
         </div>
       </aside>
 
@@ -571,14 +573,54 @@ export default function AgentDashboard({ user }) {
             <div className="ag-notification-wrap">
               <NotificationBell onViewAll={() => switchTab('notifications')} />
             </div>
-            <div className="ag-profile">
-               <div className="profile-text desktop-only">
-                 <span className="name">{user.name}</span>
-                 <span className="role">{user.roleTitle || 'Support Agent'}</span>
-               </div>
-               <div className="avatar">
-                 {user.profilePhoto ? <img src={user.profilePhoto} alt="" /> : user.name.charAt(0)}
-               </div>
+            <div className="ag-profile-wrapper">
+              <button 
+                className={`ag-profile-trigger ${isProfileDropdownOpen ? 'active' : ''}`}
+                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+              >
+                <div className="profile-text desktop-only">
+                  <span className="name">{user.name}</span>
+                  <span className="role">{user.roleTitle || 'Support Agent'}</span>
+                </div>
+                <div className="avatar">
+                  {user.profilePhoto ? <img src={user.profilePhoto} alt="" /> : user.name.charAt(0).toUpperCase()}
+                </div>
+                <ChevronDown size={14} className={`ag-chevron ${isProfileDropdownOpen ? 'open' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {isProfileDropdownOpen && (
+                  <>
+                    <div className="ag-dropdown-overlay" onClick={() => setIsProfileDropdownOpen(false)} />
+                    <motion.div 
+                      className="ag-profile-dropdown"
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.15, ease: "easeOut" }}
+                    >
+                      <div className="dropdown-header">
+                        <span className="user-email">{user.email}</span>
+                      </div>
+                      <div className="dropdown-body">
+                        <button onClick={() => { switchTab('profile'); setIsProfileDropdownOpen(false); }}>
+                          <User size={16} />
+                          <span>My Profile</span>
+                        </button>
+                        <button onClick={() => { switchTab('security'); setIsProfileDropdownOpen(false); }}>
+                          <Key size={16} />
+                          <span>Security Settings</span>
+                        </button>
+                        <div className="dropdown-divider" />
+                        <button className="logout-item" onClick={onLogout}>
+                          <LogOut size={16} />
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </header>
@@ -734,6 +776,28 @@ export default function AgentDashboard({ user }) {
         .online .ag-status-label-auto { color: #065f46; }
         .away .ag-status-label-auto { color: #92400e; }
         .offline .ag-status-label-auto { color: #475569; }
+
+        .ag-profile-wrapper { position: relative; display: flex; align-items: center; }
+        .ag-profile-trigger { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 12px; background: transparent; border: none; cursor: pointer; transition: 0.2s; border-left: 1px solid var(--outline-variant); margin-left: 8px; }
+        @media (min-width: 768px) { .ag-profile-trigger { gap: 12px; padding: 6px 12px; margin-left: 12px; } }
+        .ag-profile-trigger:hover { background: var(--surface-container-low); }
+        .ag-profile-trigger.active { background: var(--surface-container-low); }
+
+        .ag-chevron { color: var(--on-surface-variant); transition: transform 0.2s; }
+        .ag-chevron.open { transform: rotate(180deg); }
+
+        .ag-profile-dropdown { position: absolute; top: calc(100% + 8px); right: 0; width: 220px; background: white; border-radius: 16px; border: 1px solid var(--outline-variant); box-shadow: var(--shadow-lg); z-index: 1000; overflow: hidden; padding: 8px; }
+        .dropdown-header { padding: 12px 16px; border-bottom: 1px solid var(--outline-variant); margin-bottom: 8px; }
+        .user-email { font-size: 0.75rem; font-weight: 600; color: var(--on-surface-variant); display: block; overflow: hidden; text-overflow: ellipsis; }
+        
+        .dropdown-body { display: flex; flex-direction: column; gap: 2px; }
+        .dropdown-body button { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: transparent; border: none; width: 100%; color: var(--on-surface); font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.2s; text-align: left; }
+        .dropdown-body button:hover { background: var(--surface-container-low); color: var(--primary); }
+        .dropdown-body button.logout-item { color: #ef4444; }
+        .dropdown-body button.logout-item:hover { background: #fef2f2; }
+        
+        .dropdown-divider { height: 1px; background: var(--outline-variant); margin: 6px 4px; }
+        .ag-dropdown-overlay { position: fixed; inset: 0; z-index: 999; }
 
         .avatar { width: 28px; height: 28px; border-radius: 6px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.7rem; overflow: hidden; border: 1px solid var(--outline-variant); flex-shrink: 0; }
         @media (min-width: 768px) { .avatar { width: 36px; height: 36px; border-radius: 10px; font-size: 0.9rem; } }

@@ -36,7 +36,6 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
     { id: 'appearance', label: 'Visual Design', icon: Palette },
     { id: 'integration', label: 'Widget Config', icon: Code2 },
     { id: 'settings', label: 'System Settings', icon: Settings },
-    { id: 'profile', label: 'My Profile', icon: User },
   ];
 
   const onLogout = () => {
@@ -131,10 +130,6 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
             </div>
           )}
           
-          <button onClick={onLogout} className="sa-logout-btn">
-            <LogOut size={18} />
-            <span>Sign Out</span>
-          </button>
         </div>
 
         <style>{`
