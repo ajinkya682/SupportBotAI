@@ -1,4 +1,4 @@
-import User from '../models/User.model.js';
+import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 import config from '../config/config.js';
 import sendEmail from '../utils/email.js';
@@ -98,7 +98,29 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await User.findOne({ email });
+
+        // 1. Check if this is the Super Admin
+        const defaultSuperEmail = config.SUPER_ADMIN_EMAIL || process.env.SUPER_ADMIN_EMAIL;
+        const defaultSuperPass = config.SUPER_ADMIN_PASSWORD || process.env.SUPER_ADMIN_PASSWORD;
+
+        if (email === defaultSuperEmail && password === defaultSuperPass) {
+            const token = jwt.sign(
+                { role: 'superadmin', email },
+                config.SUPER_ADMIN_JWT_SECRET,
+                { expiresIn: '7d' }
+            );
+            return res.status(200).json({
+                success: true,
+                _id: 'super-admin-id',
+                name: 'Super Admin',
+                email: email,
+                role: 'superadmin',
+                token
+            });
+        }
+
+        // 2. Regular User Login
+        const user = await User.findOne({ email }).select('+password');
 
         if (user && (await user.comparePassword(password))) {
             if (user.role === 'agent') {
