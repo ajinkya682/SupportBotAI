@@ -1,7 +1,7 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://your-backend-url.com/api/:path*" },
-    { "source": "/widget.js", "destination": "https://your-backend-url.com/widget.js" },
+    { "source": "/api/:path*", "destination": "https://supportbotai-szu0.onrender.com/api/:path*" },
+    { "source": "/widget.js", "destination": "https://supportbotai-szu0.onrender.com/widget.js" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
