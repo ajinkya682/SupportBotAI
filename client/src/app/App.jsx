@@ -9,9 +9,12 @@ import { useSelector } from "react-redux";
 import { Toaster } from "react-hot-toast";
 
 import Navbar from "../shared/ui/layout/Navbar";
-
+import Login from "../features/auth/ui/pages/LoginPage";
+import Signup from "../features/auth/ui/pages/SignupPage";
 import Home from "../features/landing/ui/pages/HomePage";
 import ChatWidgetPage from "../features/chat/ui/pages/ChatWidgetPage";
+import Dashboard from "../features/dashboard/ui/pages/DashboardPage";
+import AdminPanel from "../features/dashboard/ui/pages/AdminPanelPage";
 
 import "../App.css";
 
@@ -54,6 +57,16 @@ function AppContent() {
           element={!user ? <Signup /> : <Navigate to="/dashboard" />}
         />
         <Route path="/chat-widget/:apiKey" element={<ChatWidgetPage />} />
+        <Route
+          path="/dashboard"
+          element={user ? <Dashboard /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/admin"
+          element={
+            user && user.role === "admin" ? <AdminPanel /> : <Navigate to="/" />
+          }
+        />
       </Routes>
     </div>
   );
