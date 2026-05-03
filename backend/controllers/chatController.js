@@ -102,6 +102,22 @@ const generateIssueSummary = async (messages) => {
 };
 
 const generateConversationTitle = async (lastUserMessage, intent) => {
+  try {
+    const titleGen = await mistral.chat.complete({
+      model: TITLE_MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: 'Generate a short, descriptive conversation title (max 4 words) based on the user\'s message and intent.',
+        },
+        { role: 'user', content: `Message: ${lastUserMessage}\nIntent: ${intent}` },
+      ],
+    });
+    return titleGen.choices[0].message.content.replace(/['"]/g, '').trim();
+  } catch (err) {
+    return intent.replace('_', ' ').charAt(0).toUpperCase() + intent.replace('_', ' ').slice(1);
+  }
+};
 
 const emitConversationUpdate = (io, ownerId, conversation, aiMsg) => {
   if (!io || !ownerId) return;

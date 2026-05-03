@@ -12,6 +12,7 @@ import { API_URL } from '../../../../shared/services/config';
 import toast from 'react-hot-toast';
 import ThreeDotMenu from '../../../../shared/ui/components/ThreeDotMenu';
 import ConfirmModal from '../../../../shared/ui/components/ConfirmModal';
+import socket from '../../../../shared/services/socket';
 
 const SAAgents = () => {
   const [agents, setAgents] = useState([]);
@@ -31,6 +32,34 @@ const SAAgents = () => {
 
   useEffect(() => {
     fetchAgents();
+
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user) {
+      if (!socket.connected) socket.connect();
+      socket.emit('join_room', 'role_superadmin');
+    }
+
+    const handleStatusChange = (data) => {
+      setAgents(prev => {
+        const updated = prev.map(a => 
+          (a.id === data.agentId || a._id === data.agentId) ? { ...a, status: data.status } : a
+        );
+        
+        // Update stats too
+        setStats(s => ({
+          ...s,
+          online: updated.filter(a => a.status === 'online').length
+        }));
+        
+        return updated;
+      });
+    };
+
+    socket.on('agent_status_changed', handleStatusChange);
+
+    return () => {
+      socket.off('agent_status_changed', handleStatusChange);
+    };
   }, []);
 
   const fetchAgents = async () => {

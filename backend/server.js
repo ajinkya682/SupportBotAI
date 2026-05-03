@@ -105,6 +105,7 @@ app.use('/api/conversations', require('./routes/conversationRoutes'));
 app.use('/api/agents', require('./routes/agentRoutes'));
 app.use('/api/super-admin', require('./routes/superAdminRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/profile', require('./routes/profileRoutes'));
 
 // ── Catch-all for undefined API routes ────────────────────────────────────────
 app.use('/api', (req, res) => {

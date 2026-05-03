@@ -21,6 +21,7 @@ import AgentDashboard from "../components/AgentDashboard";
 import NotificationBell from "../components/NotificationBell";
 import SystemSettings from "../components/SystemSettings";
 import Notifications from "../components/Notifications";
+import Profile from "../components/Profile";
 import { usePushNotifications } from "../../../../shared/hooks/usePushNotifications";
 import useSound from "../../../../shared/services/useSound";
 import PushPrompt from "../../../../shared/ui/components/PushPrompt";
@@ -377,6 +378,8 @@ export default function Dashboard() {
         );
       case "notifications":
         return <Notifications />;
+      case "profile":
+        return <Profile />;
       default:
         return <Overview business={business} conversations={conversations} />;
     }

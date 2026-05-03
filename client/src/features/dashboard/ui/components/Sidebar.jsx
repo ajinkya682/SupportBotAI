@@ -11,7 +11,8 @@ import {
   Palette,
   X,
   Building2,
-  Lock
+  Lock,
+  User
 } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { logout, reset } from "../../../auth/state/authSlice";
@@ -35,6 +36,7 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
     { id: 'appearance', label: 'Visual Design', icon: Palette },
     { id: 'integration', label: 'Widget Config', icon: Code2 },
     { id: 'settings', label: 'System Settings', icon: Settings },
+    { id: 'profile', label: 'My Profile', icon: User },
   ];
 
   const onLogout = () => {

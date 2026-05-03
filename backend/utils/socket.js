@@ -77,6 +77,9 @@ module.exports = (io) => {
 
                     // Notify owner dashboard & all agents of this business
                     io.to(`owner_${ownerId}`).emit('agent_status_changed', { agentId, status });
+
+                    // Also notify superadmins
+                    io.to('role_superadmin').emit('agent_status_changed', { agentId, status, ownerId });
                     
                     // If agent is in a conversation, notify that specific session room too
                     if (agent.currentConversationId) {

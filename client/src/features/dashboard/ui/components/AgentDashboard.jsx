@@ -33,6 +33,7 @@ import toast from "react-hot-toast";
 import NotificationBell from "./NotificationBell";
 import Notifications from "./Notifications";
 import AgentProfileSetup from "./AgentProfileSetup";
+import Profile from "./Profile";
 import { usePushNotifications } from "../../../../shared/hooks/usePushNotifications";
 import PushPrompt from "../../../../shared/ui/components/PushPrompt";
 
@@ -209,10 +210,67 @@ export default function AgentDashboard({ user }) {
     };
   }, [user?._id, agentStatus]);
 
-  const handleStatusChange = (newStatus) => {
-    setAgentStatus(newStatus);
-    socket.emit("agent_status_change", { agentId: user._id, status: newStatus, ownerId: user.ownerId });
-  };
+  // ── Automated Status Tracking ──────────────────────────────────────────
+  useEffect(() => {
+    if (!user?._id || !socket) return;
+
+    const updateStatus = (newStatus) => {
+      // Don't emit if status hasn't changed or if user is logged out
+      setAgentStatus(prev => {
+        if (prev === newStatus) return prev;
+        
+        socket.emit("agent_status_change", { 
+          agentId: user._id, 
+          status: newStatus, 
+          ownerId: user.ownerId 
+        });
+        return newStatus;
+      });
+    };
+
+    const handleActivity = () => {
+      if (document.hidden) {
+        updateStatus('away');
+      } else {
+        updateStatus('online');
+      }
+    };
+
+    const handleBlur = () => updateStatus('away');
+    const handleFocus = () => updateStatus('online');
+
+    // Initial status
+    updateStatus('online');
+
+    // Event listeners
+    document.addEventListener("visibilitychange", handleActivity);
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
+    
+    // Handle tab closing
+    const handleBeforeUnload = () => {
+      socket.emit("agent_status_change", { 
+        agentId: user._id, 
+        status: 'offline', 
+        ownerId: user.ownerId 
+      });
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleActivity);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      
+      // Set offline on unmount (e.g. manual logout)
+      socket.emit("agent_status_change", { 
+        agentId: user._id, 
+        status: 'offline', 
+        ownerId: user.ownerId 
+      });
+    };
+  }, [user?._id, socket]);
 
   const onLogout = () => {
     socket.emit("agent_status_change", { 
@@ -236,7 +294,8 @@ export default function AgentDashboard({ user }) {
     { id: 'overview', icon: LayoutDashboard, label: 'Agent Console' },
     { id: 'conversations', icon: MessageSquare, label: 'Live Inbox', badge: conversations.filter(c => c.status === 'human_needed' && !c.agent).length },
     { id: 'notifications', icon: Bell, label: 'Notifications' },
-    { id: 'history', icon: History, label: 'Session Archive' }
+    { id: 'history', icon: History, label: 'Session Archive' },
+    { id: 'profile', icon: User, label: 'My Profile' }
   ];
 
   const renderContent = () => {
@@ -409,7 +468,8 @@ export default function AgentDashboard({ user }) {
             </div>
           </div>
         );
-
+      case 'profile':
+        return <Profile />;
     }
   };
 
@@ -492,7 +552,8 @@ export default function AgentDashboard({ user }) {
               <span className="ag-current">
                 {activeTab === 'conversations' ? 'Live Inbox' : 
                  (activeTab === 'overview' ? 'Console' : 
-                 (activeTab === 'notifications' ? 'Notifications' : 'Archive'))}
+                 (activeTab === 'notifications' ? 'Notifications' : 
+                 (activeTab === 'profile' ? 'Profile' : 'Archive')))}
               </span>
             </div>
           </div>
@@ -500,12 +561,9 @@ export default function AgentDashboard({ user }) {
           <div className="ag-top-actions">
             <div className={`ag-status-select ${agentStatus}`}>
               <span className={`ag-status-dot-sm ${agentStatus}`} />
-              <select value={agentStatus} onChange={e => handleStatusChange(e.target.value)}
-                className="ag-status-dd">
-                <option value="online">Online</option>
-                <option value="away">Away</option>
-                <option value="offline">Offline</option>
-              </select>
+              <span className="ag-status-label-auto">
+                {agentStatus.charAt(0).toUpperCase() + agentStatus.slice(1)}
+              </span>
             </div>
             <button className="ag-mute-btn" onClick={toggleMute}>
               {isMuted ? <VolumeX size={18} color="#ef4444" /> : <Volume2 size={18} color="var(--primary)" />}
@@ -636,42 +694,54 @@ export default function AgentDashboard({ user }) {
         
         .ag-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; overflow: hidden; }
         
-        .ag-top-bar { height: 60px; padding: 0 16px; display: flex; justify-content: space-between; align-items: center; background: white; border-bottom: 1px solid var(--outline-variant); flex-shrink: 0; }
-        @media (min-width: 768px) { .ag-top-bar { height: 72px; padding: 0 32px; } }
+        .ag-top-bar { height: 60px; padding: 0 12px; display: flex; justify-content: space-between; align-items: center; background: white; border-bottom: 1px solid var(--outline-variant); flex-shrink: 0; gap: 8px; }
+        @media (min-width: 768px) { .ag-top-bar { height: 72px; padding: 0 32px; gap: 16px; } }
         @media (min-width: 1024px) { .ag-top-bar { height: 80px; padding: 0 40px; } }
 
-        .ag-top-bar-left { display: flex; align-items: center; gap: 16px; }
-        .mobile-menu-btn { background: transparent; border: none; padding: 4px; color: var(--on-surface); display: flex; align-items: center; justify-content: center; }
+        .ag-top-bar-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+        @media (min-width: 768px) { .ag-top-bar-left { gap: 16px; } }
+
+        .mobile-menu-btn { background: transparent; border: none; padding: 4px; color: var(--on-surface); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         @media (min-width: 1024px) { .mobile-menu-btn { display: none; } }
 
-        .ag-breadcrumb { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.9rem; }
+        .ag-breadcrumb { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.85rem; min-width: 0; }
+        @media (min-width: 768px) { .ag-breadcrumb { gap: 8px; font-size: 0.95rem; } }
+
         .ag-root { color: var(--on-surface-variant); }
         .ag-sep { color: var(--outline); }
-        .ag-current { color: var(--on-surface); }
+        .ag-current { color: var(--on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .ag-top-actions { display: flex; align-items: center; gap: 12px; }
+        .ag-top-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
         @media (min-width: 768px) { .ag-top-actions { gap: 16px; } }
         
-        .ag-status-select { display: flex; align-items: center; gap: 8px; border-radius: 20px; padding: 4px 10px; transition: 0.2s; border: 1px solid var(--outline-variant); }
+        .ag-status-select { display: flex; align-items: center; gap: 4px; border-radius: 20px; padding: 2px 6px; transition: 0.2s; border: 1px solid var(--outline-variant); }
+        @media (min-width: 768px) { .ag-status-select { gap: 8px; padding: 4px 10px; } }
+
         .ag-status-select.online { background: #f0fdf4; border-color: #d1fae5; }
         .ag-status-select.away { background: #fffbeb; border-color: #fef3c7; }
         .ag-status-select.offline { background: #f8fafc; border-color: #e2e8f0; }
 
-        .ag-status-dot-sm { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .ag-status-dot-sm { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        @media (min-width: 768px) { .ag-status-dot-sm { width: 8px; height: 8px; } }
+
         .ag-status-dot-sm.online { background: #10b981; box-shadow: 0 0 6px #10b98166; }
         .ag-status-dot-sm.away { background: #f59e0b; }
         .ag-status-dot-sm.offline { background: #94a3b8; }
         
-        .ag-status-dd { border: none; background: transparent; font-size: 0.7rem; font-weight: 700; color: inherit; cursor: pointer; outline: none; padding-right: 4px; }
-        .online .ag-status-dd { color: #065f46; }
-        .away .ag-status-dd { color: #92400e; }
-        .offline .ag-status-dd { color: #475569; }
+        .ag-status-label-auto { font-size: 0.65rem; font-weight: 700; color: inherit; cursor: default; }
+        @media (min-width: 768px) { .ag-status-label-auto { font-size: 0.75rem; } }
 
-        .avatar { width: 32px; height: 32px; border-radius: 8px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; overflow: hidden; border: 1px solid var(--outline-variant); }
+        .online .ag-status-label-auto { color: #065f46; }
+        .away .ag-status-label-auto { color: #92400e; }
+        .offline .ag-status-label-auto { color: #475569; }
+
+        .avatar { width: 28px; height: 28px; border-radius: 6px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.7rem; overflow: hidden; border: 1px solid var(--outline-variant); flex-shrink: 0; }
         @media (min-width: 768px) { .avatar { width: 36px; height: 36px; border-radius: 10px; font-size: 0.9rem; } }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
         
-        .ag-profile { display: flex; align-items: center; gap: 12px; padding-left: 12px; border-left: 1px solid var(--outline-variant); }
+        .ag-profile { display: flex; align-items: center; gap: 8px; padding-left: 8px; border-left: 1px solid var(--outline-variant); }
+        @media (min-width: 768px) { .ag-profile { gap: 12px; padding-left: 12px; } }
+
         .profile-text { display: flex; flex-direction: column; align-items: flex-end; }
         .profile-text .name { font-size: 0.85rem; font-weight: 800; color: var(--on-surface); line-height: 1.2; }
         .profile-text .role { font-size: 0.65rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; }
