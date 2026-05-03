@@ -6,10 +6,15 @@ import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { API_URL } from "../../../../shared/services/config";
 
-const NotificationBell = () => {
+const NotificationBell = ({ onViewAll }) => {
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  const handleViewAll = () => {
+    setIsOpen(false);
+    if (onViewAll) onViewAll();
+  };
 
   useEffect(() => {
     fetchNotifications();
@@ -173,7 +178,7 @@ const NotificationBell = () => {
 
             {notifications.length > 0 && (
               <div className="dropdown-footer">
-                <button>View All Notifications <ExternalLink size={12} /></button>
+                <button onClick={handleViewAll}>View All Notifications <ExternalLink size={12} /></button>
               </div>
             )}
           </motion.div>
@@ -194,8 +199,31 @@ const NotificationBell = () => {
         .unread-badge { position: absolute; top: 4px; right: 4px; background: var(--error); color: white; font-size: 0.6rem; font-weight: 800; min-width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid var(--surface-container-lowest); }
         @media (min-width: 768px) { .unread-badge { top: 6px; right: 6px; min-width: 18px; height: 18px; font-size: 0.65rem; } }
         
-        .notifications-dropdown { position: absolute; top: 48px; right: -10px; width: calc(100vw - 32px); max-width: 380px; background: var(--surface-container-lowest); border-radius: 16px; box-shadow: var(--shadow-4); border: 1px solid var(--outline-variant); z-index: 1000; overflow: hidden; transform-origin: top right; }
-        @media (min-width: 768px) { .notifications-dropdown { top: 56px; right: 0; border-radius: 20px; width: 380px; } }
+        .notifications-dropdown { 
+          position: fixed; 
+          top: 64px; 
+          left: 16px; 
+          right: 16px; 
+          background: var(--surface-container-lowest); 
+          border-radius: 20px; 
+          box-shadow: var(--shadow-4); 
+          border: 1px solid var(--outline-variant); 
+          z-index: 1000; 
+          overflow: hidden; 
+          transform-origin: top center;
+        }
+
+        @media (min-width: 768px) { 
+          .notifications-dropdown { 
+            position: absolute; 
+            top: 56px; 
+            right: 0; 
+            left: auto;
+            width: 380px; 
+            border-radius: 20px; 
+            transform-origin: top right; 
+          } 
+        }
 
         .dropdown-header { padding: 16px; border-bottom: 1px solid var(--outline-variant); display: flex; justify-content: space-between; align-items: center; background: var(--surface-container-low); }
         @media (min-width: 768px) { .dropdown-header { padding: 20px 24px; } }
@@ -205,7 +233,7 @@ const NotificationBell = () => {
         .mark-all-btn { background: transparent; border: none; color: var(--primary); font-size: 0.75rem; font-weight: 700; cursor: pointer; }
         @media (min-width: 768px) { .mark-all-btn { font-size: 0.8rem; } }
         
-        .notifications-list { max-height: 350px; overflow-y: auto; }
+        .notifications-list { max-height: 400px; overflow-y: auto; }
         @media (min-width: 768px) { .notifications-list { max-height: 420px; } }
 
         .notification-item { padding: 12px 16px; display: flex; gap: 12px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid var(--outline-variant); }
@@ -229,7 +257,16 @@ const NotificationBell = () => {
         .time { font-size: 0.65rem; color: var(--on-surface-variant); font-weight: 500; }
         @media (min-width: 768px) { .time { font-size: 0.7rem; } }
         
-        .message { font-size: 0.8rem; color: var(--on-surface-variant); line-height: 1.4; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .message { 
+          font-size: 0.8rem; 
+          color: var(--on-surface-variant); 
+          line-height: 1.4; 
+          margin: 0; 
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
         @media (min-width: 768px) { .message { font-size: 0.85rem; line-height: 1.5; } }
         .unread .message { color: var(--on-surface); font-weight: 500; }
         

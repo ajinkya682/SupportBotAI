@@ -20,6 +20,7 @@ import TeamMembers from "../components/TeamMembers";
 import AgentDashboard from "../components/AgentDashboard";
 import NotificationBell from "../components/NotificationBell";
 import SystemSettings from "../components/SystemSettings";
+import Notifications from "../components/Notifications";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
@@ -264,6 +265,8 @@ export default function Dashboard() {
             isLoading={businessLoading}
           />
         );
+      case "notifications":
+        return <Notifications />;
       default:
         return <Overview business={business} conversations={conversations} />;
     }
@@ -303,7 +306,11 @@ export default function Dashboard() {
 
           <div className="sa-top-actions">
             <div className="notification-wrap">
-              {business && <NotificationBell />}
+              {business && (
+                <NotificationBell 
+                  onViewAll={() => setActiveTab("notifications")} 
+                />
+              )}
             </div>
             <div className="sa-admin-badge">
               {business?.plan?.toUpperCase() || 'STARTER'}
