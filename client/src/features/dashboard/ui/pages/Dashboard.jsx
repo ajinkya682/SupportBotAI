@@ -141,11 +141,25 @@ export default function Dashboard() {
       setConversations((prev) =>
         prev.map((conv) => {
           if (conv._id !== data.conversationId) return conv;
-          return { ...conv, status: "human_resolved", updatedAt: new Date(),
-            messages: data.messages || conv.messages };
+          return { 
+            ...conv, 
+            status: "human_resolved", 
+            updatedAt: new Date(),
+            messages: data.messages || conv.messages 
+          };
         }),
       );
       toast.success(`✅ Ticket resolved by ${data.resolvedByName}`);
+    });
+
+    socket.on("update_conversation", (updatedConv) => {
+      setConversations((prev) => {
+        const exists = prev.find((c) => c._id === updatedConv._id);
+        if (exists) {
+          return prev.map((c) => (c._id === updatedConv._id ? updatedConv : c));
+        }
+        return [updatedConv, ...prev];
+      });
     });
 
     socket.on("agent_status_changed", (data) => {
@@ -194,6 +208,7 @@ export default function Dashboard() {
       socket.off("new_ticket");
       socket.off("new_message");
       socket.off("ticket_resolved");
+      socket.off("update_conversation");
       socket.off("agent_status_changed");
       socket.off("ticket_assigned");
       socket.off("conversation_claimed");
@@ -300,6 +315,7 @@ export default function Dashboard() {
             setSelectedConversationId={setSelectedConversationId}
             onConversationsUpdate={setConversations}
             socket={socket}
+            showResolved={false}
             ownerInfo={{
               name: user?.name,
               businessLogo: business?.appearance?.companyLogo,

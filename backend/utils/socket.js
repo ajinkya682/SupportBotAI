@@ -260,10 +260,16 @@ module.exports = (io) => {
 
         // ── Resolve Ticket ──────────────────────────────────────────────────────
         socket.on('resolve_ticket', async (data) => {
-            const { conversationId, ownerId, resolvedBy, resolvedByName, resolvedByType } = data;
+            const { conversationId, resolvedBy, resolvedByName, resolvedByType } = data;
+            let { ownerId } = data;
             try {
-                const conversation = await Conversation.findById(conversationId);
+                const conversation = await Conversation.findById(conversationId).populate('business');
                 if (conversation) {
+                    // Fallback to business owner if ownerId is missing
+                    if (!ownerId && conversation.business) {
+                        ownerId = conversation.business.owner;
+                    }
+
                     conversation.status = 'human_resolved';
                     conversation.routingStatus = 'resolved';
                     conversation.resolvedBy = resolvedBy;
@@ -273,7 +279,7 @@ module.exports = (io) => {
                     conversation.updatedAt = new Date();
                     await conversation.save();
 
-                    if (resolvedByType === 'agent') {
+                    if (resolvedByType === 'agent' && resolvedBy) {
                         const agent = await User.findById(resolvedBy);
                         if (agent) {
                             agent.status = 'online';
@@ -286,19 +292,20 @@ module.exports = (io) => {
                         }
                     }
 
-                    const resolverName = resolvedByName || 'Support';
+                    const resolverName = resolvedByName || (resolvedByType === 'user' ? 'Customer' : 'Support');
                     const systemMsg = {
                         role: 'assistant',
-                        content: `✅ Conversation marked as solved by ${resolvedByType === 'agent' ? `Agent ${resolverName}` : 'Business Owner'}. Feel free to ask anything else.`,
+                        content: `✅ Conversation marked as solved by ${resolvedByType === 'user' ? 'the customer' : resolvedByType === 'agent' ? `Agent ${resolverName}` : 'Business Owner'}. Feel free to ask anything else.`,
                         timestamp: new Date(),
                         senderType: 'ai',
                         senderName: 'System',
+                        senderRole: 'system'
                     };
                     conversation.messages.push(systemMsg);
                     await conversation.save();
 
                     const payload = {
-                        conversationId,
+                        conversationId: conversation._id.toString(),
                         resolvedBy,
                         resolvedByName: resolverName,
                         resolvedByType,
@@ -308,13 +315,21 @@ module.exports = (io) => {
                         messages: conversation.messages,
                     };
 
-                    // Emit to widget
-                    io.to(`session_${conversationId}`).emit('ticket_resolved', payload);
-                    // Emit to dashboard
-                    if (ownerId) io.to(ownerId.toString()).emit('ticket_resolved', payload);
+                    // 1. Notify Widget Session (all tabs)
+                    io.to(`session_${conversationId.toString()}`).emit('ticket_resolved', payload);
+                    
+                    // 2. Notify Dashboard (Owner/Agents)
+                    if (ownerId) {
+                        const room = ownerId.toString();
+                        io.to(room).emit('ticket_resolved', payload);
+                        // Standardize on update_conversation for list updates
+                        io.to(room).emit('update_conversation', conversation);
+                    }
+
+                    console.log(`[Socket] Ticket ${conversationId} resolved by ${resolvedByType}. Broadcast sent to owner ${ownerId}`);
                 }
             } catch (error) {
-                console.error('Resolve ticket error:', error);
+                console.error('[Socket] Resolve ticket error:', error);
             }
         });
 

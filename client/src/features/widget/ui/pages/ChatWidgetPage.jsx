@@ -79,6 +79,8 @@ export default function ChatWidgetPage() {
   const [starRating, setStarRating] = useState(0);
   const [starHover, setStarHover] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
+  const [isEscalating, setIsEscalating] = useState(false);
+  const [escalationPhase, setEscalationPhase] = useState(0);
   const { subscribeToPush, isSubscribed } = usePushNotifications(null);
 
   // 3. Sync Refs with State
@@ -202,6 +204,9 @@ export default function ChatWidgetPage() {
       if (!cid || data.conversationId !== cid.toString()) return;
       setIsResolved(true);
       setShowResolveButtons(false);
+      if (data.messages) {
+        setMessages(data.messages);
+      }
     });
 
     sock.on("ai_toggled", (data) => {
@@ -211,13 +216,39 @@ export default function ChatWidgetPage() {
       if (data.isAiActive) setAgent(null);
     });
 
+    sock.on("status_update", (data) => {
+      const cid = conversationIdRef.current;
+      if (!cid || data.conversationId !== cid.toString()) return;
+      if (data.status === 'human_needed' && data.priority === 'high') {
+        setIsEscalating(true);
+      }
+    });
+
     return () => {
       sock.off('connect'); sock.off('disconnect'); sock.off('new_message');
       sock.off('agent_typing'); sock.off('agent_joined'); sock.off('ticket_resolved'); sock.off('ai_toggled');
+      sock.off('status_update');
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
       sock.disconnect();
     };
   }, [ownerId]);
+
+  useEffect(() => {
+    if (isEscalating && escalationPhase < 4) {
+      const timer = setTimeout(() => {
+        setEscalationPhase(prev => prev + 1);
+        if (escalationPhase === 3) {
+          // Add the actual message to the chat after sequence finishes
+          setMessages(prev => {
+            if (prev.some(m => m.role === 'system_escalation')) return prev;
+            return [...prev, { role: 'system_escalation', timestamp: new Date() }];
+          });
+          setIsEscalating(false);
+        }
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isEscalating, escalationPhase]);
 
   useEffect(() => {
     const handleMessage = (e) => {
@@ -484,9 +515,9 @@ export default function ChatWidgetPage() {
           if (m.role === 'system_escalation') return (
             <div key={i} className="cw-esc-card">
               <div className="cw-esc-badge">⚡ HIGH INTENT</div>
-              {['Detecting query complexity...','High intent identified. Preparing escalation...','Connecting to Senior Enterprise Team...','Agent is joining...'].map((line,li)=>(
-                <div key={li} className="cw-esc-line" style={{animationDelay:`${li*0.6}s`}}>
-                  {li===3 ? <><Loader2 size={12} style={{animation:'cwSpin 0.8s linear infinite',marginRight:6}}/>{line}</> : line}
+              {['Detecting query complexity...','High intent identified. Preparing escalation...','Connecting to Senior Enterprise Team...','Agent is joining...'].slice(0, escalationPhase || 4).map((line,li)=>(
+                <div key={li} className="cw-esc-line">
+                  {(li === 3 || (isEscalating && li === escalationPhase - 1)) ? <><Loader2 size={12} style={{animation:'cwSpin 0.8s linear infinite',marginRight:6}}/>{line}</> : line}
                 </div>
               ))}
             </div>
@@ -633,27 +664,37 @@ export default function ChatWidgetPage() {
         </div>
       )}
 
-      <div className="cw-inputbar">
-        {!isAiActive && agent && (
-          <div className="cw-conn-label">Connected with {agent.displayName}{agent.roleTitle ? `, ${agent.roleTitle}` : ''}</div>
-        )}
-        <form className="cw-input-form" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
-          <input
-            ref={inputRef}
-            className="cw-input"
-            placeholder={isResolved ? "Start a new conversation..." : isAiActive ? (business?.appearance?.placeholderText || "Ask anything...") : "Reply to agent..."}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            autoComplete="off"
-          />
-          <button type="submit" className="cw-send-btn" disabled={!input.trim() || loading} style={{background: input.trim() && !loading ? themeColor : '#d1d5db'}}>
-            {loading ? <Loader2 size={15} className="spin"/> : <Send size={15} fill={input.trim() ? "currentColor" : "none"}/>}
-          </button>
-        </form>
-        {showBranding && (
-          <div className="cw-powered">POWERED BY&nbsp;<strong style={{color:themeColor}}>SUPPORTBOTAI</strong></div>
-        )}
-      </div>
+      {!isResolved ? (
+        <div className="cw-inputbar">
+          {!isAiActive && agent && (
+            <div className="cw-conn-label">Connected with {agent.displayName}{agent.roleTitle ? `, ${agent.roleTitle}` : ''}</div>
+          )}
+          <form className="cw-input-form" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
+            <input
+              ref={inputRef}
+              className="cw-input"
+              placeholder={isAiActive ? (business?.appearance?.placeholderText || "Ask anything...") : "Reply to agent..."}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              autoComplete="off"
+            />
+            <button type="submit" className="cw-send-btn" disabled={!input.trim() || loading} style={{background: input.trim() && !loading ? themeColor : '#d1d5db'}}>
+              {loading ? <Loader2 size={15} className="spin"/> : <Send size={15} fill={input.trim() ? "currentColor" : "none"}/>}
+            </button>
+          </form>
+          {showBranding && (
+            <div className="cw-powered">POWERED BY&nbsp;<strong style={{color:themeColor}}>SUPPORTBOTAI</strong></div>
+          )}
+        </div>
+      ) : (
+        <div className="cw-resolved-footer">
+          <div className="cw-resolved-msg">This conversation has ended.</div>
+          <button className="cw-start-new-link" onClick={startNewChat} style={{color:themeColor}}>Start a new chat</button>
+          {showBranding && (
+            <div className="cw-powered">POWERED BY&nbsp;<strong style={{color:themeColor}}>SUPPORTBOTAI</strong></div>
+          )}
+        </div>
+      )}
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -751,6 +792,9 @@ export default function ChatWidgetPage() {
         .cw-powered{display:flex;align-items:center;justify-content:center;gap:4px;font-size:0.55rem;color:#94a3b8;margin-top:4px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;}
         @keyframes cwSpin{to{transform:rotate(360deg);}}
         .spin{animation:cwSpin 0.8s linear infinite;}
+        .cw-resolved-footer{padding:12px 16px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;flex-direction:column;align-items:center;gap:6px;}
+        .cw-resolved-msg{font-size:0.75rem;color:#64748b;font-weight:600;}
+        .cw-start-new-link{background:none;border:none;font-size:0.78rem;font-weight:700;cursor:pointer;padding:4px 10px;text-decoration:underline;}
       `}</style>
 
     </div>
