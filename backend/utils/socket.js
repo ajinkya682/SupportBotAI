@@ -70,6 +70,13 @@ module.exports = (io) => {
             }
         });
 
+        // ── Typing Indicator ────────────────────────────────────────────────────
+        socket.on('typing', ({ conversationId, agentName }) => {
+            if (conversationId) {
+                io.to(`session_${conversationId}`).emit('agent_typing', { conversationId, agentName });
+            }
+        });
+
         // ── Send Message (Agent/Owner → User) — Persist + Broadcast ────────────
         socket.on('send_message', async (data) => {
             const {
