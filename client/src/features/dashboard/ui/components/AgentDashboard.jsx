@@ -819,6 +819,7 @@ export default function AgentDashboard({ user: propUser }) {
         .ag-chevron.open { transform: rotate(180deg); }
 
         .ag-profile-dropdown { position: absolute; top: calc(100% + 8px); right: 0; width: 220px; background: white; border-radius: 16px; border: 1px solid var(--outline-variant); box-shadow: var(--shadow-lg); z-index: 1000; overflow: hidden; padding: 8px; }
+        @media (max-width: 480px) { .ag-profile-dropdown { width: 190px; } }
         .dropdown-header { padding: 12px 16px; border-bottom: 1px solid var(--outline-variant); margin-bottom: 8px; }
         .user-email { font-size: 0.75rem; font-weight: 600; color: var(--on-surface-variant); display: block; overflow: hidden; text-overflow: ellipsis; }
         
