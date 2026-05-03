@@ -442,6 +442,12 @@ export default function ChatWidgetPage() {
 
   return (
     <div className="cw-root">
+      {!isConnected && (
+        <div className="cw-reconnect-banner">
+          <RotateCcw size={12} className="spin" /> Reconnecting to service...
+        </div>
+      )}
+
       {/* Header */}
       <div className="cw-header" style={{ borderTop: `4px solid ${themeColor}` }}>
         <div className="cw-header-left">
@@ -579,6 +585,13 @@ export default function ChatWidgetPage() {
               </div>
               <span className="cw-ts" style={{ fontStyle: 'italic' }}>{typingAgentName} is typing...</span>
             </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="cw-error">
+            <span>{error}</span>
+            <button onClick={() => setError(null)}><X size={12} /></button>
           </div>
         )}
       </div>
@@ -971,6 +984,43 @@ export default function ChatWidgetPage() {
           letter-spacing: 0.05em;
           text-transform: uppercase;
         }
+
+        .cw-reconnect-banner {
+          background: #fef3c7;
+          color: #92400e;
+          font-size: 0.75rem;
+          font-weight: 600;
+          padding: 8px;
+          text-align: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        .cw-error {
+          background: #fee2e2;
+          color: #b91c1c;
+          font-size: 0.8rem;
+          padding: 10px 14px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-top: 10px;
+          animation: cwSlideUp 0.3s ease-out;
+        }
+        .cw-error button {
+          background: none;
+          border: none;
+          color: #b91c1c;
+          cursor: pointer;
+          opacity: 0.7;
+        }
+        .cw-error button:hover { opacity: 1; }
+
+        .spin { animation: cwSpin 1s linear infinite; }
+        @keyframes cwSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         /* Mobile Styles */
         @media (max-width: 640px) {

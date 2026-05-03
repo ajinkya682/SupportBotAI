@@ -21,13 +21,16 @@ const analyzeMessage = (text) => {
 
   const angryWords = ['hate', 'worst', 'angry', 'terrible', 'scam', 'refund', 'sue', 'legal', 'bad service'];
   const urgentWords = ['urgent', 'asap', 'immediately', 'now', 'quickly', 'emergency'];
+  const escalationWords = ['agent', 'human', 'person', 'support team', 'representative', 'talk to someone', 'connect'];
 
   let emotion = 'neutral';
   if (angryWords.some((word) => lowerText.includes(word))) emotion = 'angry';
   else if (urgentWords.some((word) => lowerText.includes(word))) emotion = 'urgent';
 
   let intent = 'general_query';
-  if (lowerText.includes('price') || lowerText.includes('cost') || lowerText.includes('pay')) {
+  if (escalationWords.some((word) => lowerText.includes(word))) {
+    intent = 'human_escalation';
+  } else if (lowerText.includes('price') || lowerText.includes('cost') || lowerText.includes('pay')) {
     intent = 'billing';
   } else if (lowerText.includes('help') || lowerText.includes('how to') || lowerText.includes('not working')) {
     intent = 'technical_support';
@@ -63,15 +66,24 @@ const isKnowledgeBaseEmpty = (business) => {
 
 const isMessageRelevant = (text, business) => {
   const lowerText = text.toLowerCase();
+  
+  // 1. Always allow short greetings and polite words
+  const greetings = ['hello', 'hi', 'hey', 'greetings', 'morning', 'afternoon', 'evening', 'thanks', 'thank you', 'okay', 'ok', 'yes', 'no'];
+  if (greetings.some(g => lowerText.includes(g))) return true;
+
+  // 2. Always allow escalation requests
+  const escalationWords = ['agent', 'human', 'person', 'representative', 'talk to', 'support'];
+  if (escalationWords.some(w => lowerText.includes(w))) return true;
+
   const knowledge = (business.knowledge || '').toLowerCase();
   const faqs = (business.faqs || []).map(f => `${f.question} ${f.answer}`).join(' ').toLowerCase();
   const allContent = `${knowledge} ${faqs}`;
 
-  // Simple keyword matching: filter out very common words (stop words)
+  // 3. Simple keyword matching: filter out very common words (stop words)
   const stopWords = ['is', 'the', 'a', 'an', 'and', 'or', 'but', 'how', 'what', 'where', 'when', 'who', 'why', 'can', 'you', 'i', 'me', 'my', 'your', 'it', 'they', 'them', 'this', 'that', 'with', 'for', 'about', 'to', 'of', 'in', 'on', 'at', 'by', 'from'];
   const words = lowerText.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
 
-  if (words.length === 0) return true; // Allow short/simple greetings
+  if (words.length === 0) return true; // Allow very short/simple messages
 
   // Check if at least one meaningful word exists in the KB
   return words.some(word => allContent.includes(word));
@@ -306,7 +318,8 @@ exports.handleChat = async (req, res) => {
     const needsEscalation =
       confidence.toLowerCase() === 'low' ||
       emotion === 'angry' ||
-      intent === 'account_management';
+      intent === 'account_management' ||
+      intent === 'human_escalation';
 
     // Determine Grounded Status based on AI response content
     const aiGroundedStatus = aiReply.includes(FALLBACK_MESSAGE) ? 'fallback-irrelevant' : 'answered';

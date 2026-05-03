@@ -1,4 +1,5 @@
-const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const defaultUrl = import.meta.env.PROD ? `${window.location.origin}/api` : "http://localhost:3000/api";
+const rawApiUrl = import.meta.env.VITE_API_URL || defaultUrl;
 export const API_URL = rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl.replace(/\/$/, '')}/api`;
 export const BASE_URL = API_URL.replace(/\/api$/, "");
 export const APP_URL = import.meta.env.VITE_APP_URL || "http://localhost:5173";
