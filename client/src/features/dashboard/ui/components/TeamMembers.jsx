@@ -2,22 +2,12 @@ import { useState, useEffect } from "react";
 import { 
   Users, 
   UserPlus, 
-  Mail, 
   Shield, 
-  ShieldCheck, 
   Trash2, 
-  MoreVertical, 
   Search, 
   Filter,
-  CheckCircle2,
-  AlertCircle,
   Loader2,
-  X,
-  Bot,
-  User,
-  ExternalLink,
-  ChevronRight,
-  Plus
+  X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
@@ -95,8 +85,8 @@ export default function TeamMembers() {
           <h1>Team Management</h1>
           <p>Manage human agents who can take over AI conversations.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowInviteModal(true)}>
-          <UserPlus size={18} /> Invite Team Member
+        <button className="btn btn-primary invite-btn" onClick={() => setShowInviteModal(true)}>
+          <UserPlus size={18} /> <span>Invite Member</span>
         </button>
       </div>
 
@@ -111,7 +101,7 @@ export default function TeamMembers() {
         </div>
         <div className="card stat-mini">
           <span className="label">Handover Capacity</span>
-          <span className="value">{(agents.length * 5)} chats</span>
+          <span className="value">{(agents.length * 5)} <span className="desktop-only">chats</span></span>
         </div>
       </div>
 
@@ -120,81 +110,112 @@ export default function TeamMembers() {
           <div className="search-wrapper">
             <Search size={18} />
             <input 
-              placeholder="Search by name or email..." 
+              placeholder="Search team..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="btn btn-secondary"><Filter size={18} /> Filter</button>
+          <button className="btn btn-secondary filter-btn"><Filter size={18} /> <span className="desktop-only">Filter</span></button>
         </div>
 
-        <div className="table-wrapper">
-          <table className="team-table">
-            <thead>
-              <tr>
-                <th>Member</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Joined</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan="5" className="loading-row">
-                    <Loader2 size={32} className="animate-spin" />
-                    <p>Loading team members...</p>
-                  </td>
-                </tr>
-              ) : filteredAgents.length === 0 ? (
-                <tr>
-                  <td colSpan="5" className="empty-row">
-                    <Users size={48} />
-                    <h4>No team members found</h4>
-                    <p>Invite your first agent to start handling complex queries.</p>
-                  </td>
-                </tr>
-              ) : (
-                filteredAgents.map((agent) => (
-                  <tr key={agent._id}>
-                    <td>
-                      <div className="member-info">
-                        <div className="member-avatar">
-                          {agent.profilePhoto ? <img src={agent.profilePhoto} alt="" /> : agent.name.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="member-name">{agent.name}</div>
-                          <div className="member-email">{agent.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="role-tag">
-                        <Shield size={12} />
-                        {agent.roleTitle || 'Support Agent'}
-                      </div>
-                    </td>
-                    <td>
-                      <div className={`status-pill ${agent.status || 'offline'}`}>
-                        <span className="dot"></span>
-                        {agent.status || 'Offline'}
-                      </div>
-                    </td>
-                    <td>
-                      <span className="join-date">{new Date(agent.createdAt).toLocaleDateString()}</span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <button className="icon-btn delete" onClick={() => handleRemove(agent._id)}>
-                        <Trash2 size={18} />
-                      </button>
-                    </td>
+        {isLoading ? (
+          <div className="loading-state-view">
+            <Loader2 size={32} className="animate-spin" />
+            <p>Loading team members...</p>
+          </div>
+        ) : filteredAgents.length === 0 ? (
+          <div className="empty-state-view">
+            <Users size={40} />
+            <h4>No team members found</h4>
+            <p>Invite your first agent to start handling complex queries.</p>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table View */}
+            <div className="table-wrapper desktop-only">
+              <table className="team-table">
+                <thead>
+                  <tr>
+                    <th>Member</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody>
+                  {filteredAgents.map((agent) => (
+                    <tr key={agent._id}>
+                      <td>
+                        <div className="member-info">
+                          <div className="member-avatar">
+                            {agent.profilePhoto ? <img src={agent.profilePhoto} alt="" /> : agent.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="member-name">{agent.name}</div>
+                            <div className="member-email">{agent.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="role-tag">
+                          <Shield size={12} />
+                          {agent.roleTitle || 'Support Agent'}
+                        </div>
+                      </td>
+                      <td>
+                        <div className={`status-pill ${agent.status || 'offline'}`}>
+                          <span className="dot"></span>
+                          {agent.status || 'Offline'}
+                        </div>
+                      </td>
+                      <td>
+                        <span className="join-date">{new Date(agent.createdAt).toLocaleDateString()}</span>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button className="icon-btn delete" onClick={() => handleRemove(agent._id)}>
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Stacked View */}
+            <div className="mobile-team-list mobile-only">
+              {filteredAgents.map((agent) => (
+                <div key={agent._id} className="mobile-agent-card">
+                  <div className="mobile-agent-header">
+                    <div className="member-info">
+                      <div className="member-avatar">
+                        {agent.profilePhoto ? <img src={agent.profilePhoto} alt="" /> : agent.name.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="member-name">{agent.name}</div>
+                        <div className="member-email">{agent.email}</div>
+                      </div>
+                    </div>
+                    <button className="icon-btn delete" onClick={() => handleRemove(agent._id)}>
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                  <div className="mobile-agent-footer">
+                    <div className="role-tag">
+                      <Shield size={12} />
+                      {agent.roleTitle || 'Support Agent'}
+                    </div>
+                    <div className={`status-pill ${agent.status || 'offline'}`}>
+                      <span className="dot"></span>
+                      {agent.status || 'Offline'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Invite Modal */}
@@ -203,16 +224,16 @@ export default function TeamMembers() {
           <div className="modal-overlay" onClick={() => setShowInviteModal(false)}>
             <motion.div 
               className="modal-card"
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="modal-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div className="modal-icon"><UserPlus size={24} /></div>
+                <div className="modal-title-group">
+                  <div className="modal-icon"><UserPlus size={20} /></div>
                   <div>
-                    <h3>Invite Team Member</h3>
+                    <h3>Invite Member</h3>
                     <p>Send an invitation to join your workspace.</p>
                   </div>
                 </div>
@@ -223,7 +244,7 @@ export default function TeamMembers() {
                 <div className="form-group">
                   <label>Full Name</label>
                   <input 
-                    placeholder="Enter agent name"
+                    placeholder="Agent name"
                     value={inviteData.name}
                     onChange={(e) => setInviteData({ ...inviteData, name: e.target.value })}
                     required
@@ -239,7 +260,7 @@ export default function TeamMembers() {
                     required
                   />
                 </div>
-                <div className="form-group" style={{ marginBottom: '32px' }}>
+                <div className="form-group" style={{ marginBottom: '24px' }}>
                   <label>Role Title</label>
                   <select 
                     value={inviteData.roleTitle}
@@ -255,7 +276,7 @@ export default function TeamMembers() {
                 <div className="modal-footer">
                   <button type="button" className="btn btn-secondary" onClick={() => setShowInviteModal(false)}>Cancel</button>
                   <button type="submit" className="btn btn-primary" disabled={isInviting}>
-                    {isInviting ? <Loader2 size={18} className="animate-spin" /> : 'Send Invitation'}
+                    {isInviting ? <Loader2 size={18} className="animate-spin" /> : 'Send Invite'}
                   </button>
                 </div>
               </form>
@@ -265,54 +286,109 @@ export default function TeamMembers() {
       </AnimatePresence>
 
       <style>{`
-        .team-container { padding-bottom: 60px; }
-        .team-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .team-container { padding-bottom: 40px; }
+        .team-header { 
+          display: flex; 
+          flex-direction: column; 
+          gap: 16px; 
+          margin-bottom: 24px; 
+        }
+
+        @media (min-width: 768px) {
+          .team-header { flex-direction: row; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }
+        }
+
+        .invite-btn { width: 100%; justify-content: center; }
+        @media (min-width: 768px) { .invite-btn { width: auto; } }
         
-        .team-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
-        .stat-mini { padding: 20px; display: flex; flex-direction: column; gap: 4px; }
-        .stat-mini .label { font-size: 0.75rem; font-weight: 700; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em; }
+        .team-stats-row { 
+          display: flex;
+          flex-direction: column;
+          gap: 12px; 
+          margin-bottom: 24px; 
+        }
+
+        @media (min-width: 640px) {
+          .team-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
+        }
+
+        .stat-mini { padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+        @media (min-width: 768px) { .stat-mini { padding: 20px; } }
+        .stat-mini .label { font-size: 11px; font-weight: 700; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em; }
         .stat-mini .value { font-size: 1.5rem; font-weight: 800; color: var(--on-surface); }
         
         .team-list-card { padding: 0; overflow: hidden; }
-        .list-controls { padding: 24px; border-bottom: 1px solid var(--outline-variant); display: flex; justify-content: space-between; gap: 16px; }
-        .search-wrapper { flex: 1; display: flex; align-items: center; gap: 12px; background: var(--surface-container-low); padding: 10px 16px; border-radius: 12px; border: 1.5px solid var(--outline-variant); color: var(--outline); }
-        .search-wrapper input { background: transparent; border: none; font-size: 0.9rem; flex: 1; padding: 0; }
+        .list-controls { padding: 16px; border-bottom: 1px solid var(--outline-variant); display: flex; gap: 12px; align-items: center; }
+        @media (min-width: 768px) { .list-controls { padding: 24px; justify-content: space-between; gap: 16px; } }
+
+        .search-wrapper { flex: 1; display: flex; align-items: center; gap: 12px; background: var(--surface-container-low); padding: 8px 12px; border-radius: 12px; border: 1.5px solid var(--outline-variant); color: var(--outline); }
+        .search-wrapper input { background: transparent; border: none; font-size: 13px; flex: 1; padding: 0; min-width: 0; }
+        .search-wrapper input:focus { outline: none; }
+        .filter-btn { padding: 10px; min-width: 44px; justify-content: center; }
         
-        .table-wrapper { overflow-x: auto; }
-        .team-table { width: 100%; border-collapse: collapse; }
-        .team-table th { text-align: left; padding: 16px 24px; background: var(--surface-container-low); color: var(--on-surface-variant); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
-        .team-table td { padding: 20px 24px; border-bottom: 1px solid var(--outline-variant); vertical-align: middle; }
+        /* Desktop Table View */
+        .table-wrapper { overflow-x: auto; display: none; }
+        @media (min-width: 768px) { .table-wrapper { display: block; } }
+
+        .team-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        .team-table th { text-align: left; padding: 16px 24px; background: var(--surface-container-low); color: var(--on-surface-variant); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+        .team-table td { padding: 16px 24px; border-bottom: 1px solid var(--outline-variant); vertical-align: middle; }
         
-        .member-info { display: flex; align-items: center; gap: 16px; }
-        .member-avatar { width: 44px; height: 44px; border-radius: 14px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; overflow: hidden; }
+        .member-info { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .member-avatar { width: 36px; height: 36px; border-radius: 10px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; overflow: hidden; flex-shrink: 0; }
+        @media (min-width: 768px) { .member-avatar { width: 44px; height: 44px; font-size: 1.1rem; } }
+
         .member-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .member-name { font-weight: 700; color: var(--on-surface); font-size: 0.95rem; }
-        .member-email { font-size: 0.8rem; color: var(--on-surface-variant); }
+        .member-name { font-weight: 700; color: var(--on-surface); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .member-email { font-size: 12px; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .role-tag { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 700; color: var(--on-surface-variant); background: var(--surface-container-high); padding: 4px 10px; border-radius: 6px; width: fit-content; }
+        .role-tag { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--on-surface-variant); background: var(--surface-container-high); padding: 4px 10px; border-radius: 6px; width: fit-content; }
         
-        .status-pill { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 700; text-transform: capitalize; }
-        .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; }
+        .status-pill { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: capitalize; }
+        .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
         .status-pill.online { color: #10b981; }
-        .status-pill.online .dot { background: #10b981; box-shadow: 0 0 8px #10b981; }
+        .status-pill.online .dot { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.4); }
         .status-pill.offline { color: var(--outline); }
         .status-pill.offline .dot { background: var(--outline); }
         
-        .join-date { font-size: 0.85rem; color: var(--on-surface-variant); }
+        .join-date { font-size: 12px; color: var(--on-surface-variant); }
         .icon-btn.delete { color: var(--outline); transition: 0.2s; background: none; border: none; cursor: pointer; padding: 8px; border-radius: 8px; }
         .icon-btn.delete:hover { color: var(--error); background: var(--error-container); }
         
-        .loading-row, .empty-row { padding: 80px 24px; text-align: center; color: var(--on-surface-variant); }
-        .empty-row h4 { margin-top: 16px; color: var(--on-surface); }
+        /* Mobile Stacked View */
+        .mobile-team-list { display: flex; flex-direction: column; }
+        .mobile-agent-card { padding: 16px; border-bottom: 1px solid var(--outline-variant); display: flex; flex-direction: column; gap: 16px; }
+        .mobile-agent-card:last-child { border-bottom: none; }
+        .mobile-agent-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .mobile-agent-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px dashed var(--outline-variant); }
+
+        .loading-state-view, .empty-state-view { padding: 40px 16px; text-align: center; color: var(--on-surface-variant); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        @media (min-width: 768px) { .loading-state-view, .empty-state-view { padding: 80px 24px; } }
+        .empty-state-view h4 { margin-top: 8px; color: var(--on-surface); font-size: 1rem; }
+        .empty-state-view p { font-size: 13px; }
         
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px; }
-        .modal-card { background: var(--surface-container-lowest); width: 100%; max-width: 500px; border-radius: 24px; box-shadow: var(--shadow-4); border: 1px solid var(--outline-variant); padding: 40px; }
-        .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
-        .modal-icon { width: 56px; height: 56px; background: var(--primary-fixed); color: var(--primary); border-radius: 16px; display: flex; align-items: center; justify-content: center; }
-        .close-btn { background: var(--surface-container-low); border: none; color: var(--outline); padding: 8px; border-radius: 50%; cursor: pointer; transition: 0.2s; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: flex-end; justify-content: center; padding: 16px; }
+        @media (min-width: 640px) { .modal-overlay { align-items: center; padding: 24px; } }
+
+        .modal-card { background: var(--surface-container-lowest); width: 100%; max-width: 480px; border-radius: 20px; box-shadow: var(--shadow-modal); border: 1px solid var(--outline-variant); padding: 24px; }
+        @media (min-width: 640px) { .modal-card { padding: 32px; border-radius: 24px; } }
+
+        .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+        .modal-title-group { display: flex; gap: 12px; align-items: center; }
+        .modal-title-group h3 { font-size: 1.1rem; }
+        .modal-title-group p { font-size: 13px; color: var(--on-surface-variant); margin-top: 2px; }
+        .modal-icon { width: 44px; height: 44px; background: var(--primary-fixed); color: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .close-btn { background: var(--surface-container-low); border: none; color: var(--outline); padding: 6px; border-radius: 50%; cursor: pointer; transition: 0.2s; }
         .close-btn:hover { background: var(--outline-variant); color: var(--on-surface); }
-        .modal-footer { display: flex; gap: 12px; margin-top: 40px; }
-        .modal-footer button { flex: 1; height: 48px; }
+        
+        .modal-footer { display: flex; flex-direction: column-reverse; gap: 12px; margin-top: 32px; }
+        @media (min-width: 480px) { .modal-footer { flex-direction: row; } }
+        .modal-footer button { flex: 1; height: 44px; }
+        
+        .desktop-only { display: none; }
+        @media (min-width: 768px) { .desktop-only { display: inline; } }
+        .mobile-only { display: flex; }
+        @media (min-width: 768px) { .mobile-only { display: none; } }
       `}</style>
     </div>
   );

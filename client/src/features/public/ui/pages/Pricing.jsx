@@ -52,7 +52,7 @@ export default function Pricing() {
               className="card faq-item-card"
             >
               <div className="faq-q">
-                <HelpCircle size={20} color="var(--primary)" />
+                <HelpCircle size={20} color="var(--primary)" className="flex-shrink-0" />
                 <h4>{faq.q}</h4>
               </div>
               <p className="faq-a">{faq.a}</p>
@@ -67,32 +67,61 @@ export default function Pricing() {
             <h3>Still have questions?</h3>
             <p>Our team is here to help you choose the right plan for your business needs.</p>
           </div>
-          <button className="btn btn-primary btn-lg">Chat with Sales</button>
+          <button className="btn btn-primary btn-lg w-full-mobile">Chat with Sales</button>
         </div>
       </div>
 
       <style>{`
-        .pricing-page-wrapper { padding-bottom: 120px; background: var(--surface); }
-        .pricing-hero { padding: 80px 0 0; }
-        .pricing-hero h1 { font-size: 3.5rem; margin: 24px 0; }
-        .pricing-hero p { color: var(--on-surface-variant); font-size: 1.15rem; max-width: 600px; margin: 0 auto; }
+        .pricing-page-wrapper { padding-bottom: 64px; background: var(--surface); }
+        @media (min-width: 768px) { .pricing-page-wrapper { padding-bottom: 120px; } }
+
+        .pricing-hero { padding: 40px 0 0; }
+        @media (min-width: 768px) { .pricing-hero { padding: 80px 0 0; } }
+
+        .pricing-hero h1 { font-size: 2rem; margin: 16px 0; line-height: 1.2; font-weight: 800; }
+        @media (min-width: 768px) { .pricing-hero h1 { font-size: 3.5rem; margin: 24px 0; } }
+
+        .pricing-hero p { color: var(--on-surface-variant); font-size: 1rem; max-width: 600px; margin: 0 auto; line-height: 1.5; }
+        @media (min-width: 768px) { .pricing-hero p { font-size: 1.15rem; } }
         
-        .faq-section { margin-top: 80px; }
-        .faq-accordion { max-width: 900px; margin: 60px auto 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
-        .faq-item-card { padding: 32px; height: 100%; border-radius: 24px; }
-        .faq-q { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-        .faq-q h4 { margin: 0; font-size: 1.1rem; color: var(--on-surface); }
-        .faq-a { color: var(--on-surface-variant); line-height: 1.6; font-size: 0.95rem; margin: 0; }
+        .faq-section { margin-top: 60px; }
+        @media (min-width: 768px) { .faq-section { margin-top: 80px; } }
+
+        .faq-accordion { max-width: 900px; margin: 40px auto 0; display: grid; grid-template-columns: 1fr; gap: 16px; }
+        @media (min-width: 768px) { .faq-accordion { grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 60px; } }
+
+        .faq-item-card { padding: 24px; height: 100%; border-radius: 20px; }
+        @media (min-width: 768px) { .faq-item-card { padding: 32px; border-radius: 24px; } }
+
+        .faq-q { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+        @media (min-width: 768px) { .faq-q { align-items: center; margin-bottom: 16px; } }
+
+        .flex-shrink-0 { flex-shrink: 0; margin-top: 2px; }
+        @media (min-width: 768px) { .flex-shrink-0 { margin-top: 0; } }
+
+        .faq-q h4 { margin: 0; font-size: 1.05rem; color: var(--on-surface); line-height: 1.4; }
+        @media (min-width: 768px) { .faq-q h4 { font-size: 1.1rem; } }
+
+        .faq-a { color: var(--on-surface-variant); line-height: 1.6; font-size: 0.9rem; margin: 0; }
+        @media (min-width: 768px) { .faq-a { font-size: 0.95rem; } }
         
-        .cta-banner { margin-top: 120px; }
-        .banner-card { background: linear-gradient(135deg, var(--inverse-surface), #1e293b); color: white; padding: 60px; display: flex; justify-content: space-between; align-items: center; border: none; border-radius: 32px; }
-        .banner-text h3 { font-size: 2rem; margin-bottom: 12px; color: white; }
-        .banner-text p { color: var(--outline-variant); font-size: 1.1rem; margin: 0; }
-        
-        @media (max-width: 992px) {
-          .faq-accordion { grid-template-columns: 1fr; }
-          .banner-card { flex-direction: column; text-align: center; gap: 40px; padding: 48px; }
-        }
+        .cta-banner { margin-top: 64px; }
+        @media (min-width: 768px) { .cta-banner { margin-top: 120px; } }
+
+        .banner-card { background: linear-gradient(135deg, var(--inverse-surface), #1e293b); color: white; padding: 40px 24px; display: flex; flex-direction: column; text-align: center; gap: 32px; border: none; border-radius: 24px; align-items: center; }
+        @media (min-width: 992px) { .banner-card { flex-direction: row; text-align: left; justify-content: space-between; padding: 60px; gap: 40px; border-radius: 32px; } }
+
+        .banner-text h3 { font-size: 1.5rem; margin-bottom: 8px; color: white; }
+        @media (min-width: 768px) { .banner-text h3 { font-size: 2rem; margin-bottom: 12px; } }
+
+        .banner-text p { color: var(--outline-variant); font-size: 1rem; margin: 0; line-height: 1.5; }
+        @media (min-width: 768px) { .banner-text p { font-size: 1.1rem; } }
+
+        .w-full-mobile { width: 100%; }
+        @media (min-width: 640px) { .w-full-mobile { width: auto; } }
+
+        .title-tag { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 10px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 auto 16px; background: var(--primary-fixed); width: fit-content; padding: 4px 12px; border-radius: 20px; }
+        @media (min-width: 768px) { .title-tag { font-size: 11px; margin: 0 auto 24px; } }
       `}</style>
     </div>
   );

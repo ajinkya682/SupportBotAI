@@ -3,8 +3,6 @@ import {
   Palette, 
   Upload, 
   Bot, 
-  User, 
-  MessageSquare, 
   Sparkles, 
   Check, 
   Save, 
@@ -13,8 +11,7 @@ import {
   Image as ImageIcon,
   Monitor,
   Smartphone,
-  ChevronRight,
-  Info
+  ChevronRight
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -22,7 +19,7 @@ import { API_URL } from '../../../../shared/services/config';
 import toast from 'react-hot-toast';
 
 export default function Appearance({ formData, setFormData, onSave, isLoading, business, onUpgrade }) {
-  const [previewMode, setPreviewMode] = useState('desktop'); // desktop, mobile
+  const [previewMode, setPreviewMode] = useState('desktop'); 
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef();
 
@@ -67,9 +64,9 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
         ...prev,
         appearance: { ...prev.appearance, companyLogo: data.url }
       }));
-      toast.success('Logo uploaded successfully');
+      toast.success('Logo uploaded');
     } catch (err) {
-      toast.error('Logo upload failed');
+      toast.error('Upload failed');
     } finally {
       setIsUploading(false);
     }
@@ -85,14 +82,14 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
       <div className="appearance-header">
         <div className="page-title">
           <h1>Widget Branding</h1>
-          <p>Customize how your AI assistant looks on your website.</p>
+          <p>Customize your AI assistant's visual identity.</p>
         </div>
         <button 
-          className="btn btn-primary" 
+          className="btn btn-primary appearance-save-btn" 
           onClick={onSave} 
           disabled={isLoading}
         >
-          {isLoading ? <Loader2 size={18} className="animate-spin" /> : <><Save size={18} /> Save Changes</>}
+          {isLoading ? <Loader2 size={18} className="animate-spin" /> : <><Save size={18} /> <span>Save Changes</span></>}
         </button>
       </div>
 
@@ -100,7 +97,7 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
         {/* Settings Panel */}
         <div className="settings-panel">
           <div className="card">
-            <h3 className="section-title"><Palette size={20} /> Design & Personality</h3>
+            <h3 className="section-title"><Palette size={20} /> Personality</h3>
             
             <div className="form-group">
               <label>Bot Name</label>
@@ -119,7 +116,7 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
                 value={formData.appearance.welcomeMessage}
                 onChange={handleInputChange}
                 rows="3"
-                placeholder="Hi there! How can I help you today?"
+                placeholder="Hi there! How can I help you?"
               />
             </div>
 
@@ -129,7 +126,7 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
                 name="placeholderText"
                 value={formData.appearance.placeholderText}
                 onChange={handleInputChange}
-                placeholder="Type your message..."
+                placeholder="Type message..."
               />
             </div>
 
@@ -142,6 +139,7 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
                     className={`color-swatch ${formData.appearance.themeColor === color ? 'active' : ''}`}
                     style={{ backgroundColor: color }}
                     onClick={() => handleColorChange(color)}
+                    aria-label={`Select ${color} color`}
                   >
                     {formData.appearance.themeColor === color && <Check size={14} color="white" />}
                   </button>
@@ -151,6 +149,7 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
                     type="color" 
                     value={formData.appearance.themeColor}
                     onChange={(e) => handleColorChange(e.target.value)}
+                    aria-label="Select custom color"
                   />
                 </div>
               </div>
@@ -158,24 +157,22 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
           </div>
 
           <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 className="section-title" style={{ marginBottom: 0 }}><ImageIcon size={20} /> Branding & Logo</h3>
-              {business?.plan === 'free' && (
-                <span className="pro-badge">PRO FEATURE</span>
-              )}
+            <div className="section-title-row">
+              <h3 className="section-title"><ImageIcon size={20} /> Branding</h3>
+              {business?.plan === 'free' && <span className="pro-badge">PRO</span>}
             </div>
 
             {business?.plan === 'free' ? (
-              <div className="pro-feature-lock">
-                <Sparkles size={24} style={{ color: 'var(--primary)', marginBottom: '12px' }} />
-                <p>Upload your own logo and remove "Powered by SupportBotAI" branding.</p>
-                <button className="btn btn-secondary btn-sm" onClick={onUpgrade}>Upgrade to Unlock</button>
+              <div className="pro-lock-box">
+                <Sparkles size={24} color="var(--primary)" />
+                <p>Upload logo & remove branding.</p>
+                <button className="btn btn-secondary btn-sm" onClick={onUpgrade}>Upgrade</button>
               </div>
             ) : (
               <div className="logo-upload-container">
                 <div className="logo-preview-box">
                   {formData.appearance.companyLogo ? (
-                    <img src={formData.appearance.companyLogo} alt="Company Logo" />
+                    <img src={formData.appearance.companyLogo} alt="Logo" />
                   ) : (
                     <div className="empty-logo"><ImageIcon size={32} /></div>
                   )}
@@ -189,20 +186,20 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
                     accept="image/*"
                   />
                   <button 
-                    className="btn btn-secondary" 
+                    className="btn btn-secondary btn-sm" 
                     onClick={() => fileInputRef.current.click()}
                     disabled={isUploading}
                   >
                     {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                    Upload Logo
+                    Upload
                   </button>
                   {formData.appearance.companyLogo && (
                     <button 
-                      className="btn btn-text" 
+                      className="btn btn-text btn-sm" 
                       style={{ color: 'var(--error)' }}
                       onClick={() => setFormData(prev => ({ ...prev, appearance: { ...prev.appearance, companyLogo: '' } }))}
                     >
-                      <Trash2 size={16} /> Remove
+                      <Trash2 size={14} /> Remove
                     </button>
                   )}
                 </div>
@@ -215,10 +212,10 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
         <div className="preview-panel">
           <div className="preview-controls">
             <button className={`p-btn ${previewMode === 'desktop' ? 'active' : ''}`} onClick={() => setPreviewMode('desktop')}>
-              <Monitor size={18} /> Desktop
+              <Monitor size={18} /> <span className="desktop-only">Desktop</span>
             </button>
             <button className={`p-btn ${previewMode === 'mobile' ? 'active' : ''}`} onClick={() => setPreviewMode('mobile')}>
-              <Smartphone size={18} /> Mobile
+              <Smartphone size={18} /> <span className="desktop-only">Mobile</span>
             </button>
           </div>
 
@@ -253,7 +250,7 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
                     )}
                   </div>
                   <div>
-                    <div className="bot-name">{formData.appearance.botName || 'AI Assistant'}</div>
+                    <div className="bot-name">{formData.appearance.botName || 'Assistant'}</div>
                     <div className="bot-status">Online</div>
                   </div>
                 </div>
@@ -262,10 +259,9 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
               <div className="widget-body">
                 <div className="msg bot-msg">
                   <div className="msg-content">{formData.appearance.welcomeMessage}</div>
-                  <div className="msg-time">Just now</div>
                 </div>
                 <div className="msg user-msg">
-                  <div className="msg-content" style={{ backgroundColor: formData.appearance.themeColor }}>How can I help you?</div>
+                  <div className="msg-content" style={{ backgroundColor: formData.appearance.themeColor }}>How can I help?</div>
                 </div>
               </div>
 
@@ -277,7 +273,7 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
                   </div>
                 </div>
                 {business?.plan === 'free' && (
-                  <div className="powered-by">Powered by SupportBotAI</div>
+                  <div className="powered-by">Powered by SupportBot</div>
                 )}
               </div>
             </motion.div>
@@ -286,72 +282,143 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
       </div>
 
       <style>{`
-        .appearance-container { padding-bottom: 60px; }
-        .appearance-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-        .appearance-grid { display: grid; grid-template-columns: 1fr 480px; gap: 40px; }
+        .appearance-container { padding-bottom: 40px; }
         
-        .section-title { font-size: 1.1rem; display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
-        .color-grid { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-        .color-swatch { width: 40px; height: 40px; border-radius: 12px; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .color-swatch.active { border-color: var(--on-surface); transform: scale(1.1); box-shadow: var(--shadow-2); }
-        .custom-color-input { width: 40px; height: 40px; border-radius: 12px; overflow: hidden; border: 2px solid var(--outline-variant); position: relative; }
+        .appearance-header { 
+          display: flex; 
+          flex-direction: column; 
+          gap: 20px; 
+          margin-bottom: 32px; 
+        }
+
+        @media (min-width: 768px) {
+          .appearance-header { flex-direction: row; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        }
+
+        .appearance-save-btn { width: 100%; }
+        @media (min-width: 768px) { .appearance-save-btn { width: auto; } }
+
+        .appearance-grid { 
+          display: flex;
+          flex-direction: column;
+          gap: 32px; 
+        }
+
+        @media (min-width: 1024px) {
+          .appearance-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 400px; 
+            gap: 40px; 
+          }
+        }
+        
+        .section-title { font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+        .section-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .section-title-row .section-title { margin-bottom: 0; }
+
+        .color-grid { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .color-swatch { width: 36px; height: 36px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .color-swatch.active { border-color: var(--on-surface); transform: scale(1.05); }
+        .custom-color-input { width: 36px; height: 36px; border-radius: 10px; overflow: hidden; border: 1px solid var(--outline-variant); position: relative; }
         .custom-color-input input { position: absolute; top: -10px; left: -10px; width: 60px; height: 60px; cursor: pointer; }
         
-        .pro-badge { font-size: 0.65rem; font-weight: 800; background: var(--primary-fixed); color: var(--primary); padding: 4px 10px; border-radius: 6px; letter-spacing: 0.05em; }
-        .pro-feature-lock { text-align: center; padding: 32px; background: var(--surface-container-low); border-radius: var(--radius-lg); border: 1px dashed var(--outline-variant); }
-        .pro-feature-lock p { font-size: 0.85rem; color: var(--on-surface-variant); margin-bottom: 20px; }
+        .pro-badge { font-size: 10px; font-weight: 800; background: var(--primary-fixed); color: var(--primary); padding: 2px 8px; border-radius: 4px; }
+        .pro-lock-box { text-align: center; padding: 24px; background: var(--surface-container-low); border-radius: 16px; border: 1px dashed var(--outline-variant); }
+        .pro-lock-box p { font-size: 13px; color: var(--on-surface-variant); margin: 12px 0 16px; }
         
-        .logo-upload-container { display: flex; gap: 24px; align-items: center; }
-        .logo-preview-box { width: 100px; height: 100px; border-radius: var(--radius-lg); background: var(--surface-container-low); border: 1.5px solid var(--outline-variant); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .logo-upload-container { display: flex; gap: 16px; align-items: center; }
+        .logo-preview-box { width: 80px; height: 80px; border-radius: 12px; background: var(--surface-container-low); border: 1px solid var(--outline-variant); display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .logo-preview-box img { width: 100%; height: 100%; object-fit: contain; }
-        .empty-logo { color: var(--outline); }
-        .upload-controls { display: flex; flex-direction: column; gap: 12px; }
+        .upload-controls { display: flex; flex-direction: column; gap: 8px; }
         
-        .preview-panel { position: sticky; top: 32px; }
-        .preview-controls { display: flex; gap: 8px; background: var(--surface-container-low); padding: 6px; border-radius: 12px; width: fit-content; margin: 0 auto 24px; border: 1px solid var(--outline-variant); }
-        .p-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px; border: none; background: transparent; color: var(--on-surface-variant); font-weight: 600; font-size: 0.875rem; cursor: pointer; }
-        .p-btn.active { background: var(--surface-container-lowest); color: var(--on-surface); box-shadow: var(--shadow-1); }
+        .preview-panel { width: 100%; }
+        .preview-controls { 
+          display: flex; 
+          gap: 4px; 
+          background: var(--surface-container-low); 
+          padding: 4px; 
+          border-radius: 10px; 
+          width: fit-content; 
+          margin: 0 auto 20px; 
+          border: 1px solid var(--outline-variant); 
+        }
+
+        .p-btn { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; border: none; background: transparent; color: var(--on-surface-variant); font-weight: 600; font-size: 13px; cursor: pointer; }
+        .p-btn.active { background: white; color: var(--on-surface); box-shadow: var(--shadow-1); }
         
-        .preview-container { height: 700px; background: #e5e7eb; border-radius: 32px; border: 8px solid #1f2937; position: relative; overflow: hidden; transition: 0.4s; margin: 0 auto; }
+        .preview-container { 
+          height: 500px; 
+          background: #e5e7eb; 
+          border-radius: 20px; 
+          border: 4px solid #1f2937; 
+          position: relative; 
+          overflow: hidden; 
+          transition: 0.4s; 
+          margin: 0 auto; 
+        }
+
+        @media (min-width: 1024px) {
+          .preview-container { height: 600px; border-radius: 32px; border: 8px solid #1f2937; }
+        }
+
         .preview-container.desktop { width: 100%; }
-        .preview-container.mobile { width: 340px; border-radius: 40px; }
+        .preview-container.mobile { width: 280px; }
+        @media (min-width: 480px) { .preview-container.mobile { width: 320px; } }
         
-        .mock-site { padding: 24px; height: 100%; background: white; }
-        .mock-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 60px; }
-        .mock-logo { width: 100px; height: 20px; background: #e5e7eb; border-radius: 4px; }
-        .mock-links { display: flex; gap: 12px; }
-        .mock-links span { width: 40px; height: 10px; background: #f3f4f6; border-radius: 2px; }
-        .mock-hero { text-align: center; max-width: 80%; margin: 0 auto; }
-        .mock-text-lg { height: 32px; background: #f3f4f6; border-radius: 8px; margin-bottom: 16px; }
-        .mock-text-sm { height: 16px; background: #f9fafb; border-radius: 4px; margin-bottom: 24px; width: 60%; margin: 0 auto 24px; }
-        .mock-btn { width: 120px; height: 40px; background: #e5e7eb; border-radius: 8px; margin: 0 auto; }
+        .mock-site { padding: 16px; height: 100%; background: white; }
+        .mock-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        .mock-logo { width: 60px; height: 12px; background: #e5e7eb; border-radius: 2px; }
+        .mock-links { display: flex; gap: 8px; }
+        .mock-links span { width: 30px; height: 8px; background: #f3f4f6; border-radius: 2px; }
+        .mock-hero { text-align: center; max-width: 90%; margin: 0 auto; }
+        .mock-text-lg { height: 24px; background: #f3f4f6; border-radius: 4px; margin-bottom: 12px; }
+        .mock-text-sm { height: 12px; background: #f9fafb; border-radius: 2px; margin-bottom: 20px; width: 70%; margin: 0 auto 20px; }
+        .mock-btn { width: 100px; height: 32px; background: #e5e7eb; border-radius: 6px; margin: 0 auto; }
         
-        .widget-mockup { position: absolute; bottom: 24px; right: 24px; width: 320px; height: 480px; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #f3f4f6; }
-        .widget-header { padding: 20px; color: white; display: flex; justify-content: space-between; align-items: flex-start; }
-        .header-info { display: flex; gap: 12px; align-items: center; }
-        .bot-avatar { width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .widget-mockup { 
+          position: absolute; 
+          bottom: 16px; 
+          right: 16px; 
+          width: 240px; 
+          height: 360px; 
+          background: white; 
+          border-radius: 16px; 
+          box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+          display: flex; 
+          flex-direction: column; 
+          overflow: hidden; 
+          border: 1px solid #f3f4f6; 
+          transform-origin: bottom right;
+          scale: 0.9;
+        }
+
+        @media (min-width: 768px) {
+          .widget-mockup { width: 280px; height: 420px; scale: 1; bottom: 20px; right: 20px; }
+        }
+
+        .widget-header { padding: 12px 16px; color: white; display: flex; justify-content: space-between; align-items: flex-start; }
+        .header-info { display: flex; gap: 10px; align-items: center; }
+        .bot-avatar { width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .bot-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .bot-name { font-weight: 700; font-size: 0.95rem; }
-        .bot-status { font-size: 0.7rem; opacity: 0.8; display: flex; align-items: center; gap: 4px; }
-        .bot-status::before { content: ''; width: 6px; height: 6px; background: #4ade80; border-radius: 50%; }
+        .bot-name { font-weight: 700; font-size: 13px; }
+        .bot-status { font-size: 10px; opacity: 0.8; display: flex; align-items: center; gap: 4px; }
+        .bot-status::before { content: ''; width: 5px; height: 5px; background: #4ade80; border-radius: 50%; }
         
-        .widget-body { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 16px; background: #fafafa; overflow-y: auto; }
-        .msg { max-width: 85%; }
-        .msg-content { padding: 12px 16px; border-radius: 16px; font-size: 0.875rem; line-height: 1.5; }
+        .widget-body { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: #fafafa; overflow-y: hidden; }
+        .msg { max-width: 90%; }
+        .msg-content { padding: 10px 14px; border-radius: 12px; font-size: 12px; line-height: 1.4; }
         .bot-msg { align-self: flex-start; }
         .bot-msg .msg-content { background: white; color: #1f2937; border-bottom-left-radius: 4px; border: 1px solid #e5e7eb; }
         .user-msg { align-self: flex-end; }
         .user-msg .msg-content { color: white; border-bottom-right-radius: 4px; }
-        .msg-time { font-size: 0.65rem; color: #9ca3af; margin-top: 4px; margin-left: 4px; }
         
-        .widget-footer { padding: 16px; background: white; border-top: 1px solid #f3f4f6; }
-        .input-mock { display: flex; justify-content: space-between; align-items: center; background: #f9fafb; padding: 10px 14px; border-radius: 12px; border: 1px solid #e5e7eb; color: #9ca3af; font-size: 0.875rem; }
-        .send-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-        .powered-by { text-align: center; font-size: 0.6rem; color: #d1d5db; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+        .widget-footer { padding: 12px; background: white; border-top: 1px solid #f3f4f6; }
+        .input-mock { display: flex; justify-content: space-between; align-items: center; background: #f9fafb; padding: 8px 12px; border-radius: 10px; border: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px; }
+        .send-icon { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+        .powered-by { text-align: center; font-size: 8px; color: #d1d5db; margin-top: 10px; text-transform: uppercase; font-weight: 700; }
         
-        @media (max-width: 340px) {
-          .preview-container.mobile { width: 100%; border-radius: 0; border: none; }
-        }
+        .desktop-only { display: none; }
+        @media (min-width: 768px) { .desktop-only { display: inline; } }
       `}</style>
     </div>
   );

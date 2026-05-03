@@ -11,7 +11,6 @@ import {
   Loader2, 
   Bot, 
   Building2, 
-  Sparkles, 
   ArrowRight, 
   CheckCircle2 
 } from 'lucide-react';
@@ -20,7 +19,7 @@ import { toast } from 'react-hot-toast';
 import { useGoogleLogin } from '@react-oauth/google';
 
 export default function Signup() {
-  const [step, setStep] = useState(1); // 1: Account, 2: Business, 3: AI Setup
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({ 
     name: '', 
     email: '', 
@@ -85,7 +84,7 @@ export default function Signup() {
       case 1:
         return (
           <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-            <button className="btn btn-secondary google-btn" onClick={handleGoogleSignup} style={{ width: '100%', background: 'white', border: '1.5px solid var(--outline-variant)' }}>
+            <button className="btn btn-secondary google-btn full-width" onClick={handleGoogleSignup}>
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="18" />
               <span>Sign up with Google</span>
             </button>
@@ -94,24 +93,18 @@ export default function Signup() {
             </div>
             <form onSubmit={handleRegister}>
               <div className="form-group">
-                <label>
-                  <User size={14} style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Full Name
-                </label>
+                <label><User size={14} className="label-icon" /> Full Name</label>
                 <input type="text" name="name" value={name} onChange={onChange} placeholder="John Doe" required />
               </div>
               <div className="form-group">
-                <label>
-                  <Mail size={14} style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Email Address
-                </label>
+                <label><Mail size={14} className="label-icon" /> Email Address</label>
                 <input type="email" name="email" value={email} onChange={onChange} placeholder="name@company.com" required />
               </div>
               <div className="form-group">
-                <label>
-                  <Lock size={14} style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Password
-                </label>
+                <label><Lock size={14} className="label-icon" /> Password</label>
                 <input type="password" name="password" value={password} onChange={onChange} placeholder="••••••••" required />
               </div>
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px', height: '52px' }} disabled={isLoading}>
+              <button type="submit" className="btn btn-primary auth-submit-btn" disabled={isLoading}>
                 {isLoading ? <Loader2 size={20} className="animate-spin" /> : 'Create Account'}
               </button>
             </form>
@@ -121,16 +114,14 @@ export default function Signup() {
         return (
           <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
             <div className="step-tag">Step 2 of 3</div>
-            <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Tell us about your business</h3>
-            <p style={{ color: 'var(--on-surface-variant)', marginBottom: '32px', fontSize: '0.95rem' }}>This helps us personalize your AI assistant.</p>
+            <h3>Tell us about your business</h3>
+            <p className="step-desc">This helps us personalize your AI assistant.</p>
             <form onSubmit={handleBusinessSetup}>
               <div className="form-group">
-                <label>
-                  <Building2 size={14} style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Business Name
-                </label>
+                <label><Building2 size={14} className="label-icon" /> Business Name</label>
                 <input type="text" name="businessName" value={businessName} onChange={onChange} placeholder="Acme Corp" required />
               </div>
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '16px', height: '52px' }}>
+              <button type="submit" className="btn btn-primary auth-submit-btn">
                 Next: AI Training <ArrowRight size={18} />
               </button>
             </form>
@@ -140,13 +131,11 @@ export default function Signup() {
         return (
           <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
             <div className="step-tag">Step 3 of 3</div>
-            <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Pre-train your AI</h3>
-            <p style={{ color: 'var(--on-surface-variant)', marginBottom: '32px', fontSize: '0.95rem' }}>Briefly describe what your business does or paste some FAQs.</p>
+            <h3>Pre-train your AI</h3>
+            <p className="step-desc">Briefly describe what your business does or paste some FAQs.</p>
             <form onSubmit={handleAISetup}>
               <div className="form-group">
-                <label>
-                  <Bot size={14} style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Business Description / FAQ
-                </label>
+                <label><Bot size={14} className="label-icon" /> Business Description / FAQ</label>
                 <textarea 
                   name="knowledge" 
                   value={knowledge} 
@@ -155,11 +144,11 @@ export default function Signup() {
                   style={{ minHeight: '160px' }}
                 />
               </div>
-              <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
-                <button type="button" className="btn btn-secondary" style={{ flex: 1, height: '52px' }} onClick={() => navigate('/dashboard')}>
+              <div className="button-group-responsive">
+                <button type="button" className="btn btn-secondary flex-1" onClick={() => navigate('/dashboard')}>
                   Skip for now
                 </button>
-                <button type="submit" className="btn btn-primary" style={{ flex: 2, height: '52px' }} disabled={businessLoading}>
+                <button type="submit" className="btn btn-primary flex-2" disabled={businessLoading}>
                   {businessLoading ? <Loader2 size={18} className="animate-spin" /> : 'Complete Setup'}
                 </button>
               </div>
@@ -172,83 +161,109 @@ export default function Signup() {
 
   return (
     <div className="auth-page">
-      <div style={{ width: '100%', maxWidth: '500px' }}>
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="card auth-card"
-          style={{ padding: '40px' }}
-        >
-          <div className="auth-header" style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center', marginBottom: '24px', textDecoration: 'none' }}>
-              <div style={{ background: 'var(--primary)', padding: '10px', borderRadius: '12px' }}>
-                <Bot size={32} color="white" />
-              </div>
-              <span style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.5rem', color: 'var(--on-surface)' }}>
-                SUPPORTBOT <span style={{ color: 'var(--primary)' }}>AI</span>
-              </span>
-            </Link>
-            <h2 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>{step === 1 ? 'Start your free trial' : 'Almost there...'}</h2>
-            <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.95rem' }}>
-              {step === 1 ? 'Join thousands of businesses automating support' : 'Finalizing your workspace'}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="auth-card"
+      >
+        <div className="auth-header">
+          <Link to="/" className="auth-brand">
+            <div className="brand-icon">
+              <Bot size={28} color="white" />
+            </div>
+            <span className="brand-text">
+              SUPPORTBOT <span className="highlight">AI</span>
+            </span>
+          </Link>
+          <h2>{step === 1 ? 'Start your free trial' : 'Almost there...'}</h2>
+          <p className="header-desc">
+            {step === 1 ? 'Join thousands of businesses automating support' : 'Finalizing your workspace'}
+          </p>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {renderStep()}
+        </AnimatePresence>
+
+        {step === 1 && (
+          <div className="auth-footer">
+            <p>
+              Already have an account? <Link to="/login" className="login-link-footer">Sign In</Link>
             </p>
           </div>
-
-          <AnimatePresence mode="wait">
-            {renderStep()}
-          </AnimatePresence>
-
-          {step === 1 && (
-            <div style={{ marginTop: '32px', textAlign: 'center', paddingTop: '24px', borderTop: '1px solid var(--outline-variant)' }}>
-              <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.95rem' }}>
-                Already have an account? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'none' }}>Sign In</Link>
-              </p>
-            </div>
-          )}
-        </motion.div>
-      </div>
+        )}
+      </motion.div>
 
       <style>{`
         .auth-page {
           min-height: 100vh;
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: center;
-          background: linear-gradient(135deg, var(--surface-container-low) 0%, var(--surface) 100%);
-          padding: 24px;
+          background: var(--surface-container-lowest);
+          padding: 0;
         }
-        .step-tag {
-          font-size: 0.7rem;
-          font-weight: 800;
-          color: var(--primary);
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-          margin-bottom: 12px;
-          background: var(--primary-fixed);
-          width: fit-content;
-          padding: 4px 12px;
-          border-radius: var(--radius-full);
-        }
-        .google-btn:hover {
-          background-color: var(--surface-container-low) !important;
-          border-color: var(--primary) !important;
-        }
-        .divider {
+
+        .auth-card {
+          width: 100%;
+          min-height: 100vh;
+          padding: 48px 24px 32px;
+          background: white;
+          border-radius: 0;
           display: flex;
-          align-items: center;
-          text-align: center;
-          margin: 24px 0;
-          color: var(--outline);
-          font-size: 0.75rem;
-          font-weight: 700;
-          letter-spacing: 0.1em;
+          flex-direction: column;
+          padding-top: calc(48px + env(safe-area-inset-top));
         }
-        .divider::before, .divider::after {
-          content: '';
-          flex: 1;
-          border-bottom: 1.5px solid var(--outline-variant);
+
+        @media (min-width: 640px) {
+          .auth-page {
+            align-items: center;
+            background: var(--surface);
+            padding: 24px;
+          }
+          .auth-card {
+            max-width: 480px;
+            min-height: auto;
+            padding: 48px;
+            border-radius: 24px;
+            box-shadow: var(--shadow-overlay);
+            border: 1px solid var(--outline-variant);
+          }
         }
+
+        .auth-header { text-align: center; margin-bottom: 32px; }
+        .auth-brand { display: flex; align-items: center; gap: 12px; justify-content: center; margin-bottom: 24px; text-decoration: none; }
+        .brand-icon { background: var(--primary); padding: 8px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-raised); }
+        .brand-text { font-size: 1.25rem; font-weight: 800; color: var(--on-surface); letter-spacing: -0.02em; }
+        .brand-text .highlight { color: var(--primary); }
+        
+        .auth-header h2 { font-size: clamp(1.5rem, 5vw, 1.75rem); margin-bottom: 8px; }
+        .header-desc { color: var(--on-surface-variant); font-size: 0.9rem; }
+
+        .google-btn { width: 100%; background: white; border: 1px solid var(--outline-variant); margin-bottom: 24px; gap: 12px; height: 44px; }
+        .google-btn:hover { background-color: var(--surface-container-low); border-color: var(--primary); }
+        
+        .divider { display: flex; align-items: center; text-align: center; margin: 24px 0; color: var(--outline); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; }
+        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1.5px solid var(--outline-variant); }
         .divider span { padding: 0 16px; }
+
+        .label-icon { margin-right: 8px; vertical-align: middle; }
+        .auth-submit-btn { width: 100%; margin-top: 8px; height: 52px; font-size: 1rem; }
+
+        .step-tag { font-size: 0.7rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; background: var(--surface-container-low); width: fit-content; padding: 4px 12px; border-radius: var(--radius-full); }
+        .step-desc { color: var(--on-surface-variant); margin-bottom: 32px; font-size: 0.9rem; line-height: 1.5; }
+
+        .button-group-responsive { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+        @media (min-width: 640px) { .button-group-responsive { flex-direction: row; gap: 16px; } }
+        
+        .flex-1 { flex: 1; }
+        .flex-2 { flex: 2; }
+
+        .auth-footer { margin-top: auto; text-align: center; padding-top: 24px; border-top: 1px solid var(--outline-variant); }
+        @media (min-width: 640px) { .auth-footer { margin-top: 32px; } }
+        
+        .auth-footer p { color: var(--on-surface-variant); font-size: 0.9rem; }
+        .login-link-footer { color: var(--primary); font-weight: 700; text-decoration: none; }
       `}</style>
     </div>
   );
