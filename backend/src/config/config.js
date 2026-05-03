@@ -25,7 +25,24 @@ if (!process.env.GOOGLE_CLIENT_ID) {
     throw new Error("GOOGLE_CLIENT_ID is not defined in environment variables")
 }
 
+if (!process.env.SUPER_ADMIN_JWT_SECRET) {
+    throw new Error("SUPER_ADMIN_JWT_SECRET is not defined in environment variables")
+}
+
+if (!process.env.IMAGEKIT_PUBLIC_KEY) {
+    throw new Error("IMAGEKIT_PUBLIC_KEY is not defined in environment variables")
+}
+
+if (!process.env.IMAGEKIT_PRIVATE_KEY) {
+    throw new Error("IMAGEKIT_PRIVATE_KEY is not defined in environment variables")
+}
+
+if (!process.env.IMAGEKIT_URL_ENDPOINT) {
+    throw new Error("IMAGEKIT_URL_ENDPOINT is not defined in environment variables")
+}
+
 const config = {
+    PORT: process.env.PORT ? Number(process.env.PORT) : 3000,
     MONGODB_URI: process.env.MONGODB_URI,
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_SECRET_EXPIRES_IN: process.env.JWT_SECRET_EXPIRES_IN || '30d',
@@ -35,6 +52,10 @@ const config = {
     CLIENT_ID: process.env.CLIENT_ID,
     CLIENT_SECRET: process.env.CLIENT_SECRET,
     REFRESH_TOKEN: process.env.REFRESH_TOKEN,
+    SUPER_ADMIN_JWT_SECRET: process.env.SUPER_ADMIN_JWT_SECRET,
+    IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY,
+    IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY,
+    IMAGEKIT_URL_ENDPOINT: process.env.IMAGEKIT_URL_ENDPOINT,
 }
 
 export default config;
