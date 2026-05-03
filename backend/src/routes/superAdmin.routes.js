@@ -26,13 +26,25 @@ import {
 } from '../controller/notification.controller.js';
 
 import { superAdminProtect } from '../middlewares/superAdmin.middleware.js';
+import validateRequest from '../validators/validateRequest.js';
+import {
+    superAdminLoginValidator,
+    businessIdValidator,
+    updateBusinessPlanValidator,
+    agentIdValidator,
+    conversationIdValidator,
+    updateSettingsValidator,
+    changePasswordValidator,
+    broadcastNotificationValidator,
+    targetedNotificationValidator
+} from '../validators/superAdmin.validator.js';
 
 /**
  * @route   POST /api/super-admin/login
  * @desc    Authenticate super admin and return master JWT
  * @access  Public
  */
-router.post('/login', login);
+router.post('/login', superAdminLoginValidator, validateRequest, login);
 
 /**
  * All routes below this line require the superAdminProtect middleware
@@ -72,14 +84,14 @@ router.get('/businesses', getBusinesses);
  * @desc    Get full profile, agent list, and conversation history for a specific business
  * @access  Protected (Super Admin)
  */
-router.get('/businesses/:id', getBusinessDetails);
+router.get('/businesses/:id', businessIdValidator, validateRequest, getBusinessDetails);
 
 /**
  * @route   PATCH /api/super-admin/businesses/:id/plan
  * @desc    Manually update a business's subscription plan (Free/Pro)
  * @access  Protected (Super Admin)
  */
-router.patch('/businesses/:id/plan', updateBusinessPlan);
+router.patch('/businesses/:id/plan', updateBusinessPlanValidator, validateRequest, updateBusinessPlan);
 
 /**
  * @route   GET /api/super-admin/agents
@@ -93,7 +105,7 @@ router.get('/agents', getAgents);
  * @desc    Get detailed performance history for a specific support agent
  * @access  Protected (Super Admin)
  */
-router.get('/agents/:id', getAgentDetails);
+router.get('/agents/:id', agentIdValidator, validateRequest, getAgentDetails);
 
 /**
  * @route   GET /api/super-admin/conversations
@@ -107,7 +119,7 @@ router.get('/conversations', getConversations);
  * @desc    View specific conversation transcript and technical metadata
  * @access  Protected (Super Admin)
  */
-router.get('/conversations/:id', getConversationDetails);
+router.get('/conversations/:id', conversationIdValidator, validateRequest, getConversationDetails);
 
 /**
  * @route   GET /api/super-admin/subscriptions
@@ -128,28 +140,28 @@ router.get('/settings', getSettings);
  * @desc    Update global platform-wide configurations
  * @access  Protected (Super Admin)
  */
-router.put('/settings', updateSettings);
+router.put('/settings', updateSettingsValidator, validateRequest, updateSettings);
 
 /**
  * @route   PUT /api/super-admin/settings/change-password
  * @desc    Update the Super Admin master password
  * @access  Protected (Super Admin)
  */
-router.put('/settings/change-password', changePassword);
+router.put('/settings/change-password', changePasswordValidator, validateRequest, changePassword);
 
 /**
  * @route   POST /api/super-admin/notifications/broadcast
  * @desc    Send a real-time notification to every business on the platform
  * @access  Protected (Super Admin)
  */
-router.post('/notifications/broadcast', broadcastNotification);
+router.post('/notifications/broadcast', broadcastNotificationValidator, validateRequest, broadcastNotification);
 
 /**
  * @route   POST /api/super-admin/notifications/targeted
  * @desc    Send a real-time notification to a specific business owner
  * @access  Protected (Super Admin)
  */
-router.post('/notifications/targeted', targetedNotification);
+router.post('/notifications/targeted', targetedNotificationValidator, validateRequest, targetedNotification);
 
 /**
  * @route   GET /api/super-admin/notifications/history

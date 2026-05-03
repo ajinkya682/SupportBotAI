@@ -1,15 +1,22 @@
 import express from 'express';
 const router = express.Router();
 
-import { 
-    getConversations, 
-    getConversationById, 
-    resolveConversation, 
+import {
+    getConversations,
+    getConversationById,
+    resolveConversation,
     sendAgentReply,
     upgradePlan,
     toggleAi
 } from '../controller/conversation.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
+import validateRequest from '../validators/validateRequest.js';
+import {
+    conversationIdValidator,
+    sendAgentReplyValidator,
+    toggleAiValidator,
+    upgradePlanValidator
+} from '../validators/conversation.validator.js';
 
 /**
  * @route   GET /api/conversations/
@@ -23,34 +30,34 @@ router.get('/', protect, getConversations);
  * @desc    Simulate upgrading the business plan to Pro
  * @access  Protected (Owner)
  */
-router.post('/upgrade', protect, upgradePlan);
+router.post('/upgrade', protect, upgradePlanValidator, validateRequest, upgradePlan);
 
 /**
  * @route   GET /api/conversations/:id
  * @desc    Fetch a specific conversation by its ID
  * @access  Protected (Agent/Owner)
  */
-router.get('/:id', protect, getConversationById);
+router.get('/:id', protect, conversationIdValidator, validateRequest, getConversationById);
 
 /**
  * @route   PUT /api/conversations/:id/resolve
  * @desc    Mark a conversation as resolved by a human
  * @access  Protected (Agent/Owner)
  */
-router.put('/:id/resolve', protect, resolveConversation);
+router.put('/:id/resolve', protect, conversationIdValidator, validateRequest, resolveConversation);
 
 /**
  * @route   PUT /api/conversations/:id/toggle-ai
  * @desc    Toggle the AI assistant on or off for a specific conversation
  * @access  Protected (Agent/Owner)
  */
-router.put('/:id/toggle-ai', protect, toggleAi);
+router.put('/:id/toggle-ai', protect, toggleAiValidator, validateRequest, toggleAi);
 
 /**
  * @route   POST /api/conversations/:id/reply
  * @desc    Send a reply from a human agent/owner in the conversation
  * @access  Protected (Agent/Owner)
  */
-router.post('/:id/reply', protect, sendAgentReply);
+router.post('/:id/reply', protect, sendAgentReplyValidator, validateRequest, sendAgentReply);
 
 export default router;
