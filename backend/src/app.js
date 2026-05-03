@@ -123,7 +123,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/business', businessRoutes);
-app.use('/api/conversation', conversationRoutes);
+app.use('/api/conversations', conversationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/super-admin', superAdminRoutes);
 

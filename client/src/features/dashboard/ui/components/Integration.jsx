@@ -17,7 +17,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
-import { API_URL } from '../../../../shared/services/config';
+import { API_URL, BASE_URL, APP_URL } from '../../../../shared/services/config';
 
 export default function Integration({ business, onSave, isLoading, onUpgrade }) {
   const [copied, setCopied] = useState(false);
@@ -26,7 +26,7 @@ export default function Integration({ business, onSave, isLoading, onUpgrade }) 
   const domainLimit = isFree ? 1 : 10;
   const currentDomains = business?.allowedDomains || [];
 
-  const scriptTag = `<!-- SupportBotAI Widget -->\n<script \n  src="${API_URL}/widget.js" \n  data-api-key="${business?.apiKey || 'YOUR_API_KEY'}" \n  defer\n></script>\n<!-- End SupportBotAI Widget -->`;
+  const scriptTag = `<!-- SupportBotAI Widget -->\n<script \n  src="${BASE_URL}/widget.js" \n  data-api-key="${business?.apiKey || 'YOUR_API_KEY'}" \n  data-client-url="${APP_URL}" \n  defer\n></script>\n<!-- End SupportBotAI Widget -->`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(scriptTag);
