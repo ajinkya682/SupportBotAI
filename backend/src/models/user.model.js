@@ -16,10 +16,14 @@ const userSchema = new mongoose.Schema({
     },
     password: { 
         type: String,
-        // Password required tabhi hoga jab googleId na ho
-        required: function() { return !this.googleId; }
+        
+        required: function() { return !this.googleId; },
+        select: false 
     },
-    googleId: { type: String },
+    googleId: { 
+        type: String,
+        sparse: true 
+    },
     role: { 
         type: String, 
         enum: ['owner', 'agent', 'user'], 
@@ -27,16 +31,30 @@ const userSchema = new mongoose.Schema({
     },
     ownerId: { 
         type: mongoose.Schema.Types.ObjectId, 
-        ref: 'User',
-        index: true // For faster agent lookups
+        ref: 'User'
+        
     },
-    profilePhoto: { type: String },
-    displayName: { type: String },
-    roleTitle: { type: String },
+    profilePhoto: { 
+        type: String,
+        default: null 
+    },
+    displayName: { 
+        type: String,
+        trim: true 
+    },
+    roleTitle: { 
+        type: String,
+        trim: true 
+    },
     status: { 
         type: String, 
         enum: ['online', 'in_conversation', 'away', 'offline'], 
         default: 'offline' 
+    },
+    availability: {
+        type: String,
+        enum: ['online', 'away', 'offline'],
+        default: 'online'
     },
     lastHeartbeat: { 
         type: Date, 
@@ -44,19 +62,20 @@ const userSchema = new mongoose.Schema({
     },
     currentConversationId: { 
         type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Conversation' 
+        ref: 'Conversation',
+        default: null
     },
     resetPasswordOTP: { type: String },
     resetPasswordExpires: { type: Date }
 }, { 
-    timestamps: true // Automatically manages createdAt and updatedAt
+    timestamps: true 
 });
 
 /**
- * Password Hashing Middleware
+ * MIDDLEWARE: Hash password before saving
  */
 userSchema.pre('save', async function(next) {
-    // Only hash if password is modified or new
+    
     if (!this.isModified('password')) return next();
 
     try {
@@ -69,14 +88,30 @@ userSchema.pre('save', async function(next) {
 });
 
 /**
- * Instance Method to compare passwords
+ * INSTANCE METHOD: Compare entered password with hashed password in DB
  */
 userSchema.methods.comparePassword = async function(enteredPassword) {
-    if (!this.password) return false; // Handle Google Login users
+    if (!this.password) return false; // Handle users who only use Google Login
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// CRITICAL: OverwriteModelError fix
+/**
+ * INDEXES: Optimized for high-performance queries
+ * We use compound indexes to avoid "Duplicate Index" warnings.
+ */
+
+userSchema.index({ ownerId: 1, role: 1 });
+
+
+userSchema.index({ lastHeartbeat: 1 });
+
+
+userSchema.index({ status: 1, role: 1 });
+
+/**
+ * OVERWRITE PROTECTION:
+ * Ensures the model isn't compiled twice during hot-reloads.
+ */
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 export default User;
