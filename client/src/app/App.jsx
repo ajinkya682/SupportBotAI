@@ -9,15 +9,30 @@ import { useSelector } from "react-redux";
 import { Toaster } from "react-hot-toast";
 
 import Navbar from "../shared/ui/layout/Navbar";
+
 import Login from "../features/auth/ui/pages/LoginPage";
 import Signup from "../features/auth/ui/pages/SignupPage";
+import SuperAdminLogin from "../features/auth/ui/pages/SuperAdminLoginPage";
+
 import Home from "../features/landing/ui/pages/HomePage";
+
 import ChatWidgetPage from "../features/chat/ui/pages/ChatWidgetPage";
+
 import Dashboard from "../features/dashboard/ui/pages/DashboardPage";
 import AdminPanel from "../features/dashboard/ui/pages/AdminPanelPage";
+
 import Product from "../features/public/ui/pages/ProductPage";
 import Pricing from "../features/public/ui/pages/PricingPage";
 import Docs from "../features/public/ui/pages/DocsPage";
+
+import SuperAdminDashboard from "../features/superadmin/ui/pages/SuperAdminDashboardPage";
+import SAOverview from "../features/superadmin/ui/sections/Overview";
+import SABusinessOwners from "../features/superadmin/ui/sections/Businesses";
+import SAAgents from "../features/superadmin/ui/sections/Agents";
+import SAConversations from "../features/superadmin/ui/sections/Conversations";
+import SASubscriptions from "../features/superadmin/ui/sections/Subscriptions";
+import SANotifications from "../features/superadmin/ui/sections/Notifications";
+import SASettings from "../features/superadmin/ui/sections/Settings";
 
 import "../App.css";
 
@@ -55,24 +70,46 @@ function AppContent() {
           path="/login"
           element={!user ? <Login /> : <Navigate to="/dashboard" />}
         />
+
         <Route
           path="/signup"
           element={!user ? <Signup /> : <Navigate to="/dashboard" />}
         />
+
         <Route path="/chat-widget/:apiKey" element={<ChatWidgetPage />} />
+
         <Route
           path="/dashboard"
           element={user ? <Dashboard /> : <Navigate to="/login" />}
         />
+
         <Route
           path="/admin"
           element={
             user && user.role === "admin" ? <AdminPanel /> : <Navigate to="/" />
           }
         />
+
         <Route path="/product" element={<Product />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/docs" element={<Docs />} />
+
+        <Route path="/super-admin/login" element={<SuperAdminLogin />} />
+        <Route element={<SuperAdminProtectedRoute />}>
+          <Route
+            path="/super-admin/dashboard"
+            element={<SuperAdminDashboard />}
+          >
+            <Route index element={<Navigate to="overview" replace />} />
+            <Route path="overview" element={<SAOverview />} />
+            <Route path="businesses" element={<SABusinessOwners />} />
+            <Route path="agents" element={<SAAgents />} />
+            <Route path="conversations" element={<SAConversations />} />
+            <Route path="subscriptions" element={<SASubscriptions />} />
+            <Route path="notifications" element={<SANotifications />} />
+            <Route path="settings" element={<SASettings />} />
+          </Route>
+        </Route>
       </Routes>
     </div>
   );
