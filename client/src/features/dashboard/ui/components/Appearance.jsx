@@ -53,7 +53,7 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
     setIsUploading(true);
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-      const { data } = await axios.post(`${API_URL}/auth/upload-logo`, uploadData, {
+      const { data } = await axios.post(`${API_URL}/business/logo-upload`, uploadData, {
         headers: { 
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${user.token}`
