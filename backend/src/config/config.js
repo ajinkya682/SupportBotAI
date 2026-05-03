@@ -1,5 +1,4 @@
-import dotenv from 'dotenv';
-dotenv.config();
+import 'dotenv/config';
 
 if (!process.env.MONGODB_URI) {
     throw new Error("MONGODB_URI is not defined in environment variables")
@@ -45,9 +44,16 @@ if (!process.env.MISTRAL_API_KEY) {
     throw new Error("MISTRAL_API_KEY is not defined in environment variables")
 }
 
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+const FRONTEND_URL = process.env.FRONTEND_URL?.trim() || '';
+const ADDITIONAL_ORIGINS = process.env.ADDITIONAL_ORIGINS
+  ? process.env.ADDITIONAL_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
+  : [];
+
+const ALLOWED_ORIGINS = [...new Set([FRONTEND_URL, ...ADDITIONAL_ORIGINS].filter(Boolean))];
 
 const config = {
-    PORT: process.env.PORT ? Number(process.env.PORT) : 3000, 
+    PORT,
     MONGODB_URI: process.env.MONGODB_URI,
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_SECRET_EXPIRES_IN: process.env.JWT_SECRET_EXPIRES_IN || '30d',
@@ -64,6 +70,11 @@ const config = {
     MISTRAL_API_KEY: process.env.MISTRAL_API_KEY,
     AI_MODEL: process.env.AI_MODEL || 'mistral-large-latest',
     AI_MAX_TOKENS: parseInt(process.env.AI_MAX_TOKENS) || 1024,
+    SERVER_BASE_URL: process.env.SERVER_BASE_URL || '',
+    API_URL: process.env.API_URL || `http://localhost:${PORT}`,
+    ALLOWED_ORIGINS,
+    RATE_LIMIT_MAX_REQUESTS: process.env.RATE_LIMIT_MAX_REQUESTS ? Number(process.env.RATE_LIMIT_MAX_REQUESTS) : 100,
+    RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS ? Number(process.env.RATE_LIMIT_WINDOW_MS) : 900000,
     scraper: {
         MAX_PAGES: parseInt(process.env.SCRAPER_MAX_PAGES) || 8,
         DELAY_MS: parseInt(process.env.SCRAPER_DELAY_MS) || 1000,
