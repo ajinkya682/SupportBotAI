@@ -74,11 +74,11 @@ export default function Signup() {
 
   const handleGoogleSignup = useGoogleLogin({
     onSuccess: (tokenResponse) => {
-      console.log("Google Signup Success (Frontend):", tokenResponse);
+
       dispatch(googleLogin({ accessToken: tokenResponse.access_token, plan }));
     },
     onError: (error) => {
-      console.error("Google Signup Error (Frontend):", error);
+
       toast.error('Google Signup Failed');
     }
   });

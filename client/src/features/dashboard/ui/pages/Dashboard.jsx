@@ -83,7 +83,7 @@ export default function Dashboard() {
 
     const joinRooms = () => {
       socket.emit("join_room", { userId: user._id, ownerId: user._id, role: "owner" });
-      console.log("Dashboard joined room:", user._id);
+
     };
 
     socket.connect();

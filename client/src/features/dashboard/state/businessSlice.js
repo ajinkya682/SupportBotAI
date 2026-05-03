@@ -20,7 +20,7 @@ const authHeader = (thunkAPI) => ({
 export const getBusiness = createAsyncThunk('business/get', async (_, thunkAPI) => {
   try {
     const response = await axios.get(BUSINESS_API, authHeader(thunkAPI));
-    console.log('Business Data Fetched:', response.data);
+
     return response.data;
   } catch (error) {
     const message = error.response?.data?.message || error.message;

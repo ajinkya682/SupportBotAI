@@ -88,7 +88,7 @@ export default function AgentDashboard({ user }) {
         socket.emit("join_room", { ownerId: user.ownerId, role: "agent", userId: user._id });
         // Announce online status explicitly
         socket.emit("agent_status_change", { agentId: user._id, status: agentStatus, ownerId: user.ownerId });
-        console.log("Agent Dashboard joined room:", user.ownerId, "Status:", agentStatus);
+
       }
     };
 
