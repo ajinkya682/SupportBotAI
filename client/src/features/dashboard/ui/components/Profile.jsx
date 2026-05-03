@@ -111,7 +111,7 @@ export default function Profile({ view = "general" }) {
     try {
       const { data } = await axios.put(`${API_URL}/profile/update-photo`, formData, {
         headers: { 
-          Authorization: `Bearer ${user.token}`,
+          Authorization: `Bearer ${user?.token}`,
           "Content-Type": "multipart/form-data"
         }
       });
@@ -158,7 +158,7 @@ export default function Profile({ view = "general" }) {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       }, {
-        headers: { Authorization: `Bearer ${user.token}` }
+        headers: { Authorization: `Bearer ${user?.token}` }
       });
 
       if (data.success) {
@@ -204,10 +204,10 @@ export default function Profile({ view = "general" }) {
             <div className="avatar-large">
               {photoPreview ? (
                 <img src={photoPreview} alt="Preview" />
-              ) : user.profilePhoto ? (
-                <img src={user.profilePhoto} alt={user.name} />
+              ) : user?.profilePhoto ? (
+                <img src={user.profilePhoto} alt={user?.name} />
               ) : (
-                <div className="avatar-initials">{user.name.charAt(0)}</div>
+                <div className="avatar-initials">{user?.name?.charAt(0)}</div>
               )}
               
               <button 
@@ -254,18 +254,18 @@ export default function Profile({ view = "general" }) {
           <div className="user-details-read">
             <div className="detail-item">
               <label>Full Name</label>
-              <p>{user.name}</p>
+              <p>{user?.name}</p>
             </div>
             <div className="detail-item">
               <label>Role</label>
               <div className="role-pill">
                 <ShieldCheck size={14} />
-                {user.role === 'owner' ? 'Business Owner' : (user.roleTitle || 'Support Agent')}
+                {user?.role === 'owner' ? 'Business Owner' : (user?.roleTitle || 'Support Agent')}
               </div>
             </div>
             <div className="detail-item">
               <label>Email Address</label>
-              <p>{user.email}</p>
+              <p>{user?.email}</p>
             </div>
           </div>
           </section>
@@ -373,6 +373,7 @@ export default function Profile({ view = "general" }) {
             </button>
           </form>
         </section>
+      )}
       </div>
 
       <style>{`

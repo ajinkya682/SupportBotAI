@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import useSound from "../../../../shared/services/useSound"; 
 import { useDispatch, useSelector } from "react-redux";
+import Profile from "./Profile";
 import { logout, reset } from "../../../auth/state/authSlice";
 import { getBusiness } from "../../state/businessSlice";
 import { getConversations } from "../../../conversations/state/conversationSlice";
