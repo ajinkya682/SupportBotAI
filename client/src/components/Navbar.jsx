@@ -2,23 +2,16 @@ import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Bot, LogOut, LayoutDashboard, X, Menu } from "lucide-react";
 
-// We are commenting these out because the files don't exist yet
-// import { useSelector, useDispatch } from 'react-redux';
-// import { logout, reset } from '../slices/authSlice';
-
 export default function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Temporary: We will pretend there is no user logged in for now
-  // Later, when you build your backend, you can turn this back on.
   const user = null;
 
   const onLogout = () => {
     console.log("Logout clicked");
   };
 
-  // Don't show main navbar on dashboard/admin pages
   if (
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/admin")
