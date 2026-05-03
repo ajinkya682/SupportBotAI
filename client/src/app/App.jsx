@@ -8,93 +8,94 @@ import {
 import { useSelector } from "react-redux";
 import { Toaster } from "react-hot-toast";
 
-import Navbar from "../shared/ui/layout/Navbar";
+import Navbar from "../shared/ui/components/Navbar";
 
-import Login from "../features/auth/ui/pages/LoginPage";
-import Signup from "../features/auth/ui/pages/SignupPage";
-import SuperAdminLogin from "../features/auth/ui/pages/SuperAdminLoginPage";
+import Login from "../features/auth/ui/pages/Login";
+import Signup from "../features/auth/ui/pages/Signup";
+import ForgotPassword from "../features/auth/ui/pages/ForgotPassword";
 
-import Home from "../features/landing/ui/pages/HomePage";
+import Dashboard from "../features/dashboard/ui/pages/Dashboard";
+import AdminPanel from "../features/dashboard/ui/pages/AdminPanel";
 
-import ChatWidgetPage from "../features/chat/ui/pages/ChatWidgetPage";
+import Home from "../features/public/ui/pages/Home";
+import Product from "../features/public/ui/pages/Product";
+import Pricing from "../features/public/ui/pages/Pricing";
+import Docs from "../features/public/ui/pages/Docs";
 
-import Dashboard from "../features/dashboard/ui/pages/DashboardPage";
-import AdminPanel from "../features/dashboard/ui/pages/AdminPanelPage";
+import ChatWidgetPage from "../features/widget/ui/pages/ChatWidgetPage";
 
-import Product from "../features/public/ui/pages/ProductPage";
-import Pricing from "../features/public/ui/pages/PricingPage";
-import Docs from "../features/public/ui/pages/DocsPage";
-
-import SuperAdminDashboard from "../features/superadmin/ui/pages/SuperAdminDashboardPage";
-import SAOverview from "../features/superadmin/ui/sections/Overview";
-import SABusinessOwners from "../features/superadmin/ui/sections/Businesses";
-import SAAgents from "../features/superadmin/ui/sections/Agents";
-import SAConversations from "../features/superadmin/ui/sections/Conversations";
-import SASubscriptions from "../features/superadmin/ui/sections/Subscriptions";
-import SANotifications from "../features/superadmin/ui/sections/Notifications";
-import SASettings from "../features/superadmin/ui/sections/Settings";
-
-import "../App.css";
+import SuperAdminDashboard from "../features/superadmin/ui/pages/SuperAdminDashboard";
+import SAOverview from "../features/superadmin/ui/components/SAOverview";
+import SABusinessOwners from "../features/superadmin/ui/components/SABusinessOwners";
+import SAAgents from "../features/superadmin/ui/components/SAAgents";
+import SAConversations from "../features/superadmin/ui/components/SAConversations";
+import SASubscriptions from "../features/superadmin/ui/components/SASubscriptions";
+import SANotifications from "../features/superadmin/ui/components/SANotifications";
+import SASettings from "../features/superadmin/ui/components/SASettings";
+import SuperAdminProtectedRoute from "../features/superadmin/ui/components/SuperAdminProtectedRoute";
 
 function AppContent() {
   const { user } = useSelector((state) => state.auth);
   const location = useLocation();
+  const isWidgetPage = location.pathname.startsWith("/chat-widget");
+  const isSuperAdminPage = location.pathname.startsWith("/super-admin");
 
   return (
     <div className="app-container">
       <Toaster
-        position="top-right"
+        position="top-center"
         toastOptions={{
           style: {
-            background: "var(--color-surface-container-lowest)",
-            color: "var(--color-on-surface)",
+            background: "var(--inverse-surface)",
+            color: "var(--inverse-on-surface)",
+            border: "1px solid var(--outline-variant)",
             borderRadius: "var(--radius-md)",
-            fontSize: "var(--text-sm)",
-            padding: "var(--space-4) var(--space-5)",
-            boxShadow: "var(--shadow-xl)",
-            fontFamily: "var(--font-body)",
+            fontSize: "14px",
+            padding: "12px 20px",
           },
           success: {
-            iconTheme: { primary: "var(--color-secondary)", secondary: "#fff" },
+            iconTheme: { primary: "#10b981", secondary: "#fff" },
           },
           error: {
-            iconTheme: { primary: "var(--color-error)", secondary: "#fff" },
+            iconTheme: { primary: "var(--error)", secondary: "#fff" },
           },
         }}
       />
       {!isWidgetPage && !isSuperAdminPage && <Navbar />}
       <Routes>
         <Route path="/" element={<Home />} />
-
+        <Route path="/product" element={<Product />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/docs" element={<Docs />} />
         <Route
           path="/login"
-          element={!user ? <Login /> : <Navigate to="/dashboard" />}
+          element={
+            !user ? (
+              <Login />
+            ) : user.role === "superadmin" ? (
+              <Navigate to="/super-admin/dashboard" />
+            ) : (
+              <Navigate to="/dashboard" />
+            )
+          }
         />
-
         <Route
           path="/signup"
           element={!user ? <Signup /> : <Navigate to="/dashboard" />}
         />
-
-        <Route path="/chat-widget/:apiKey" element={<ChatWidgetPage />} />
-
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route
           path="/dashboard"
           element={user ? <Dashboard /> : <Navigate to="/login" />}
         />
-
         <Route
           path="/admin"
           element={
             user && user.role === "admin" ? <AdminPanel /> : <Navigate to="/" />
           }
         />
+        <Route path="/chat-widget/:apiKey" element={<ChatWidgetPage />} />
 
-        <Route path="/product" element={<Product />} />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/docs" element={<Docs />} />
-
-        <Route path="/super-admin/login" element={<SuperAdminLogin />} />
         <Route element={<SuperAdminProtectedRoute />}>
           <Route
             path="/super-admin/dashboard"
