@@ -232,6 +232,24 @@ export default function AgentDashboard({ user }) {
     setIsSidebarOpen(false);
   };
 
+  const handleJoinConversation = (t) => {
+    if (t.status === 'human_resolved' || t.status === 'ai_resolved') {
+      switchTab('conversations', t._id);
+      return;
+    }
+    
+    const isUnassigned = !t.agent && !t.assignedAgentId;
+    if (t.routingStatus === 'assigned' || isUnassigned) {
+      socket.emit('join_conversation', {
+        conversationId: t._id,
+        agentId: user._id,
+        ownerId: user.ownerId
+      });
+    }
+    switchTab('conversations', t._id);
+  };
+
+
   const navItems = [
     { id: 'overview', icon: LayoutDashboard, label: 'Agent Console' },
     { id: 'conversations', icon: MessageSquare, label: 'Live Inbox', badge: conversations.filter(c => c.status === 'human_needed' && !c.agent).length },
@@ -378,7 +396,7 @@ export default function AgentDashboard({ user }) {
         
         return (
           <div className="agent-console animate-fade-in">
-            <div className="ag-ticket-section" style={{ marginTop: 0 }}>
+            <div className="ag-ticket-section">
               <div className="section-header">
                 <h3><History size={18} color="#64748b" /> Session Archive</h3>
                 <div className="sh-right">
