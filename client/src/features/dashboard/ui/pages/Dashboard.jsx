@@ -76,8 +76,16 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user?._id || user?.role === "agent") return;
 
+    const joinRooms = () => {
+      socket.emit("join_room", { ownerId: user._id, role: "owner" });
+      console.log("Dashboard joined room:", user._id);
+    };
+
     socket.connect();
-    socket.emit("join_room", { ownerId: user._id, role: "owner" });
+    joinRooms();
+
+    // Rejoin rooms on reconnection (Critical for production stability)
+    socket.on("connect", joinRooms);
 
     socket.on("new_ticket", (newConv) => {
       playSound('new_ticket');
@@ -100,15 +108,26 @@ export default function Dashboard() {
       setConversations((prev) =>
         prev.map((conv) => {
           if (conv._id !== data.conversationId) return conv;
+          
           const newMsg = {
             role: data.senderType === "user" ? "user" : "assistant",
             content: data.content,
             timestamp: data.timestamp || new Date(),
             senderType: data.senderType,
             senderName: data.senderName,
+            senderAvatar: data.senderAvatar,
+            senderRole: data.senderRole,
           };
+
+          // Improved deduplication logic
           const last = conv.messages[conv.messages.length - 1];
-          if (last && last.content === data.content) return conv;
+          if (last && last.content === data.content) {
+            // If the last message has the same content and was sent within the last 2 seconds, ignore it
+            const lastTime = new Date(last.timestamp).getTime();
+            const newTime = new Date(newMsg.timestamp).getTime();
+            if (newTime - lastTime < 2000) return conv;
+          }
+
           return {
             ...conv,
             messages: [...conv.messages, newMsg],
@@ -171,6 +190,7 @@ export default function Dashboard() {
     });
 
     return () => {
+      socket.off("connect", joinRooms);
       socket.off("new_ticket");
       socket.off("new_message");
       socket.off("ticket_resolved");

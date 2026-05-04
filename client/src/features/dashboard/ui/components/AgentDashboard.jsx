@@ -79,11 +79,18 @@ export default function AgentDashboard({ user }) {
   useEffect(() => {
     if (!user?._id) return;
 
+    const joinRooms = () => {
+      socket.emit("join_room", { ownerId: user.ownerId, role: "agent", userId: user._id });
+      // Announce online status
+      socket.emit("agent_status_change", { agentId: user._id, status: 'online', ownerId: user.ownerId });
+      console.log("Agent Dashboard joined room:", user.ownerId);
+    };
+
     socket.connect();
-    // Use userId key so server joins agent_${userId} room correctly
-    socket.emit("join_room", { ownerId: user.ownerId, role: "agent", userId: user._id });
-    // Announce online status
-    socket.emit("agent_status_change", { agentId: user._id, status: 'online', ownerId: user.ownerId });
+    joinRooms();
+
+    // Rejoin rooms on reconnection (Critical for production stability)
+    socket.on("connect", joinRooms);
 
     // Handle action from notification
     const urlParams = new URLSearchParams(window.location.search);
@@ -120,6 +127,7 @@ export default function AgentDashboard({ user }) {
       if (data.senderType === 'user') playSound('pop');
       setConversations(prev => prev.map(conv => {
         if (conv._id !== data.conversationId) return conv;
+        
         const newMsg = {
           role: data.senderType === 'user' ? 'user' : 'assistant',
           content: data.content,
@@ -127,9 +135,17 @@ export default function AgentDashboard({ user }) {
           senderType: data.senderType,
           senderName: data.senderName,
           senderAvatar: data.senderAvatar,
+          senderRole: data.senderRole,
         };
+
+        // Improved deduplication logic
         const last = conv.messages[conv.messages.length - 1];
-        if (last && last.content === data.content) return conv;
+        if (last && last.content === data.content) {
+          const lastTime = new Date(last.timestamp).getTime();
+          const newTime = new Date(newMsg.timestamp).getTime();
+          if (newTime - lastTime < 2000) return conv;
+        }
+
         return { ...conv, messages: [...conv.messages, newMsg], updatedAt: new Date() };
       }));
     });
@@ -160,6 +176,7 @@ export default function AgentDashboard({ user }) {
     return () => {
       clearInterval(heartbeat);
       socket.emit("agent_status_change", { agentId: user._id, status: 'offline', ownerId: user.ownerId });
+      socket.off("connect", joinRooms);
       socket.off("agent_assigned");
       socket.off("new_ticket");
       socket.off("new_message");

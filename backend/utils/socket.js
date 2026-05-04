@@ -116,8 +116,10 @@ module.exports = (io) => {
                 senderRole,
             } = data;
 
+            console.log(`[send_message] from ${senderType} (${senderName}) for conv ${conversationId}`);
+
             const messagePayload = {
-                conversationId,
+                conversationId: conversationId.toString(),
                 content,
                 senderType,
                 senderName,
@@ -173,7 +175,11 @@ module.exports = (io) => {
             }
 
             // 2. Owner dashboard + all agents in owner room
-            if (ownerId) io.to(ownerId.toString()).emit('new_message', messagePayload);
+            if (ownerId) {
+                const room = ownerId.toString();
+                io.to(room).emit('new_message', messagePayload);
+                console.log(`[send_message] Broadcasted to room ${room}`);
+            }
         });
 
         // ── Join Conversation via Socket (Legacy — prefer REST PUT /agents/join/:id) ──
