@@ -49,7 +49,7 @@ export const getNotifications = createAsyncThunk('business/getNotifications', as
 
 export const markNotificationsRead = createAsyncThunk('business/readNotifications', async (_, thunkAPI) => {
   try {
-    const response = await axios.patch(`${BUSINESS_API}/notifications/read`, {}, authHeader(thunkAPI));
+    const response = await axios.put(`${BUSINESS_API}/notifications/read`, {}, authHeader(thunkAPI));
     return response.data;
   } catch (error) {
     const message = error.response?.data?.message || error.message;
