@@ -1,0 +1,175 @@
+const Notification = require('../models/Notification');
+const Business = require('../models/Business');
+
+// Super Admin: Broadcast to all
+exports.broadcastNotification = async (req, res) => {
+    try {
+        const { subject, message } = req.body;
+        
+        const notification = new Notification({
+            recipientBusinessId: null, // null means broadcast
+            subject,
+            message,
+            sentBy: 'superadmin'
+        });
+        
+        await notification.save();
+
+        // Emit to all connected clients
+        if (req.io) {
+            req.io.emit('new_notification', {
+                id: notification._id,
+                subject: notification.subject,
+                message: notification.message,
+                createdAt: notification.createdAt,
+                isBroadcast: true
+            });
+        }
+
+        res.json({ success: true, notification });
+    } catch (error) {
+        console.error('Broadcast error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// Super Admin: Targeted to specific business
+exports.targetedNotification = async (req, res) => {
+    try {
+        const { businessId, subject, message } = req.body;
+
+        const business = await Business.findById(businessId);
+        if (!business) {
+            return res.status(404).json({ success: false, message: 'Business not found' });
+        }
+
+        const notification = new Notification({
+            recipientBusinessId: businessId,
+            subject,
+            message,
+            sentBy: 'superadmin'
+        });
+
+        await notification.save();
+
+        // Emit to specific business owner room
+        if (req.io) {
+            req.io.to(business.owner.toString()).emit('new_notification', {
+                id: notification._id,
+                subject: notification.subject,
+                message: notification.message,
+                createdAt: notification.createdAt,
+                isBroadcast: false
+            });
+        }
+
+        res.json({ success: true, notification });
+    } catch (error) {
+        console.error('Targeted notification error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// Super Admin: Get all notifications history
+exports.getNotificationHistory = async (req, res) => {
+    try {
+        const notifications = await Notification.find()
+            .populate('recipientBusinessId', 'name')
+            .sort({ createdAt: -1 });
+            
+        const results = await Promise.all(notifications.map(async (n) => {
+            const totalRecipients = n.recipientBusinessId ? 1 : await Business.countDocuments();
+            return {
+                id: n._id,
+                subject: n.subject,
+                message: n.message,
+                recipient: n.recipientBusinessId ? n.recipientBusinessId.name : 'All Businesses (Broadcast)',
+                readCount: n.readBy.length,
+                totalRecipients,
+                createdAt: n.createdAt
+            };
+        }));
+
+        res.json({ success: true, history: results });
+    } catch (error) {
+        console.error('History error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// Business Owner: Get their notifications
+exports.getMyNotifications = async (req, res) => {
+    try {
+        // Find business for this user
+        const business = await Business.findOne({ owner: req.user._id });
+        if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
+
+        // Get targeted and broadcast notifications
+        const notifications = await Notification.find({
+            $or: [
+                { recipientBusinessId: business._id },
+                { recipientBusinessId: null }
+            ]
+        }).sort({ createdAt: -1 });
+
+        const formatted = notifications.map(n => ({
+            id: n._id,
+            subject: n.subject,
+            message: n.message,
+            createdAt: n.createdAt,
+            isRead: n.readBy.includes(business._id)
+        }));
+
+        res.json({ success: true, notifications: formatted });
+    } catch (error) {
+        console.error('Get notifications error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// Business Owner: Mark one as read
+exports.markAsRead = async (req, res) => {
+    try {
+        const business = await Business.findOne({ owner: req.user._id });
+        if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
+
+        const notification = await Notification.findById(req.params.id);
+        if (!notification) return res.status(404).json({ success: false, message: 'Not found' });
+
+        if (!notification.readBy.includes(business._id)) {
+            notification.readBy.push(business._id);
+            await notification.save();
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Mark read error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// Business Owner: Mark all as read
+exports.markAllAsRead = async (req, res) => {
+    try {
+        const business = await Business.findOne({ owner: req.user._id });
+        if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
+
+        const notifications = await Notification.find({
+            $or: [
+                { recipientBusinessId: business._id },
+                { recipientBusinessId: null }
+            ],
+            readBy: { $ne: business._id }
+        });
+
+        for (let n of notifications) {
+            n.readBy.push(business._id);
+            await n.save();
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Mark all read error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};

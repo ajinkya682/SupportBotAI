@@ -29,7 +29,7 @@ export const getBusiness = createAsyncThunk('business/get', async (_, thunkAPI) 
 
 export const updateBusiness = createAsyncThunk('business/update', async (businessData, thunkAPI) => {
   try {
-    const response = await axios.patch(BUSINESS_API, businessData, authHeader(thunkAPI));
+    const response = await axios.put(BUSINESS_API, businessData, authHeader(thunkAPI));
     return response.data;
   } catch (error) {
     const message = error.response?.data?.message || error.message;
