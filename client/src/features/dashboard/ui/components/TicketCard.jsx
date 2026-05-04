@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function TicketCard({ ticket, onTakeOver }) {
+export default function TicketCard({ ticket, onTakeOver, actionLabel, onAction }) {
   const { 
     userName, 
     issueSummary, 
@@ -19,7 +19,8 @@ export default function TicketCard({ ticket, onTakeOver }) {
     routingStatus, 
     priority,
     intent,
-    title
+    title,
+    status
   } = ticket;
 
   const getTimeAgo = (date) => {
@@ -103,8 +104,11 @@ export default function TicketCard({ ticket, onTakeOver }) {
               <span>CREATED: {new Date(createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
               <span>REF: 0X-{ticket._id.slice(-4).toUpperCase()}</span>
             </div>
-            <button className="take-over-btn" onClick={() => onTakeOver(ticket)}>
-              Intercept <ArrowRight size={14} />
+            <button 
+              className="take-over-btn" 
+              onClick={() => onAction ? onAction(ticket) : onTakeOver(ticket)}
+            >
+              {actionLabel || 'Intercept'} <ArrowRight size={14} />
             </button>
           </div>
         </div>
