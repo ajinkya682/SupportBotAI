@@ -32,20 +32,33 @@ export default function Dashboard() {
   const { user } = useSelector((state) => state.auth);
 
   const [conversations, setConversations] = useState([]);
+  const [agents, setAgents] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const loadAgents = async () => {
+    if (!user?.token) return;
+    try {
+      const { data } = await axios.get(`${API_URL}/agents/list`,
+        { headers: { Authorization: `Bearer ${user.token}` } }
+      );
+      setAgents(data);
+    } catch (err) {
+      console.error('Failed to load agents', err);
+    }
+  };
+
   useEffect(() => {
     if (user?.role === "agent") return;
     dispatch(getBusiness()).then((action) => {
-      // Check if the action was successful and returned business data
       if (action.payload && typeof action.payload === 'object' && !action.error) {
         dispatch(getConversations());
       }
     });
+    loadAgents();
   }, [dispatch, user?.role]);
 
   useEffect(() => {
@@ -98,16 +111,62 @@ export default function Dashboard() {
       setConversations((prev) =>
         prev.map((conv) => {
           if (conv._id !== data.conversationId) return conv;
-          return { ...conv, status: "human_resolved", updatedAt: new Date() };
+          return { ...conv, status: "human_resolved", updatedAt: new Date(),
+            messages: data.messages || conv.messages };
         }),
       );
       toast.success(`✅ Ticket resolved by ${data.resolvedByName}`);
+    });
+
+    socket.on("agent_status_changed", (data) => {
+      setAgents((prev) =>
+        prev.map((a) =>
+          a._id === data.agentId || a._id?.toString() === data.agentId?.toString()
+            ? { ...a, status: data.status }
+            : a
+        )
+      );
+    });
+
+    socket.on("ticket_assigned", (data) => {
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv._id === data.conversationId
+            ? { ...conv, routingStatus: 'assigned', assignedAgentId: data.agentId }
+            : conv
+        )
+      );
+    });
+
+    socket.on("conversation_claimed", (data) => {
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv._id === data.conversationId
+            ? { ...conv, routingStatus: 'assigned', assignedAgentId: data.agentId }
+            : conv
+        )
+      );
+    });
+
+    socket.on("agent_joined", (data) => {
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv._id === data.conversationId
+            ? { ...conv, status: 'in_progress', isAiActive: false, agent: data.agent,
+                messages: data.messages || conv.messages }
+            : conv
+        )
+      );
     });
 
     return () => {
       socket.off("new_ticket");
       socket.off("new_message");
       socket.off("ticket_resolved");
+      socket.off("agent_status_changed");
+      socket.off("ticket_assigned");
+      socket.off("conversation_claimed");
+      socket.off("agent_joined");
       socket.disconnect();
     };
   }, [user?._id]);
@@ -196,6 +255,7 @@ export default function Dashboard() {
           <Overview
             business={business}
             conversations={conversations}
+            agents={agents}
             setActiveTab={setActiveTab}
             setSelectedConversationId={setSelectedConversationId}
             onUpgrade={() => setShowUpgradeModal(true)}

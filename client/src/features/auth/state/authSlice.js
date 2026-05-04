@@ -63,6 +63,13 @@ export const authSlice = createSlice({
       state.isSuccess = false;
       state.message = '';
     },
+    updateUserProfile: (state, action) => {
+      // Merge profile fields into user and persist to localStorage
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+        localStorage.setItem('user', JSON.stringify(state.user));
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -106,5 +113,5 @@ export const authSlice = createSlice({
   },
 });
 
-export const { reset } = authSlice.actions;
+export const { reset, updateUserProfile } = authSlice.actions;
 export default authSlice.reducer;

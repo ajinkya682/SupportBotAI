@@ -86,12 +86,16 @@ exports.sendAgentReply = async (req, res) => {
         }
         await conversation.save();
 
-        // Emit new_message to the entire ownerId room
+        // Emit new_message to all parties:
+        // 1. Widget user (session room)
+        // 2. Owner dashboard + agents (ownerId room)
         if (req.io) {
-            req.io.to(ownerId.toString()).emit('new_message', {
+            const msgPayload = {
                 conversationId: conversation._id.toString(),
                 ...newMessage
-            });
+            };
+            req.io.to(`session_${conversation._id.toString()}`).emit('new_message', msgPayload);
+            req.io.to(ownerId.toString()).emit('new_message', msgPayload);
         }
 
         res.json(conversation);

@@ -74,23 +74,28 @@ export default function Conversations({
   const handleJoin = async () => {
     if (!selectedConv || !user) return;
     const ownerId = user.role === "owner" ? user._id : user.ownerId;
-
-    socket.emit("join_conversation", {
-      conversationId: selectedConv._id,
-      agentId: user._id,
-      ownerId,
-    });
-
-    setSelectedConv((prev) => ({
-      ...prev,
-      status: "in_progress",
-      isAiActive: false,
-      agent: {
-        _id: user._id,
-        displayName: user.displayName || user.name,
-        profilePhoto: user.profilePhoto,
-      },
-    }));
+    try {
+      const { data } = await axios.put(
+        `${API_URL}/agents/join/${selectedConv._id}`,
+        {},
+        { headers: { Authorization: `Bearer ${user.token}` } }
+      );
+      // Optimistically update local state
+      setSelectedConv(prev => ({
+        ...prev,
+        status: "in_progress",
+        isAiActive: false,
+        agent: {
+          _id: user._id,
+          displayName: user.displayName || user.name,
+          profilePhoto: user.profilePhoto,
+        },
+        messages: data.conversation?.messages || prev.messages,
+      }));
+      toast.success('Joined conversation successfully');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to join conversation');
+    }
   };
 
   const handleResolve = async (id) => {
@@ -158,17 +163,8 @@ export default function Conversations({
         senderRole: user.role === "owner" ? "Business Owner" : user.roleTitle,
       };
 
+      // socket.js persists to DB AND emits to session room (widget) + owner room (dashboard)
       socket.emit("send_message", payload);
-
-      await axios.post(
-        `${API_URL}/conversations/${selectedConv._id}/reply`,
-        {
-          content: replyText,
-          senderType: payload.senderType,
-          senderName: payload.senderName,
-        },
-        { headers: { Authorization: `Bearer ${user.token}` } },
-      );
 
       setReplyText("");
     } catch (err) {
@@ -177,6 +173,7 @@ export default function Conversations({
       setIsSending(false);
     }
   };
+
 
   const getStatusChip = (status) => {
     switch(status) {
@@ -232,7 +229,11 @@ export default function Conversations({
             ) : (
               [...filteredConversations]
                 .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-                .map((conv) => (
+                .map((conv) => {
+                  const isAssignedToMe = conv.assignedAgentId === user?._id ||
+                    conv.agent?._id === user?._id;
+                  const isPending = conv.routingStatus === 'holding' || conv.routingStatus === 'pending';
+                  return (
                   <motion.div
                     key={conv._id}
                     layout
@@ -250,11 +251,13 @@ export default function Conversations({
                     </p>
                     <div className="thread-footer">
                       {getStatusChip(conv.status)}
+                      {isAssignedToMe && <span className="chip chip-mine">YOU</span>}
+                      {isPending && isAgentView && <span className="chip chip-pending">UNASSIGNED</span>}
                       {conv.isAiActive && <div className="ai-active-indicator"><Sparkles size={10} /> AI</div>}
                     </div>
                     {selectedConv?._id === conv._id && <div className="selection-indicator" />}
                   </motion.div>
-                ))
+                );})
             )}
           </AnimatePresence>
         </div>
@@ -320,6 +323,7 @@ export default function Conversations({
                   const isUs = msg.senderType === "ai" || msg.senderType === "agent" || msg.senderType === "owner";
                   const displaySide = isUs ? "us" : "customer";
                   const senderName = msg.senderName || msg.sender?.name || (msg.role === "user" ? "User" : "AI Assistant");
+                  const avatarSrc = msg.senderAvatar || msg.sender?.profilePhoto || null;
 
                   return (
                     <div key={idx} className={`neural-message ${displaySide}`}>
@@ -330,10 +334,18 @@ export default function Conversations({
                           </div>
                         </div>
                       )}
+                      {displaySide === "us" && msg.senderType !== "ai" && avatarSrc && (
+                        <div className="message-source">
+                          <div className="source-avatar agent-photo">
+                            <img src={avatarSrc} alt={senderName} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} />
+                          </div>
+                        </div>
+                      )}
                       <div className="message-envelope">
                         {displaySide === "us" && msg.senderType !== "ai" && (
                           <div className="message-attribution">
                             {senderName} <span className="attribution-role">{msg.senderRole || 'Node'}</span>
+                            {msg.senderType === 'agent' && <span className="real-human-badge">🟢 Real Human</span>}
                           </div>
                         )}
                         <div className="message-body">
@@ -536,6 +548,9 @@ export default function Conversations({
         .empty-orb { width: 80px; height: 80px; border-radius: 50%; background: var(--surface-container-low); display: flex; align-items: center; justify-content: center; margin-bottom: 24px; color: var(--outline); }
         
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
+        .chip-mine { background: #ede9fe; color: #7c3aed; }
+        .real-human-badge { margin-left: 6px; font-size: 10px; background: #dcfce7; color: #16a34a; padding: 1px 6px; border-radius: 8px; font-weight: 700; }
+        .source-avatar.agent-photo { width: 28px; height: 28px; overflow: hidden; border-radius: 50%; }
       `}</style>
     </div>
   );

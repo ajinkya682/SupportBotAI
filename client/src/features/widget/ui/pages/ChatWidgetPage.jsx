@@ -97,9 +97,23 @@ export default function ChatWidgetPage() {
     });
     socketRef.current = sock;
 
-    sock.emit("join_room", { ownerId, role: "user" });
-    if (conversationIdRef.current) {
-      sock.emit("join_session", conversationIdRef.current);
+    const joinRooms = () => {
+      sock.emit("join_room", { ownerId, role: "user" });
+      if (conversationIdRef.current) {
+        sock.emit("join_session", conversationIdRef.current);
+        console.log('[Widget] Joined session room:', conversationIdRef.current);
+      }
+    };
+
+    // Join on first connect
+    sock.on("connect", () => {
+      console.log('[Widget] Socket connected, joining rooms...');
+      joinRooms();
+    });
+
+    // If already connected when this effect runs, join immediately
+    if (sock.connected) {
+      joinRooms();
     }
 
     sock.on("new_message", (data) => {
@@ -119,9 +133,13 @@ export default function ChatWidgetPage() {
       };
 
       setMessages((prev) => {
+        // Deduplicate: skip if last message has same content from same sender
         const last = prev[prev.length - 1];
-        if (last && last.content === data.content && last.role === "assistant")
-          return prev;
+        if (
+          last &&
+          last.content === data.content &&
+          last.senderType === data.senderType
+        ) return prev;
         return [...prev, newMsg];
       });
 
@@ -155,16 +173,12 @@ export default function ChatWidgetPage() {
     sock.on("agent_joined", (data) => {
       const cid = conversationIdRef.current;
       if (!cid || data.conversationId !== cid.toString()) return;
+      // Only update agent info — do NOT replace messages array.
+      // The join message arrives cleanly via the separate 'new_message' event.
       setAgent(data.agent);
       setIsAiActive(false);
-      if (data.messages) {
-        setMessages(
-          data.messages.map((m) => ({
-            ...m,
-            role: m.role === "user" ? "user" : "assistant",
-          })),
-        );
-      }
+      // Remove any escalation card shown while waiting
+      setMessages((prev) => prev.filter((m) => m.role !== "system_escalation"));
     });
 
     sock.on("ticket_resolved", (data) => {
@@ -183,14 +197,16 @@ export default function ChatWidgetPage() {
       }
     });
 
+
     return () => {
-      sock.off("new_message");
-      sock.off("agent_joined");
-      sock.off("ticket_resolved");
-      sock.off("ai_toggled");
+      sock.off('connect');
+      sock.off('new_message');
+      sock.off('agent_joined');
+      sock.off('ticket_resolved');
+      sock.off('ai_toggled');
       sock.disconnect();
     };
-  }, [ownerId, isWidgetOpen]);
+  }, [ownerId]); // ← removed isWidgetOpen: socket must NOT reconnect on widget open/close
 
   useEffect(() => {
     const handleMessage = (e) => {
@@ -299,6 +315,19 @@ export default function ChatWidgetPage() {
         if (!capturedName && aiAskedForName(data.content))
           setWaitingForName(true);
       }
+
+      // Show escalation cinematic message if ticket was created
+      if (data.status === 'human_needed') {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'system_escalation',
+            content: 'escalation',
+            timestamp: new Date(),
+            senderType: 'system',
+          },
+        ]);
+      }
     } catch (err) {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -392,12 +421,12 @@ export default function ChatWidgetPage() {
     return <Sparkles size={12} style={{ color: themeColor }} />;
   };
 
-  const headerName = !isAiActive && agent ? agent.displayName : botName;
+  const headerName = !isAiActive && agent ? (agent.displayName || agent.name) : botName;
   const headerStatus = isAiActive
     ? `${botName} Online`
     : agent
-      ? agent.roleTitle || "Support Agent"
-      : "Agent is Joining...";
+      ? `${agent.roleTitle || 'Support Agent'} — Real Human 🟢`
+      : "Connecting to Agent...";
   const headerAvatar =
     !isAiActive && agent?.profilePhoto ? agent.profilePhoto : logoUrl;
 
@@ -441,54 +470,63 @@ export default function ChatWidgetPage() {
 
       <div className="cw-messages" ref={scrollRef}>
         {messages.map((m, i) => {
-          const isHuman = m.senderType === "user" || m.senderType === "agent" || m.senderType === "owner";
-          const displaySide = isHuman ? 'user' : 'assistant';
+          if (m.role === 'system_escalation') {
+            return (
+              <div key={i} className="cw-escalation-card">
+                <div className="cw-esc-icon">🔴</div>
+                <div className="cw-esc-body">
+                  <div className="cw-esc-title">HIGH INTENT DETECTED</div>
+                  <div className="cw-esc-sub">Connecting you with our support team. An agent will join shortly...</div>
+                </div>
+              </div>
+            );
+          }
+
+          const isAgentMsg = m.senderType === 'agent' || m.senderType === 'owner';
+          const isUserMsg  = m.role === 'user' || m.senderType === 'user';
+          const ts = m.timestamp ? new Date(m.timestamp) : null;
+
           return (
-            <div key={i} className={`cw-msg cw-msg--${displaySide}`}>
-            {m.role === "assistant" && (
-              <div
-                className="cw-avatar"
-                style={{
-                  background: `${themeColor}22`,
-                  border: `1.5px solid ${themeColor}44`,
-                }}
-              >
-                {renderAvatar(m)}
-              </div>
-            )}
-            {m.role === "user" && (
-              <div className="cw-avatar cw-avatar--user">
-                <User size={12} style={{ color: "#94a3b8" }} />
-              </div>
-            )}
-            <div className="cw-bubble-wrap">
-              {m.role === "assistant" &&
-                (m.senderType === "agent" || m.senderType === "owner") && (
+            <div key={i} className={`cw-msg cw-msg--${isUserMsg ? 'user' : 'assistant'}`}>
+              {!isUserMsg && (
+                <div
+                  className="cw-avatar"
+                  style={{
+                    background: `${themeColor}22`,
+                    border: `1.5px solid ${themeColor}44`,
+                  }}
+                >
+                  {renderAvatar(m)}
+                </div>
+              )}
+              {isUserMsg && (
+                <div className="cw-avatar cw-avatar--user">
+                  <User size={12} style={{ color: '#94a3b8' }} />
+                </div>
+              )}
+              <div className="cw-bubble-wrap">
+                {isAgentMsg && (
                   <div className="cw-sender-label">
-                    {m.senderName}
-                    {m.senderRole ? `, ${m.senderRole}` : ""}
+                    {m.senderName || 'Agent'}
+                    {m.senderRole ? `, ${m.senderRole}` : ''}
+                    <span className="cw-human-badge">🟢 Real Human</span>
                   </div>
                 )}
-              <div
-                className="cw-bubble"
-                style={
-                  isHuman
-                    ? { background: themeColor, color: "#fff" }
-                    : {}
-                }
-              >
-                {m.content}
-              </div>
-              <div className="cw-timestamp">
-                {new Date(m.timestamp).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                <div
+                  className="cw-bubble"
+                  style={isUserMsg ? { background: themeColor, color: '#fff' } : {}}
+                >
+                  {m.content}
+                </div>
+                {ts && (
+                  <div className="cw-timestamp">
+                    {ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
 
         {loading && isAiActive && (
           <div className="cw-msg cw-msg--assistant">
@@ -738,6 +776,11 @@ export default function ChatWidgetPage() {
         .cw-start-new-btn:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
         .spin { animation: cwSpin 0.8s linear infinite; }
         @keyframes cwSpin { to { transform: rotate(360deg); } }
+        .cw-escalation-card { display: flex; align-items: flex-start; gap: 10px; background: #fff5f5; border: 1px solid #fecaca; border-radius: 14px; padding: 12px 14px; margin: 4px 0; animation: cwFadeUp 0.3s ease-out; }
+        .cw-esc-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+        .cw-esc-title { font-size: 0.72rem; font-weight: 800; color: #dc2626; letter-spacing: 0.03em; }
+        .cw-esc-sub { font-size: 0.7rem; color: #7f1d1d; margin-top: 3px; line-height: 1.4; }
+        .cw-human-badge { margin-left: 6px; font-size: 0.6rem; background: #dcfce7; color: #16a34a; padding: 1px 6px; border-radius: 8px; font-weight: 700; }
       `}</style>
     </div>
   );
