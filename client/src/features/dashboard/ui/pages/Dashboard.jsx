@@ -651,7 +651,8 @@ export default function Dashboard() {
         .dropdown-divider { height: 1px; background: var(--outline-variant); margin: 6px 4px; }
         .ag-dropdown-overlay { position: fixed; inset: 0; z-index: 999; }
         
-        .sa-avatar { width: 32px; height: 32px; background: var(--primary-low); color: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; }
+        .sa-avatar { width: 32px; height: 32px; background: var(--primary-low); color: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; overflow: hidden; border: 1px solid var(--outline-variant); }
+        .sa-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
         @media (min-width: 768px) { .sa-avatar { width: 36px; height: 36px; border-radius: 10px; } }
         
         .sa-viewport { flex: 1; padding: 16px; overflow-y: auto; background: var(--surface-container-low); -webkit-overflow-scrolling: touch; }

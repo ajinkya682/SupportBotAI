@@ -41,8 +41,10 @@ import AgentProfileSetup from "./AgentProfileSetup";
 import { usePushNotifications } from "../../../../shared/hooks/usePushNotifications";
 import PushPrompt from "../../../../shared/ui/components/PushPrompt";
 
-export default function AgentDashboard({ user }) {
+export default function AgentDashboard({ user: propUser }) {
   const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  const currentUser = user || propUser;
   const [activeTab, setActiveTab] = useState('overview');
   const [conversations, setConversations] = useState([]);
   const [business, setBusiness] = useState(null);
@@ -579,11 +581,15 @@ export default function AgentDashboard({ user }) {
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
               >
                 <div className="profile-text desktop-only">
-                  <span className="name">{user.name}</span>
-                  <span className="role">{user.roleTitle || 'Support Agent'}</span>
+                  <span className="name">{currentUser.name}</span>
+                  <span className="role">{currentUser.roleTitle || 'Support Agent'}</span>
                 </div>
                 <div className="avatar">
-                  {user.profilePhoto ? <img src={user.profilePhoto} alt="" /> : user.name.charAt(0).toUpperCase()}
+                  {currentUser.profilePhoto ? (
+                    <img src={currentUser.profilePhoto} alt="" />
+                  ) : (
+                    currentUser.name?.charAt(0).toUpperCase()
+                  )}
                 </div>
                 <ChevronDown size={14} className={`ag-chevron ${isProfileDropdownOpen ? 'open' : ''}`} />
               </button>
