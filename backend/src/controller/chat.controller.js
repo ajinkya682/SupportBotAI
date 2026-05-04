@@ -1,42 +1,39 @@
+import { Mistral } from '@mistralai/mistralai';
 import Business from '../models/business.model.js';
 import Conversation from '../models/conversation.model.js';
 import cache from '../utils/cache.js';
 import * as aiService from '../service/ai.service.js';
+import { routeTicket } from '../utils/routing.js';
 
-
+const mistral = new Mistral({
+    apiKey: process.env.MISTRAL_API_KEY || '',
+});
 
 export const handleChat = async (req, res) => {
     const { apiKey, messages, conversationId, userName } = req.body;
-
     if (!apiKey) return res.status(400).json({ error: 'API Key missing' });
 
     try {
-        // 1. Business Retrieval (Cache First Strategy)
         let business = cache.get(apiKey);
         if (!business) {
             business = await Business.findOne({ apiKey }).lean();
             if (!business) return res.status(404).json({ error: 'Invalid API Key' });
-
-            // Setting cache (default 1 hour TTL)
             cache.set(apiKey, business);
         }
 
-        // 2. Usage & Plan Limit Check
-        const currentCount = business.conversationCount || 0;
-        const limit = business.conversationLimit || 0;
-
-        if (business.plan === 'free' && currentCount >= limit) {
-            return res.status(403).json({ error: 'Conversation limit reached' });
+        if (business.plan === 'free' && business.conversationCount >= business.conversationLimit) {
+            return res.status(403).json({
+                error: 'Conversation limit reached',
+                message: 'This business has reached its conversation limit. Please upgrade to Pro.',
+            });
         }
 
-        // 3. AI Analysis & Response Generation
+        const botName = business.appearance?.botName || business.name || 'SupportBotAI';
+        const botAvatar = business.appearance?.botAvatar || '';
         const lastUserMessage = messages[messages.length - 1].content;
-
-        // Sentiment and Intent analysis
         const { emotion, intent } = aiService.analyzeMessage(lastUserMessage);
-        const extractedName = aiService.extractNameFromMessage(lastUserMessage);
-
-        // Fetch AI reply using extracted service
+        
+        // Fetch AI reply using improved service
         const { content: aiReply, confidence } = await aiService.getAiResponse(
             business,
             messages,
@@ -45,126 +42,168 @@ export const handleChat = async (req, res) => {
             intent
         );
 
-        // Escalation Logic (Angry users or low confidence AI)
-        const needsEscalation = confidence === 'Low' || emotion === 'angry' || intent === 'account_management';
-
-        // 4. Message Objects Preparation
-        const userMsg = {
-            role: 'user',
-            content: lastUserMessage,
-            timestamp: new Date(),
-            senderType: 'user',
-            senderName: userName || extractedName || 'User'
-        };
-
-        const aiMsg = {
-            role: 'assistant',
-            content: aiReply,
-            timestamp: new Date(),
-            senderType: 'ai',
-            senderName: business.appearance?.botName || 'AI Assistant'
-        };
+        const extractedName = aiService.extractNameFromMessage(lastUserMessage);
+        const needsEscalation =
+            confidence.toLowerCase() === 'low' ||
+            emotion === 'angry' ||
+            intent === 'account_management';
 
         let conversation;
 
-        // 5. Conversation Persistence Logic
         if (conversationId) {
             conversation = await Conversation.findById(conversationId);
             if (!conversation) return res.status(404).json({ error: 'Conversation not found' });
 
-            // CASE: Human Agent is already handling this chat
             if (conversation.isAiActive === false) {
+                const userMsg = {
+                    role: 'user',
+                    content: lastUserMessage,
+                    timestamp: new Date(),
+                    senderType: 'user',
+                    senderName: conversation.userName || 'User',
+                };
                 conversation.messages.push(userMsg);
                 await conversation.save();
 
-                // Emit only user message to dashboard
-                req.io?.to(business.owner.toString()).emit('new_message', { conversationId, ...userMsg });
+                if (req.io && business.owner) {
+                    const room = business.owner.toString();
+                    req.io.to(room).emit('new_message', {
+                        conversationId: conversation._id.toString(),
+                        ...userMsg,
+                    });
+                    req.io.to(room).emit('update_conversation', conversation);
+                }
 
-                return res.json({ content: null, conversationId, isAiActive: false });
+                return res.json({
+                    content: null,
+                    conversationId: conversation._id,
+                    status: conversation.status,
+                    isAiActive: false,
+                    userName: conversation.userName,
+                });
             }
 
-            // Sync user name if found during chat
             if (extractedName && (!conversation.userName || conversation.userName === 'Anonymous')) {
                 conversation.userName = extractedName;
             }
 
-            conversation.messages.push(userMsg, aiMsg);
-        } else {
-            // CASE: New Conversation Initialization
-            const title = await aiService.generateConversationTitle(lastUserMessage, intent);
+            const userMsg = {
+                role: 'user',
+                content: lastUserMessage,
+                timestamp: new Date(),
+                senderType: 'user',
+                senderName: conversation.userName || 'User',
+            };
+            const aiMsg = {
+                role: 'assistant',
+                content: aiReply,
+                timestamp: new Date(),
+                senderType: 'ai',
+                senderName: botName,
+                senderAvatar: botAvatar,
+            };
 
-            conversation = new Conversation({
+            conversation.messages.push(userMsg, aiMsg);
+            conversation.emotion = emotion;
+            conversation.intent = intent;
+            conversation.updatedAt = new Date();
+
+            if (needsEscalation && conversation.status !== 'human_needed' && conversation.status !== 'in_progress') {
+                conversation.status = 'human_needed';
+                conversation.priority = emotion === 'angry' ? 'high' : 'medium';
+
+                if (confidence === 'Low') {
+                    conversation.messages.push({
+                        role: 'assistant',
+                        content: `I've notified our support team, and a human agent will join this chat shortly to help you with ${intent.replace('_', ' ')}! 😊`,
+                        timestamp: new Date(),
+                        senderType: 'ai',
+                        senderName: botName,
+                        senderAvatar: botAvatar,
+                    });
+                }
+
+                await Business.findByIdAndUpdate(business._id, {
+                    $push: {
+                        notifications: {
+                            message: `Ticket Created: ${conversation.userName} needs help with ${intent}.`,
+                            isRead: false,
+                        },
+                    },
+                });
+
+                await conversation.save();
+                if (req.io) await routeTicket(conversation._id, req.io);
+            } else {
+                await conversation.save();
+                if (req.io && business.owner) {
+                    const room = business.owner.toString();
+                    req.io.to(room).emit('update_conversation', conversation);
+                    req.io.to(room).emit('new_message', { conversationId: conversation._id.toString(), ...aiMsg });
+                }
+            }
+        } else {
+            // New conversation
+            const title = await aiService.generateConversationTitle(lastUserMessage, intent);
+            const userMsg = {
+                role: 'user',
+                content: lastUserMessage,
+                timestamp: new Date(),
+                senderType: 'user',
+                senderName: extractedName || 'Anonymous',
+            };
+            const aiMsg = {
+                role: 'assistant',
+                content: aiReply,
+                timestamp: new Date(),
+                senderType: 'ai',
+                senderName: botName,
+                senderAvatar: botAvatar,
+            };
+
+            conversation = await Conversation.create({
                 business: business._id,
                 messages: [userMsg, aiMsg],
-                userName: userName || extractedName || 'Anonymous',
+                emotion,
+                intent,
+                status: needsEscalation ? 'human_needed' : 'ai_resolved',
+                routingStatus: needsEscalation ? 'pending' : 'resolved',
+                priority: emotion === 'angry' ? 'high' : needsEscalation ? 'medium' : 'low',
+                userName: extractedName || 'Anonymous',
                 title,
-                status: 'open'
             });
 
-            // Increment usage and clear cache to keep data fresh
+            if (req.io && needsEscalation) {
+                await routeTicket(conversation._id, req.io);
+            }
+
             await Business.findByIdAndUpdate(business._id, { $inc: { conversationCount: 1 } });
             cache.del(apiKey);
         }
 
-        // 6. Meta-data & Status Updates
-        conversation.emotion = emotion;
-        conversation.intent = intent;
-
-        if (needsEscalation && !['human_needed', 'in_progress'].includes(conversation.status)) {
-            conversation.status = 'human_needed';
-            conversation.priority = emotion === 'angry' ? 'high' : 'medium';
-
-            // Add notification for the business owner
-            await Business.findByIdAndUpdate(business._id, {
-                $push: {
-                    notifications: {
-                        message: `Action Required: ${conversation.userName} needs assistance with ${intent}`,
-                        isRead: false
-                    }
-                }
-            });
-        }
-
-        await conversation.save();
-
-        // 7. Real-time Socket Synchronization
-        if (req.io && business.owner) {
-            const room = business.owner.toString();
-            // Update the sidebar/list in dashboard
-            req.io.to(room).emit('update_conversation', conversation);
-            // Send the new AI reply to dashboard chat window
-            req.io.to(room).emit('new_message', { conversationId: conversation._id, ...aiMsg });
-        }
-
-        // 8. Final Response to Widget
         res.json({
             content: aiReply,
             conversationId: conversation._id,
             status: conversation.status,
-            userName: conversation.userName
+            userName: conversation.userName,
+            title: conversation.title,
         });
-
     } catch (error) {
-        console.error("Chat Controller Error:", error);
-        res.status(500).json({
-            error: 'Internal Server Error',
-            details: error.message
-        });
+        console.error('AI Chat Error:', error);
+        res.status(500).json({ error: 'AI Assistant Error', details: error.message });
     }
 };
 
-
 export const getAgentSuggestion = async (req, res) => {
+    const { conversationId } = req.body;
     try {
-        const { conversationId } = req.body;
-        const conv = await Conversation.findById(conversationId).populate('business').lean();
-        if (!conv) return res.status(404).json({ error: 'Conversation not found' });
+        const conversation = await Conversation.findById(conversationId).populate('business');
+        if (!conversation) return res.status(404).json({ error: 'Conversation not found' });
 
-        const history = conv.messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n');
         const suggestion = await aiService.getAgentSuggestion(
-            conv.business.name,
-            conv.business,
-            history
+            conversation.business.name,
+            conversation.business,
+            conversation.messages
         );
 
         res.json({ suggestion });
@@ -172,7 +211,6 @@ export const getAgentSuggestion = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-
 
 export const getWidgetConfig = async (req, res) => {
     try {
@@ -183,10 +221,10 @@ export const getWidgetConfig = async (req, res) => {
         const business = await Business.findOne({ apiKey });
         if (!business) return res.status(404).json({ message: 'Invalid API Key' });
 
-        // Domain Security Check
         const domainLimit = business.plan === 'free' ? 1 : 10;
-        if (!business.allowedDomains.includes(origin) && origin !== "") {
-            if (business.allowedDomains.length < domainLimit) {
+        const currentDomains = business.allowedDomains || [];
+        if (!currentDomains.includes(origin) && origin !== "") {
+            if (currentDomains.length < domainLimit) {
                 await Business.updateOne({ _id: business._id }, { $push: { allowedDomains: origin } });
             } else {
                 return res.status(403).json({ error: 'Unauthorized domain. Limit reached.' });
@@ -195,45 +233,16 @@ export const getWidgetConfig = async (req, res) => {
 
         res.json({
             name: business.name,
-            ownerId: business.owner,
+            ownerId: business.owner.toString(),
             faqs: business.faqs,
             appearance: business.appearance,
-            plan: business.plan
+            plan: business.plan,
+            allowedDomains: business.allowedDomains,
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
-
-
-export const updateConversationStatus = async (req, res) => {
-    try {
-        const { conversationId, status, resolvedBy, resolvedByName, resolvedByType } = req.body;
-        const conv = await Conversation.findById(conversationId);
-        if (!conv) return res.status(404).json({ error: "Not found" });
-
-        let finalStatus = status === 'solved' ? (conv.isAiActive ? 'ai_resolved' : 'human_resolved') : status;
-
-        const update = {
-            status: finalStatus,
-            resolvedAt: status === 'solved' ? new Date() : null,
-            resolvedBy,
-            resolvedByName,
-            resolvedByType
-        };
-
-        const updatedConv = await Conversation.findByIdAndUpdate(
-            conversationId,
-            { $set: update },
-            { new: true }
-        );
-
-        res.json({ success: true, conversation: updatedConv });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
 
 export const getConversationForWidget = async (req, res) => {
     try {
@@ -257,6 +266,32 @@ export const getConversationForWidget = async (req, res) => {
                 }
                 : null,
         });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const updateConversationStatus = async (req, res) => {
+    try {
+        const { conversationId, status, resolvedBy, resolvedByName, resolvedByType } = req.body;
+        const conversation = await Conversation.findById(conversationId);
+        if (!conversation) return res.status(404).json({ message: 'Conversation not found' });
+
+        let finalStatus = status;
+        if (status === 'solved') {
+            finalStatus = conversation.isAiActive ? 'ai_resolved' : 'human_resolved';
+        }
+
+        conversation.status = finalStatus;
+        if (resolvedByName) {
+            conversation.resolvedByName = resolvedByName;
+            conversation.resolvedByType = resolvedByType;
+            conversation.resolvedBy = resolvedBy;
+            conversation.resolvedAt = new Date();
+        }
+        await conversation.save();
+
+        res.json({ success: true, status: finalStatus });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
