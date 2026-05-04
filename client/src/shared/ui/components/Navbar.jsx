@@ -47,7 +47,7 @@ export default function Navbar() {
       <div className="container nav-inner">
         <Link to="/" className="brand-logo">
           <div className="logo-icon">
-            <Bot size={24} color="white" />
+            <img src="/image.png" alt="SupportBot AI" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
           </div>
           <span className="brand-text">SUPPORTBOT <span className="highlight">AI</span></span>
         </Link>
@@ -117,7 +117,7 @@ export default function Navbar() {
               <div className="drawer-header">
                 <Link to="/" className="brand-logo" onClick={() => setIsMobileMenuOpen(false)}>
                   <div className="logo-icon">
-                    <Bot size={20} color="white" />
+                    <img src="/image.png" alt="SupportBot AI" style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
                   </div>
                   <span className="brand-text">SUPPORTBOT <span className="highlight">AI</span></span>
                 </Link>
