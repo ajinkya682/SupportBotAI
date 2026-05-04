@@ -45,19 +45,27 @@ function AppContent() {
       <Toaster
         position="top-center"
         toastOptions={{
+          className: 'toast-custom',
           style: {
-            background: "var(--inverse-surface)",
-            color: "var(--inverse-on-surface)",
-            border: "1px solid var(--outline-variant)",
-            borderRadius: "var(--radius-md)",
+            background: "#ffffff",
+            color: "#1e293b",
+            border: "1px solid #e2e8f0",
+            borderRadius: "12px",
             fontSize: "14px",
             padding: "12px 20px",
+            boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
           },
           success: {
             iconTheme: { primary: "#10b981", secondary: "#fff" },
           },
           error: {
-            iconTheme: { primary: "var(--error)", secondary: "#fff" },
+            className: 'toast-error',
+            iconTheme: { primary: "#ef4444", secondary: "#fff" },
+            style: {
+              background: "#fef2f2",
+              color: "#991b1b",
+              border: "1px solid #fee2e2"
+            }
           },
         }}
       />

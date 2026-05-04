@@ -39,7 +39,7 @@ const resolveGoogleUser = async (idToken, accessToken) => {
 };
 
 exports.googleLogin = async (req, res) => {
-  const { idToken, accessToken } = req.body;
+  const { idToken, accessToken, plan } = req.body;
   try {
     const profile = await resolveGoogleUser(idToken, accessToken);
     if (!profile) {
@@ -58,8 +58,14 @@ exports.googleLogin = async (req, res) => {
         email: profile.email,
         googleId: profile.googleId,
       });
-      // Create business immediately for new Google users
-      await Business.create({ owner: user._id, name: `${user.name}'s Business` });
+      // Create business with selected plan
+      const selectedPlan = plan === 'pro' ? 'pro' : 'free';
+      await Business.create({ 
+        owner: user._id, 
+        name: `${user.name}'s Business`,
+        plan: selectedPlan,
+        conversationLimit: selectedPlan === 'pro' ? 999999 : 100
+      });
     }
 
     if (user.role === 'agent') {
@@ -83,7 +89,7 @@ exports.googleLogin = async (req, res) => {
 };
 
 exports.registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, plan } = req.body;
   try {
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -91,8 +97,15 @@ exports.registerUser = async (req, res) => {
     }
 
     const user = await User.create({ name, email, password });
-    // Create business immediately for new users
-    await Business.create({ owner: user._id, name: `${user.name}'s Business` });
+    
+    // Create business with selected plan
+    const selectedPlan = plan === 'pro' ? 'pro' : 'free';
+    await Business.create({ 
+      owner: user._id, 
+      name: `${user.name}'s Business`,
+      plan: selectedPlan,
+      conversationLimit: selectedPlan === 'pro' ? 999999 : 100
+    });
 
     res.status(201).json({
       _id: user._id,

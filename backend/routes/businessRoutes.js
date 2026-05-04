@@ -16,5 +16,6 @@ router.get('/notifications', protect, getNotifications);
 router.put('/notifications/read', protect, markNotificationsRead);
 router.post('/scrape', protect, scrapeAndTrain);
 router.post('/logo-upload', protect, uploadLogo);
+router.post('/upgrade-pro', protect, upgradePlan);
 
 module.exports = router;
