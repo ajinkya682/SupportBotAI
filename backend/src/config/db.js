@@ -10,14 +10,14 @@ const connectDB = async () => {
             connectTimeoutMS: 30000,
             serverSelectionTimeoutMS: 30000,
             socketTimeoutMS: 45000,
+            family: 4 // Force IPv4 to avoid some Render/Atlas resolution issues
         });
         console.log(`🚀 MongoDB Connected: ${conn.connection.host}`);
+        return conn;
     } catch (error) {
         console.error(`❌ MongoDB Connection Error: ${error.message}`);
-        // Don't exit process in production to allow Render to keep trying
-        if (process.env.NODE_ENV !== 'production') {
-            process.exit(1);
-        }
+        // If we can't connect, we should exit so Render knows to restart the container
+        process.exit(1);
     }
 };
 
