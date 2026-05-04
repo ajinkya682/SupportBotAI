@@ -29,7 +29,7 @@ export default function TeamMembers() {
   const fetchAgents = async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-      const { data } = await axios.get(`${API_URL}/agent`, {
+      const { data } = await axios.get(`${API_URL}/agents`, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       setAgents(data);
@@ -63,7 +63,7 @@ export default function TeamMembers() {
     if (!window.confirm('Are you sure you want to remove this team member?')) return;
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-      await axios.delete(`${API_URL}/agent/${id}`, {
+      await axios.delete(`${API_URL}/agents/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       setAgents(agents.filter(a => a._id !== id));

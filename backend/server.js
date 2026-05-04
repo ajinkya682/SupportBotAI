@@ -1,133 +1,157 @@
-import config from './src/config/config.js';
-import http from 'http';
-import { Server } from 'socket.io';
-import app from './src/app.js';
-import connectDB from './src/config/db.js';
-import User from './src/models/user.model.js';
-import socketHandler from './src/utils/socket.js';
-import autoResolve from './src/utils/autoResolve.js';
+require('dotenv').config();
+require('./config/validateEnv')();
 
+const express = require('express');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
+const connectDB = require('./config/db');
+const http = require('http');
+const { Server } = require('socket.io');
+const User = require('./models/User');
+const path = require('path');
+const fs = require('fs');
+
+const app = express();
 const server = http.createServer(app);
+
+// ── Build allowed origins from environment ──────────────────────────────────
+const buildAllowedOrigins = () => {
+  const origins = [process.env.FRONTEND_URL].filter(Boolean);
+  if (process.env.ADDITIONAL_ORIGINS) {
+    const extra = process.env.ADDITIONAL_ORIGINS.split(',')
+      .map((o) => o.trim())
+      .filter(Boolean);
+    origins.push(...extra);
+  }
+  return origins;
+};
+
+const allowedOrigins = buildAllowedOrigins();
+
+// ── Socket.IO ────────────────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: '*', // Open for widget to work everywhere
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true,
   },
-  allowEIO3: true,
-  transports: ['polling', 'websocket']
 });
 
+// Pass io to req before routes
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-socketHandler(io);
-autoResolve(io);
+// ── CORS — open for widget compatibility ──────────────────────────────────────
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Always allow — widget can be embedded on any site
+      // Domain-level security is handled inside chatController.getWidgetConfig
+      return callback(null, true);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept'],
+  })
+);
 
+// ── Rate Limiting ─────────────────────────────────────────────────────────────
+const MAX_REQUESTS = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100;
+const WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000;
+
+const limiter = rateLimit({
+  windowMs: WINDOW_MS,
+  max: MAX_REQUESTS,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please wait a moment and try again.' },
+});
+app.use('/api/', limiter);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ── Widget.js — served dynamically with injected SERVER_BASE_URL ──────────────
+app.get('/widget.js', (req, res) => {
+  const templatePath = path.join(__dirname, 'public', 'widget.template.js');
+  try {
+    let template = fs.readFileSync(templatePath, 'utf8');
+    const filled = template.replace(/__SERVER_BASE_URL__/g, process.env.SERVER_BASE_URL || '');
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(filled);
+  } catch (err) {
+    console.error('widget.js template not found:', err.message);
+    res.status(404).send('// widget.js not found');
+  }
+});
+
+app.use(express.static('public'));
+
+// ── Health Check ──────────────────────────────────────────────────────────────
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString(), uptime: process.uptime() });
+});
+
+// ── API Routes ─────────────────────────────────────────────────────────────────
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/business', require('./routes/businessRoutes'));
+app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api/conversations', require('./routes/conversationRoutes'));
+app.use('/api/agents', require('./routes/agentRoutes'));
+app.use('/api/super-admin', require('./routes/superAdminRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+
+// ── Global Error Handler ───────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Internal Server Error', error: err.message });
+});
+
+require('./utils/socket')(io);
+require('./utils/autoResolve')(io);
+
+// ── Agent Heartbeat Monitor ────────────────────────────────────────────────────
 const HEARTBEAT_INTERVAL_MS = 30000;
 const AGENT_OFFLINE_AFTER_MS = 60000;
-
 
 setInterval(async () => {
   try {
     const threshold = new Date(Date.now() - AGENT_OFFLINE_AFTER_MS);
-    
-    
-    const result = await User.updateMany(
-      {
-        role: 'agent',
-        status: { $ne: 'offline' },
-        lastHeartbeat: { $lt: threshold },
-      },
-      { status: 'offline' }
-    );
+    const agentsToOffline = await User.find({
+      role: 'agent',
+      status: { $ne: 'offline' },
+      lastHeartbeat: { $lt: threshold },
+    });
 
-    if (result.modifiedCount > 0) {
-      
-      const offlineAgents = await User.find({
-        role: 'agent',
+    for (const agent of agentsToOffline) {
+      agent.status = 'offline';
+      await agent.save();
+      io.to(agent.ownerId.toString()).emit('agent_status_changed', {
+        agentId: agent._id,
         status: 'offline',
-        lastHeartbeat: { $lt: threshold },
-      }).select('_id ownerId').lean();
-
-      const ownerIds = new Set(offlineAgents.map(a => a.ownerId?.toString()).filter(Boolean));
-      
-      ownerIds.forEach(ownerId => {
-        io.to(ownerId).emit('agents_offline_status', {
-          count: result.modifiedCount,
-          timestamp: new Date()
-        });
       });
-
-      console.log(`✅ Batch offline update: ${result.modifiedCount} agents set to offline`);
     }
   } catch (error) {
-    console.error('❌ Heartbeat check error:', error);
+    console.error('Heartbeat check error:', error);
   }
 }, HEARTBEAT_INTERVAL_MS);
+
+// ── Start Server ──────────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
   try {
     await connectDB();
-    server.listen(config.PORT, '0.0.0.0', () => {
-      console.log(`✅ Server running on ${config.API_URL}`);
-      console.log(`📋 Allowed origins: ${config.ALLOWED_ORIGINS.join(', ')}`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
     });
   } catch (error) {
     console.error('❌ Failed to connect to MongoDB:', error.message);
     process.exit(1);
   }
 };
-
-
-const gracefulShutdown = async (signal) => {
-  console.log(`\n⚠️ ${signal} received. Shutting down gracefully...`);
-  
-  
-  server.close(() => {
-    console.log('✅ Server closed, no longer accepting connections');
-  });
-
-  
-  io.disconnectSockets();
-
- 
-  const shutdownTimeout = setTimeout(() => {
-    console.error('❌ Forced shutdown after timeout');
-    process.exit(1);
-  }, 30000);
-
-  try {
-   
-    if (global.cache) {
-      global.cache.shutdown?.();
-      console.log('✅ Cache cleaned up');
-    }
-
-    clearTimeout(shutdownTimeout);
-    console.log('✅ Graceful shutdown completed');
-    process.exit(0);
-  } catch (error) {
-    console.error('❌ Error during shutdown:', error);
-    process.exit(1);
-  }
-};
-
-
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-
-process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
-  process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-});
 
 startServer();
