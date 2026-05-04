@@ -434,6 +434,35 @@ const changePassword = async (req, res) => {
     }
 };
 
+const exportReport = async (req, res) => {
+    try {
+        const businesses = await Business.find().populate('owner', 'email name');
+        
+        // CSV Headers
+        let csv = 'Business Name,Owner Name,Owner Email,Plan,Conversations,Created At\n';
+        
+        for (const b of businesses) {
+            const convCount = await Conversation.countDocuments({ business: b._id });
+            const row = [
+                `"${b.name}"`,
+                `"${b.owner?.name || 'N/A'}"`,
+                `"${b.owner?.email || 'N/A'}"`,
+                `"${b.plan}"`,
+                convCount,
+                `"${new Date(b.createdAt).toLocaleDateString()}"`
+            ].join(',');
+            csv += row + '\n';
+        }
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=platform_report.csv');
+        res.status(200).send(csv);
+    } catch (error) {
+        console.error('Error exporting report:', error);
+        res.status(500).json({ success: false, message: 'Server error during export' });
+    }
+};
+
 module.exports = {
     login,
     getOverviewStats,
@@ -449,5 +478,6 @@ module.exports = {
     getSubscriptions,
     getSettings,
     updateSettings,
-    changePassword
+    changePassword,
+    exportReport
 };
