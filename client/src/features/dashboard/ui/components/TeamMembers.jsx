@@ -29,7 +29,7 @@ export default function TeamMembers() {
   const fetchAgents = async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-      const { data } = await axios.get(`${API_URL}/agents`, {
+      const { data } = await axios.get(`${API_URL}/agents/list`, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       setAgents(data);
@@ -45,7 +45,7 @@ export default function TeamMembers() {
     setIsInviting(true);
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-      const { data } = await axios.post(`${API_URL}/auth/invite-agent`, inviteData, {
+      const { data } = await axios.post(`${API_URL}/agents/add`, inviteData, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       setAgents([...agents, data.agent]);
