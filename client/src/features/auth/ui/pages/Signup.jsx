@@ -208,7 +208,7 @@ export default function Signup() {
           border-radius: 0;
           display: flex;
           flex-direction: column;
-          padding-top: calc(64px + 24px + env(safe-area-inset-top));
+          padding-top: calc(80px + env(safe-area-inset-top)); /* Adjusted to clear navbar */
         }
 
         @media (min-width: 640px) {
@@ -229,7 +229,7 @@ export default function Signup() {
           }
         }
 
-        .auth-header { text-align: center; margin-bottom: 32px; }
+        .auth-header { text-align: center; margin-bottom: 24px; }
         .auth-brand { display: flex; align-items: center; gap: 12px; justify-content: center; margin-bottom: 24px; text-decoration: none; }
         .brand-icon { background: var(--primary); padding: 8px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-raised); }
         .brand-text { font-size: 1.25rem; font-weight: 800; color: var(--on-surface); letter-spacing: -0.02em; }
@@ -241,15 +241,15 @@ export default function Signup() {
         .google-btn { width: 100%; background: white; border: 1px solid var(--outline-variant); margin-bottom: 24px; gap: 12px; height: 44px; }
         .google-btn:hover { background-color: var(--surface-container-low); border-color: var(--primary); }
         
-        .divider { display: flex; align-items: center; text-align: center; margin: 24px 0; color: var(--outline); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; }
+        .divider { display: flex; align-items: center; text-align: center; margin: 16px 0; color: var(--outline); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; }
         .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1.5px solid var(--outline-variant); }
         .divider span { padding: 0 16px; }
 
         .label-icon { margin-right: 8px; vertical-align: middle; }
         .auth-submit-btn { width: 100%; margin-top: 8px; height: 52px; font-size: 1rem; }
 
-        .step-tag { font-size: 0.7rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; background: var(--surface-container-low); width: fit-content; padding: 4px 12px; border-radius: var(--radius-full); }
-        .step-desc { color: var(--on-surface-variant); margin-bottom: 32px; font-size: 0.9rem; line-height: 1.5; }
+        .step-tag { font-size: 0.7rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; background: var(--surface-container-low); width: fit-content; padding: 4px 12px; border-radius: var(--radius-full); }
+        .step-desc { color: var(--on-surface-variant); margin-bottom: 24px; font-size: 0.9rem; line-height: 1.5; }
 
         .button-group-responsive { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
         @media (min-width: 640px) { .button-group-responsive { flex-direction: row; gap: 16px; } }

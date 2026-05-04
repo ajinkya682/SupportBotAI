@@ -197,7 +197,7 @@ export default function Login() {
           border-radius: 0;
           display: flex;
           flex-direction: column;
-          padding-top: calc(64px + 24px + env(safe-area-inset-top));
+          padding-top: calc(80px + env(safe-area-inset-top)); /* Adjusted to clear navbar */
         }
 
       @media (min-width: 640px) {
@@ -220,7 +220,7 @@ export default function Login() {
         
         .auth-header {
           text-align: center;
-          margin-bottom: 32px;
+          margin-bottom: 24px; /* Reduced margin */
         }
         
         .auth-brand {
@@ -268,7 +268,7 @@ export default function Login() {
           display: flex;
           align-items: center;
           text-align: center;
-          margin: 24px 0;
+          margin: 16px 0; /* Reduced margin */
           color: var(--outline);
           font-size: 10px;
           font-weight: 700;
