@@ -21,6 +21,8 @@ module.exports = (io) => {
                     // Support both 'userId' and 'agentId' keys for backward compat
                     const agentId = data.userId || data.agentId;
                     if (agentId) {
+                        socket.agentId = agentId;
+                        socket.ownerId = data.ownerId;
                         socket.join(`agent_${agentId}`);
                         console.log(`Agent ${agentId} joined agent room agent_${agentId}`);
                     }
@@ -380,8 +382,43 @@ module.exports = (io) => {
         }, 60000); // Check every minute
 
         // ── Disconnect ──────────────────────────────────────────────────────────
-        socket.on('disconnect', () => {
+        socket.on('disconnect', async () => {
             console.log('Client disconnected:', socket.id);
+            
+            // Find if this socket belonged to an agent
+            // We can check rooms or use a map. For simplicity, let's look for agents
+            // who might have just disconnected.
+            
+            // To be more robust, we should have stored agentId on the socket object
+            // when they joined. Let's assume we do that now in join_room.
+            
+            if (socket.agentId && socket.ownerId) {
+                const agentId = socket.agentId;
+                const ownerId = socket.ownerId;
+
+                // Give it a small delay to see if they reconnect (e.g. refresh)
+                setTimeout(async () => {
+                    const activeSockets = await io.in(`agent_${agentId}`).fetchSockets();
+                    if (activeSockets.length === 0) {
+                        try {
+                            const agent = await User.findById(agentId);
+                            if (agent && agent.status !== 'offline') {
+                                agent.status = 'offline';
+                                await agent.save();
+                                
+                                // Notify owner dashboard
+                                io.to(ownerId.toString()).emit('agent_status_changed', { 
+                                    agentId, 
+                                    status: 'offline' 
+                                });
+                                console.log(`Agent ${agentId} set to offline after disconnect`);
+                            }
+                        } catch (err) {
+                            console.error('Error setting agent offline on disconnect:', err);
+                        }
+                    }
+                }, 5000); // 5 second grace period for refreshes
+            }
         });
     });
 };
