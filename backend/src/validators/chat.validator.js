@@ -55,21 +55,7 @@ export const getConversationForWidgetValidator = [
 ];
 
 export const getAgentSuggestionValidator = [
-  body('messages')
-    .isArray({ min: 1 })
-    .withMessage('Messages must be a non-empty array'),
-  body('messages.*.role')
-    .isIn(['user', 'assistant'])
-    .withMessage('Message role must be user or assistant'),
-  body('messages.*.content')
-    .trim()
-    .notEmpty()
-    .withMessage('Message content cannot be empty')
-    .isLength({ max: 5000 })
-    .withMessage('Message content cannot exceed 5000 characters'),
-  body('context')
-    .optional()
-    .isString()
-    .isLength({ max: 1000 })
-    .withMessage('Context cannot exceed 1000 characters'),
+  body('conversationId')
+    .isMongoId()
+    .withMessage('Invalid conversation ID format'),
 ];

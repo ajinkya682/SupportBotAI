@@ -19,6 +19,7 @@ import Analytics from "../components/Analytics";
 import TeamMembers from "../components/TeamMembers";
 import AgentDashboard from "../components/AgentDashboard";
 import NotificationBell from "../components/NotificationBell";
+import SystemSettings from "../components/SystemSettings";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
@@ -249,6 +250,15 @@ export default function Dashboard() {
         );
       case "team":
         return <TeamMembers />;
+      case "settings":
+        return (
+          <SystemSettings
+            formData={formData}
+            setFormData={setFormData}
+            onSave={onSave}
+            isLoading={businessLoading}
+          />
+        );
       default:
         return <Overview business={business} conversations={conversations} />;
     }
