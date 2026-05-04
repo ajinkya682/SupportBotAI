@@ -3,22 +3,14 @@ import {
   LayoutDashboard, 
   MessageSquare, 
   Bot, 
-  Settings, 
   LogOut, 
-  Search, 
-  Bell, 
   User, 
   CheckCircle2, 
-  Zap, 
-  ZapOff, 
-  Send, 
-  Loader2,
-  Sparkles,
   ChevronRight,
-  Shield,
   Activity,
   History,
-  Info
+  Menu,
+  X
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { logout, reset } from "../../../auth/state/authSlice";
@@ -26,7 +18,6 @@ import { getBusiness } from "../../state/businessSlice";
 import { getConversations } from "../../../conversations/state/conversationSlice";
 import Conversations from "./Conversations";
 import socket from "../../../../shared/services/socket";
-import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 
@@ -35,7 +26,8 @@ export default function AgentDashboard({ user }) {
   const [activeTab, setActiveTab] = useState('conversations');
   const [conversations, setConversations] = useState([]);
   const [business, setBusiness] = useState(null);
-  const { conversations: reduxConversations, isLoading: convLoading } = useSelector((state) => state.conversations);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { conversations: reduxConversations } = useSelector((state) => state.conversations);
 
   useEffect(() => {
     dispatch(getConversations());
@@ -64,7 +56,7 @@ export default function AgentDashboard({ user }) {
     socket.emit("join_room", { ownerId: user.ownerId, role: "agent", agentId: user._id });
 
     socket.on("new_ticket", (newConv) => {
-      toast.success(`🎫 New ticket assigned from ${newConv.userName || "Anonymous"}`);
+      toast.success(`🎫 New ticket from ${newConv.userName || "Anonymous"}`);
       setConversations(prev => {
         const exists = prev.find(c => c._id === newConv._id);
         if (exists) return prev.map(c => c._id === newConv._id ? newConv : c);
@@ -93,7 +85,7 @@ export default function AgentDashboard({ user }) {
         if (conv._id !== data.conversationId) return conv;
         return { ...conv, status: 'human_resolved', updatedAt: new Date() };
       }));
-      toast.success(`✅ Ticket resolved by ${data.resolvedByName}`);
+      toast.success(`✅ Ticket resolved`);
     });
 
     return () => {
@@ -107,6 +99,11 @@ export default function AgentDashboard({ user }) {
   const onLogout = () => {
     dispatch(logout());
     dispatch(reset());
+  };
+
+  const switchTab = (tab) => {
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false);
   };
 
   const renderContent = () => {
@@ -146,18 +143,18 @@ export default function AgentDashboard({ user }) {
              </div>
              
              <div className="card active-now">
-               <h3><Activity size={20} /> My Active Workload</h3>
+               <h3><Activity size={18} /> My Active Workload</h3>
                <div className="workload-list">
                  {conversations.filter(c => c.agent?._id === user._id && c.status === 'in_progress').map(conv => (
                    <div key={conv._id} className="workload-item" onClick={() => setActiveTab('conversations')}>
-                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                       <div className="user-icon"><User size={18} /></div>
-                       <div>
+                     <div className="workload-info">
+                       <div className="user-icon"><User size={16} /></div>
+                       <div className="workload-text">
                          <div className="name">{conv.userName || 'Anonymous'}</div>
                          <div className="preview">{conv.messages[conv.messages.length - 1]?.content}</div>
                        </div>
                      </div>
-                     <ChevronRight size={18} color="var(--outline)" />
+                     <ChevronRight size={18} color="var(--outline)" className="chevron" />
                    </div>
                  ))}
                  {conversations.filter(c => c.agent?._id === user._id && c.status === 'in_progress').length === 0 && (
@@ -170,36 +167,41 @@ export default function AgentDashboard({ user }) {
              </div>
           </div>
         );
-      default: return null;
+      default: return (
+        <div className="empty-workload">
+          <History size={40} style={{opacity: 0.3}} />
+          <p>History feature coming soon.</p>
+        </div>
+      );
     }
   };
 
   return (
     <div className="agent-layout">
-      {/* Mini Sidebar */}
-      <aside className="agent-sidebar">
+      {/* Desktop Sidebar */}
+      <aside className="agent-sidebar desktop-only">
         <div className="sidebar-top">
           <div className="brand-icon">
-            <Bot size={28} color="white" />
+            <Bot size={24} color="white" />
           </div>
           <nav className="nav-icons">
-            <button className={`icon-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')} title="Overview">
-              <LayoutDashboard size={24} />
+            <button className={`icon-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => switchTab('overview')} title="Overview">
+              <LayoutDashboard size={20} />
             </button>
-            <button className={`icon-btn ${activeTab === 'conversations' ? 'active' : ''}`} onClick={() => setActiveTab('conversations')} title="Chats">
-              <MessageSquare size={24} />
+            <button className={`icon-btn ${activeTab === 'conversations' ? 'active' : ''}`} onClick={() => switchTab('conversations')} title="Chats">
+              <MessageSquare size={20} />
               {conversations.filter(c => c.status === 'human_needed' && !c.agent).length > 0 && (
                 <span className="nav-badge"></span>
               )}
             </button>
-            <button className={`icon-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')} title="History">
-              <History size={24} />
+            <button className={`icon-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => switchTab('history')} title="History">
+              <History size={20} />
             </button>
           </nav>
         </div>
         <div className="sidebar-bottom">
           <button className="icon-btn logout" onClick={onLogout} title="Logout">
-            <LogOut size={24} />
+            <LogOut size={20} />
           </button>
         </div>
       </aside>
@@ -208,13 +210,13 @@ export default function AgentDashboard({ user }) {
       <main className="agent-main">
         <header className="agent-header">
           <div className="header-left">
-            <h2>{activeTab === 'conversations' ? 'Inbox' : (activeTab === 'overview' ? 'Agent Console' : 'Archive')}</h2>
+            <h2>{activeTab === 'conversations' ? 'Inbox' : (activeTab === 'overview' ? 'Console' : 'Archive')}</h2>
             <div className="agent-status">
-              <span className="dot"></span> Online
+              <span className="dot"></span> <span className="desktop-only">Online</span>
             </div>
           </div>
           <div className="header-right">
-            <div className="agent-profile">
+            <div className="agent-profile desktop-flex">
               <div className="profile-info">
                 <span className="name">{user.name}</span>
                 <span className="role">{user.roleTitle || 'Support Agent'}</span>
@@ -226,7 +228,7 @@ export default function AgentDashboard({ user }) {
           </div>
         </header>
 
-        <div className="content-inner">
+        <div className={`content-inner ${activeTab === 'conversations' ? 'no-pad' : ''}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -242,52 +244,140 @@ export default function AgentDashboard({ user }) {
         </div>
       </main>
 
+      {/* Mobile Bottom Navigation */}
+      <nav className="mobile-bottom-nav mobile-only">
+        <button className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => switchTab('overview')}>
+          <LayoutDashboard size={20} />
+          <span>Console</span>
+        </button>
+        <button className={`nav-item ${activeTab === 'conversations' ? 'active' : ''}`} onClick={() => switchTab('conversations')}>
+          <div className="icon-wrapper">
+            <MessageSquare size={20} />
+            {conversations.filter(c => c.status === 'human_needed' && !c.agent).length > 0 && (
+              <span className="nav-badge"></span>
+            )}
+          </div>
+          <span>Inbox</span>
+        </button>
+        <button className="nav-item text-error" onClick={onLogout}>
+          <LogOut size={20} />
+          <span>Logout</span>
+        </button>
+      </nav>
+
       <style>{`
-        .agent-layout { display: flex; height: 100vh; background: var(--surface); overflow: hidden; }
+        .agent-layout { 
+          display: flex; 
+          flex-direction: column;
+          height: 100vh; 
+          height: 100dvh;
+          background: var(--surface); 
+          overflow: hidden; 
+        }
+
+        @media (min-width: 1024px) {
+          .agent-layout { flex-direction: row; }
+        }
         
-        .agent-sidebar { width: 80px; background: var(--inverse-surface); display: flex; flex-direction: column; justify-content: space-between; padding: 24px 0; align-items: center; }
-        .brand-icon { width: 48px; height: 48px; background: var(--primary); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 40px; }
-        .nav-icons { display: flex; flex-direction: column; gap: 20px; }
-        .icon-btn { width: 52px; height: 52px; border-radius: 16px; border: none; background: transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; position: relative; }
+        .agent-sidebar { width: 72px; background: var(--inverse-surface); display: flex; flex-direction: column; justify-content: space-between; padding: 20px 0; align-items: center; z-index: 10; }
+        .brand-icon { width: 40px; height: 40px; background: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 32px; }
+        .nav-icons { display: flex; flex-direction: column; gap: 16px; }
+        .icon-btn { width: 44px; height: 44px; border-radius: 12px; border: none; background: transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; position: relative; }
         .icon-btn:hover { background: rgba(255,255,255,0.05); color: white; }
-        .icon-btn.active { background: var(--primary-container); color: white; box-shadow: var(--shadow-2); }
-        .nav-badge { position: absolute; top: 12px; right: 12px; width: 10px; height: 10px; background: var(--error); border: 2px solid var(--inverse-surface); border-radius: 50%; }
+        .icon-btn.active { background: var(--primary-container); color: white; box-shadow: var(--shadow-1); }
+        .nav-badge { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: var(--error); border: 2px solid var(--inverse-surface); border-radius: 50%; }
         .icon-btn.logout { color: #f87171; }
         .icon-btn.logout:hover { background: rgba(248,113,113,0.1); }
         
-        .agent-main { flex: 1; display: flex; flex-direction: column; }
-        .agent-header { height: 80px; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; background: var(--surface-container-lowest); border-bottom: 1px solid var(--outline-variant); }
-        .header-left { display: flex; align-items: center; gap: 24px; }
-        .header-left h2 { font-size: 1.5rem; margin: 0; }
-        .agent-status { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: #10b981; background: #d1fae5; padding: 4px 12px; border-radius: 20px; }
+        .agent-main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+        .agent-header { height: 60px; padding: 0 16px; display: flex; justify-content: space-between; align-items: center; background: var(--surface-container-lowest); border-bottom: 1px solid var(--outline-variant); flex-shrink: 0; }
+        @media (min-width: 768px) { .agent-header { height: 72px; padding: 0 32px; } }
+
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        @media (min-width: 768px) { .header-left { gap: 24px; } }
+        .header-left h2 { font-size: 1.1rem; margin: 0; }
+        @media (min-width: 768px) { .header-left h2 { font-size: 1.25rem; } }
+
+        .agent-status { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 700; color: #10b981; background: #d1fae5; padding: 4px 8px; border-radius: 20px; }
+        @media (min-width: 768px) { .agent-status { padding: 4px 12px; } }
         .agent-status .dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; }
         
-        .agent-profile { display: flex; align-items: center; gap: 16px; }
+        .agent-profile { display: flex; align-items: center; gap: 12px; }
         .profile-info { text-align: right; }
-        .profile-info .name { display: block; font-weight: 700; color: var(--on-surface); font-size: 0.95rem; }
-        .profile-info .role { display: block; font-size: 0.75rem; color: var(--on-surface-variant); font-weight: 600; }
-        .avatar { width: 44px; height: 44px; border-radius: 12px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; overflow: hidden; }
+        .profile-info .name { display: block; font-weight: 700; color: var(--on-surface); font-size: 0.85rem; }
+        .profile-info .role { display: block; font-size: 0.7rem; color: var(--on-surface-variant); font-weight: 600; }
+        .avatar { width: 36px; height: 36px; border-radius: 10px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; overflow: hidden; }
+        @media (min-width: 768px) { .avatar { width: 40px; height: 40px; border-radius: 12px; font-size: 1rem; } }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
         
-        .content-inner { flex: 1; padding: 32px 40px; overflow-y: auto; background: var(--surface-container-low); }
-        .agent-chat-wrapper { height: 100%; }
+        .content-inner { flex: 1; padding: 16px; overflow-y: auto; background: var(--surface-container-low); -webkit-overflow-scrolling: touch; }
+        @media (min-width: 768px) { .content-inner { padding: 32px; } }
+        .content-inner.no-pad { padding: 0; }
         
-        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
-        .stat-card { padding: 24px; }
-        .stat-label { font-size: 0.85rem; font-weight: 600; color: var(--on-surface-variant); margin-bottom: 8px; }
-        .stat-value { font-size: 2rem; font-weight: 800; }
+        .agent-chat-wrapper { height: 100%; display: flex; flex-direction: column; }
         
-        .active-now { padding: 32px; }
-        .active-now h3 { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .stats-row { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+        @media (min-width: 640px) { .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; } }
+        .stat-card { padding: 20px; }
+        .stat-label { font-size: 0.8rem; font-weight: 600; color: var(--on-surface-variant); margin-bottom: 4px; }
+        .stat-value { font-size: 1.75rem; font-weight: 800; }
+        
+        .active-now { padding: 20px; }
+        @media (min-width: 768px) { .active-now { padding: 32px; } }
+        .active-now h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; font-size: 1.1rem; }
         .workload-list { display: flex; flex-direction: column; gap: 12px; }
-        .workload-item { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: var(--surface-container-low); border: 1px solid var(--outline-variant); border-radius: 16px; cursor: pointer; transition: 0.2s; }
-        .workload-item:hover { transform: translateY(-2px); border-color: var(--primary); background: var(--surface-container-lowest); }
-        .workload-item .user-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; }
-        .workload-item .name { font-weight: 700; font-size: 0.95rem; margin-bottom: 2px; }
-        .workload-item .preview { font-size: 0.85rem; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; }
+        .workload-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--surface-container-low); border: 1px solid var(--outline-variant); border-radius: 12px; cursor: pointer; transition: 0.2s; gap: 12px; }
+        .workload-item:hover { border-color: var(--primary); background: var(--surface-container-lowest); }
+        .workload-info { display: flex; gap: 12px; align-items: center; min-width: 0; flex: 1; }
+        .workload-item .user-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .workload-text { min-width: 0; flex: 1; }
+        .workload-item .name { font-weight: 700; font-size: 0.9rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .workload-item .preview { font-size: 0.8rem; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chevron { flex-shrink: 0; }
         
-        .empty-workload { padding: 48px; text-align: center; color: var(--on-surface-variant); }
-        .empty-workload p { margin-top: 16px; font-weight: 600; }
+        .empty-workload { padding: 40px 20px; text-align: center; color: var(--on-surface-variant); display: flex; flex-direction: column; align-items: center; }
+        .empty-workload p { margin-top: 12px; font-weight: 600; font-size: 14px; }
+
+        /* Mobile Bottom Nav */
+        .mobile-bottom-nav {
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+          height: 64px;
+          background: var(--surface-container-lowest);
+          border-top: 1px solid var(--outline-variant);
+          padding-bottom: env(safe-area-inset-bottom);
+          flex-shrink: 0;
+        }
+
+        .nav-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          background: none;
+          border: none;
+          color: var(--outline);
+          font-size: 10px;
+          font-weight: 600;
+          padding: 8px;
+          flex: 1;
+        }
+
+        .nav-item.active { color: var(--primary); }
+        .nav-item.text-error { color: var(--error); }
+        
+        .icon-wrapper { position: relative; }
+        .icon-wrapper .nav-badge { top: -2px; right: -4px; border: 2px solid var(--surface-container-lowest); }
+
+        .desktop-only { display: none; }
+        @media (min-width: 1024px) { .desktop-only { display: flex; } }
+        
+        .desktop-flex { display: none; }
+        @media (min-width: 768px) { .desktop-flex { display: flex; } }
+
+        .mobile-only { display: flex; }
+        @media (min-width: 1024px) { .mobile-only { display: none; } }
       `}</style>
     </div>
   );

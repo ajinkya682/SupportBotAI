@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, ArrowRight, Zap, Sparkles, Shield, Bot, MessageSquare } from 'lucide-react';
+import { Check, Sparkles, Shield, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
@@ -11,7 +11,7 @@ export default function PricingSection() {
       description: 'Perfect for small blogs and side projects exploring AI support.',
       features: [
         '50 AI Conversations /mo',
-        'Basic Knowledge Base (Manual)',
+        'Basic Knowledge Base',
         'Standard SupportBotAI Branding',
         '1 Website Integration',
         'Basic Analytics',
@@ -30,9 +30,9 @@ export default function PricingSection() {
       features: [
         'Unlimited AI Conversations',
         'Intelligent URL Deep-Scanning',
-        'White-label Widget (No Branding)',
-        'Up to 10 Website Integrations',
-        'Sentiment & Intent Analytics',
+        'White-label Widget',
+        'Up to 10 Integrations',
+        'Sentiment Analytics',
         'Priority Human Handover',
         'Advanced Custom Styling',
         'Priority Email Support'
@@ -49,12 +49,12 @@ export default function PricingSection() {
       description: 'High-volume support with custom LLM training and API access.',
       features: [
         'Everything in Pro',
-        'Custom Dedicated Model Training',
+        'Custom Dedicated Model',
         'Full API & Webhook Access',
-        'Unlimited Website Integrations',
+        'Unlimited Integrations',
         'Dedicated Account Manager',
-        'SLA & Priority 24/7 Support',
-        'SSO & Advanced Security',
+        'SLA & 24/7 Support',
+        'SSO & Security',
         'Custom Legal Compliance'
       ],
       cta: 'Contact Sales',
@@ -70,7 +70,7 @@ export default function PricingSection() {
       <div className="container">
         <div className="section-title text-center">
           <div className="title-tag">TRANSPARENT PRICING</div>
-          <h2>Scale your support without <br />scaling your overhead</h2>
+          <h2>Scale your support without <br className="desktop-only" />scaling your overhead</h2>
           <p>Choose the plan that fits your business stage. No hidden fees, cancel anytime.</p>
         </div>
 
@@ -90,7 +90,7 @@ export default function PricingSection() {
               
               <div className="plan-header">
                 <div className="plan-icon" style={{ color: plan.color, background: `${plan.color}15` }}>
-                  <plan.icon size={28} />
+                  <plan.icon size={24} />
                 </div>
                 <h3>{plan.name}</h3>
                 <p>{plan.description}</p>
@@ -106,7 +106,7 @@ export default function PricingSection() {
                 <ul>
                   {plan.features.map((feature, fIdx) => (
                     <li key={fIdx}>
-                      <Check size={18} className="check-icon" />
+                      <Check size={16} className="check-icon" />
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -115,8 +115,8 @@ export default function PricingSection() {
 
               <Link 
                 to={plan.link} 
-                className={`btn btn-block ${plan.highlight ? 'btn-primary' : 'btn-outline'}`}
-                style={{ height: '56px', fontSize: '1rem' }}
+                className={`btn btn-block w-full ${plan.highlight ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ height: '52px', fontSize: '0.95rem' }}
               >
                 {plan.cta}
               </Link>
@@ -130,39 +130,116 @@ export default function PricingSection() {
       </div>
 
       <style>{`
-        .pricing-section { padding: 120px 0; background: var(--surface); position: relative; }
-        .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 80px; }
-        
-        .pricing-card { background: var(--surface-container-lowest); border: 1px solid var(--outline-variant); border-radius: 32px; padding: 48px; position: relative; transition: var(--transition-normal); display: flex; flex-direction: column; }
-        .pricing-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-4); border-color: var(--primary-fixed); }
-        .pricing-card.highlighted { border: 2px solid var(--primary); box-shadow: 0 20px 40px rgba(53, 37, 205, 0.1); transform: scale(1.05); z-index: 2; }
-        .pricing-card.highlighted:hover { transform: scale(1.05) translateY(-8px); }
-        
-        .popular-badge { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 6px 16px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em; }
-        
-        .plan-header { margin-bottom: 32px; }
-        .plan-icon { width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
-        .plan-header h3 { font-size: 1.75rem; margin-bottom: 12px; }
-        .plan-header p { font-size: 0.95rem; color: var(--on-surface-variant); line-height: 1.5; }
-        
-        .plan-price { margin-bottom: 40px; display: flex; align-items: baseline; gap: 4px; }
-        .plan-price .currency { font-size: 1.5rem; font-weight: 700; color: var(--on-surface-variant); }
-        .plan-price .amount { font-size: 3.5rem; font-weight: 900; color: var(--on-surface); font-family: 'Outfit'; }
-        .plan-price .period { font-size: 1rem; color: var(--on-surface-variant); font-weight: 600; }
-        
-        .plan-features { margin-bottom: 48px; flex: 1; }
-        .plan-features ul { list-style: none; padding: 0; }
-        .plan-features li { display: flex; gap: 12px; margin-bottom: 16px; font-size: 0.95rem; color: var(--on-surface-variant); font-weight: 500; }
-        .check-icon { color: var(--primary); flex-shrink: 0; }
-        
-        .pricing-footer { margin-top: 60px; color: var(--on-surface-variant); font-weight: 500; }
-        .pricing-footer a { color: var(--primary); text-decoration: none; font-weight: 700; }
-        
-        @media (max-width: 1024px) {
-          .pricing-grid { grid-template-columns: 1fr; max-width: 500px; margin: 80px auto 0; }
-          .pricing-card.highlighted { transform: none; }
-          .pricing-card.highlighted:hover { transform: translateY(-8px); }
+        .pricing-section { 
+          padding: 60px 0; 
+          background: var(--surface); 
+          position: relative; 
         }
+
+        @media (min-width: 768px) {
+          .pricing-section { padding: 100px 0; }
+        }
+
+        .pricing-grid { 
+          display: flex;
+          flex-direction: column;
+          gap: 24px; 
+          margin-top: 40px; 
+        }
+
+        @media (min-width: 768px) {
+          .pricing-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; margin-top: 60px; }
+        }
+
+        @media (min-width: 1024px) {
+          .pricing-grid { grid-template-columns: repeat(3, 1fr); margin-top: 80px; }
+        }
+        
+        .pricing-card { 
+          background: var(--surface-container-lowest); 
+          border: 1px solid var(--outline-variant); 
+          border-radius: 20px; 
+          padding: 24px; 
+          position: relative; 
+          transition: var(--transition-normal); 
+          display: flex; 
+          flex-direction: column; 
+          width: 100%;
+        }
+
+        @media (min-width: 768px) {
+          .pricing-card { padding: 32px; border-radius: 24px; }
+        }
+
+        .pricing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-1); }
+        @media (min-width: 1024px) { .pricing-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-raised); } }
+        
+        .pricing-card.highlighted { 
+          border: 2px solid var(--primary); 
+          box-shadow: 0 4px 12px rgba(53, 37, 205, 0.08); 
+        }
+
+        @media (min-width: 1024px) {
+          .pricing-card.highlighted { transform: scale(1.05); z-index: 2; box-shadow: 0 10px 30px rgba(53, 37, 205, 0.08); }
+          .pricing-card.highlighted:hover { transform: scale(1.05) translateY(-8px); }
+        }
+        
+        .popular-badge { 
+          position: absolute; 
+          top: -12px; 
+          left: 50%; 
+          transform: translateX(-50%); 
+          background: var(--primary); 
+          color: white; 
+          padding: 4px 12px; 
+          border-radius: 20px; 
+          font-size: 0.65rem; 
+          font-weight: 800; 
+          letter-spacing: 0.05em; 
+        }
+        @media (min-width: 768px) { .popular-badge { top: -14px; padding: 6px 16px; font-size: 0.7rem; } }
+        
+        .plan-header { margin-bottom: 20px; }
+        @media (min-width: 768px) { .plan-header { margin-bottom: 24px; } }
+
+        .plan-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+        @media (min-width: 768px) { .plan-icon { width: 56px; height: 56px; border-radius: 14px; margin-bottom: 20px; } }
+
+        .plan-header h3 { font-size: 1.25rem; margin-bottom: 8px; font-weight: 800; }
+        @media (min-width: 768px) { .plan-header h3 { font-size: 1.5rem; } }
+
+        .plan-header p { font-size: 0.85rem; color: var(--on-surface-variant); line-height: 1.5; margin: 0; }
+        @media (min-width: 768px) { .plan-header p { font-size: 0.9rem; } }
+        
+        .plan-price { margin-bottom: 24px; display: flex; align-items: baseline; gap: 4px; }
+        @media (min-width: 768px) { .plan-price { margin-bottom: 32px; } }
+
+        .plan-price .currency { font-size: 1.1rem; font-weight: 700; color: var(--on-surface-variant); }
+        @media (min-width: 768px) { .plan-price .currency { font-size: 1.25rem; } }
+
+        .plan-price .amount { font-size: 2.5rem; font-weight: 900; color: var(--on-surface); line-height: 1; }
+        @media (min-width: 768px) { .plan-price .amount { font-size: 3.5rem; } }
+
+        .plan-price .period { font-size: 0.85rem; color: var(--on-surface-variant); font-weight: 600; }
+        @media (min-width: 768px) { .plan-price .period { font-size: 0.9rem; } }
+        
+        .plan-features { margin-bottom: 24px; flex: 1; }
+        @media (min-width: 768px) { .plan-features { margin-bottom: 32px; } }
+
+        .plan-features ul { list-style: none; padding: 0; margin: 0; }
+        .plan-features li { display: flex; gap: 12px; margin-bottom: 12px; font-size: 0.85rem; color: var(--on-surface-variant); font-weight: 500; align-items: flex-start; line-height: 1.4; }
+        @media (min-width: 768px) { .plan-features li { font-size: 0.9rem; margin-bottom: 16px; } }
+
+        .check-icon { color: var(--primary); flex-shrink: 0; margin-top: 2px; }
+        
+        .w-full { width: 100%; display: flex; align-items: center; justify-content: center; }
+
+        .pricing-footer { margin-top: 40px; color: var(--on-surface-variant); font-weight: 500; font-size: 0.85rem; }
+        @media (min-width: 768px) { .pricing-footer { margin-top: 48px; font-size: 0.9rem; } }
+        .pricing-footer a { color: var(--primary); text-decoration: none; font-weight: 700; }
+
+        .desktop-only { display: none; }
+        @media (min-width: 768px) { .desktop-only { display: inline; } }
       `}</style>
     </section>
   );

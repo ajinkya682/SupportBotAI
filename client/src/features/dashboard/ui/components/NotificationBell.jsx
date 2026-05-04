@@ -108,7 +108,7 @@ const NotificationBell = () => {
         onClick={() => setIsOpen(!isOpen)}
         className={`bell-btn ${isOpen ? 'active' : ''}`}
       >
-        <Bell size={22} />
+        <Bell size={20} className="bell-icon-adaptive" />
         {unreadCount > 0 && (
           <span className="unread-badge">
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -182,37 +182,71 @@ const NotificationBell = () => {
 
       <style>{`
         .notification-bell-wrapper { position: relative; }
-        .bell-btn { background: transparent; border: none; padding: 10px; border-radius: 12px; color: var(--on-surface-variant); cursor: pointer; transition: 0.2s; position: relative; }
+        
+        .bell-btn { background: transparent; border: none; padding: 8px; border-radius: 12px; color: var(--on-surface-variant); cursor: pointer; transition: 0.2s; position: relative; display: flex; align-items: center; justify-content: center; }
+        @media (min-width: 768px) { .bell-btn { padding: 10px; } }
+        
         .bell-btn:hover, .bell-btn.active { background: var(--surface-container-low); color: var(--primary); }
-        .unread-badge { position: absolute; top: 6px; right: 6px; background: var(--error); color: white; font-size: 0.65rem; font-weight: 800; min-width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid var(--surface-container-lowest); }
         
-        .notifications-dropdown { position: absolute; top: 56px; right: 0; width: 380px; background: var(--surface-container-lowest); border-radius: 20px; box-shadow: var(--shadow-4); border: 1px solid var(--outline-variant); z-index: 1000; overflow: hidden; transform-origin: top right; }
-        .dropdown-header { padding: 20px 24px; border-bottom: 1px solid var(--outline-variant); display: flex; justify-content: space-between; align-items: center; background: var(--surface-container-low); }
+        .bell-icon-adaptive { width: 20px; height: 20px; }
+        @media (min-width: 768px) { .bell-icon-adaptive { width: 22px; height: 22px; } }
+
+        .unread-badge { position: absolute; top: 4px; right: 4px; background: var(--error); color: white; font-size: 0.6rem; font-weight: 800; min-width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid var(--surface-container-lowest); }
+        @media (min-width: 768px) { .unread-badge { top: 6px; right: 6px; min-width: 18px; height: 18px; font-size: 0.65rem; } }
+        
+        .notifications-dropdown { position: absolute; top: 48px; right: -10px; width: calc(100vw - 32px); max-width: 380px; background: var(--surface-container-lowest); border-radius: 16px; box-shadow: var(--shadow-4); border: 1px solid var(--outline-variant); z-index: 1000; overflow: hidden; transform-origin: top right; }
+        @media (min-width: 768px) { .notifications-dropdown { top: 56px; right: 0; border-radius: 20px; width: 380px; } }
+
+        .dropdown-header { padding: 16px; border-bottom: 1px solid var(--outline-variant); display: flex; justify-content: space-between; align-items: center; background: var(--surface-container-low); }
+        @media (min-width: 768px) { .dropdown-header { padding: 20px 24px; } }
+
         .new-tag { background: var(--primary-fixed); color: var(--primary); font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; }
-        .mark-all-btn { background: transparent; border: none; color: var(--primary); font-size: 0.8rem; font-weight: 700; cursor: pointer; }
         
-        .notifications-list { max-height: 420px; overflow-y: auto; }
-        .notification-item { padding: 16px 24px; display: flex; gap: 16px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid var(--outline-variant); }
+        .mark-all-btn { background: transparent; border: none; color: var(--primary); font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+        @media (min-width: 768px) { .mark-all-btn { font-size: 0.8rem; } }
+        
+        .notifications-list { max-height: 350px; overflow-y: auto; }
+        @media (min-width: 768px) { .notifications-list { max-height: 420px; } }
+
+        .notification-item { padding: 12px 16px; display: flex; gap: 12px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid var(--outline-variant); }
+        @media (min-width: 768px) { .notification-item { padding: 16px 24px; gap: 16px; } }
+
         .notification-item:hover { background: var(--surface-container-low); }
         .notification-item.unread { background: var(--primary-fixed); }
-        .notif-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-container-high); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+        
+        .notif-icon { width: 28px; height: 28px; border-radius: 50%; background: var(--surface-container-high); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+        @media (min-width: 768px) { .notif-icon { width: 32px; height: 32px; } }
         .unread .notif-icon { background: white; }
         
         .notif-content { flex: 1; min-width: 0; }
+        
         .notif-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .subject { font-weight: 700; font-size: 0.9rem; color: var(--on-surface); }
+        
+        .subject { font-weight: 700; font-size: 0.85rem; color: var(--on-surface); }
+        @media (min-width: 768px) { .subject { font-size: 0.9rem; } }
         .unread .subject { color: var(--primary); }
-        .time { font-size: 0.7rem; color: var(--on-surface-variant); font-weight: 500; }
-        .message { font-size: 0.85rem; color: var(--on-surface-variant); line-height: 1.5; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .time { font-size: 0.65rem; color: var(--on-surface-variant); font-weight: 500; }
+        @media (min-width: 768px) { .time { font-size: 0.7rem; } }
+        
+        .message { font-size: 0.8rem; color: var(--on-surface-variant); line-height: 1.4; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        @media (min-width: 768px) { .message { font-size: 0.85rem; line-height: 1.5; } }
         .unread .message { color: var(--on-surface); font-weight: 500; }
         
-        .empty-notifications { padding: 60px 40px; text-align: center; color: var(--on-surface-variant); }
-        .empty-icon { margin-bottom: 16px; opacity: 0.2; }
-        .empty-notifications h4 { margin: 0 0 8px 0; color: var(--on-surface); }
-        .empty-notifications p { font-size: 0.85rem; margin: 0; }
+        .empty-notifications { padding: 40px 20px; text-align: center; color: var(--on-surface-variant); }
+        @media (min-width: 768px) { .empty-notifications { padding: 60px 40px; } }
+        
+        .empty-icon { margin-bottom: 12px; opacity: 0.2; }
+        @media (min-width: 768px) { .empty-icon { margin-bottom: 16px; } }
+
+        .empty-notifications h4 { margin: 0 0 8px 0; color: var(--on-surface); font-size: 0.95rem; }
+        @media (min-width: 768px) { .empty-notifications h4 { font-size: 1rem; } }
+
+        .empty-notifications p { font-size: 0.8rem; margin: 0; line-height: 1.5; }
+        @media (min-width: 768px) { .empty-notifications p { font-size: 0.85rem; } }
         
         .dropdown-footer { padding: 12px; background: var(--surface-container-low); border-top: 1px solid var(--outline-variant); text-align: center; }
-        .dropdown-footer button { background: transparent; border: none; font-size: 0.75rem; font-weight: 700; color: var(--on-surface-variant); cursor: pointer; display: flex; align-items: center; gap: 8px; margin: 0 auto; }
+        .dropdown-footer button { background: transparent; border: none; font-size: 0.75rem; font-weight: 700; color: var(--on-surface-variant); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 auto; width: 100%; padding: 4px 0; }
         .dropdown-footer button:hover { color: var(--primary); }
       `}</style>
     </div>
