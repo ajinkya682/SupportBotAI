@@ -23,7 +23,7 @@ const BusinessSchema = new mongoose.Schema({
         trim: true 
     },
     
-    // AI Training Data
+    
     knowledge: { type: String, default: "" },
     knowledgeChunks: [{
         content: { type: String, trim: true },
@@ -35,7 +35,7 @@ const BusinessSchema = new mongoose.Schema({
     trainedFromUrl: { type: String },
     trainedPagesCount: { type: Number, default: 0 },
     
-    // Security & Access
+   
     apiKey: { 
         type: String, 
         unique: true, 
@@ -52,7 +52,7 @@ const BusinessSchema = new mongoose.Schema({
         answer: { type: String, trim: true }
     }],
     
-    // Customization (Widget UI)
+    
     appearance: {
         themeColor: { type: String, default: '#6366f1' },
         botName: { type: String },
@@ -62,7 +62,7 @@ const BusinessSchema = new mongoose.Schema({
         placeholderText: { type: String, default: 'Type your message...' }
     },
     
-    // Quota & Billing
+    
     plan: { 
         type: String, 
         enum: ['free', 'pro', 'enterprise'], 
@@ -71,7 +71,7 @@ const BusinessSchema = new mongoose.Schema({
     conversationLimit: { type: Number, default: 100 },
     conversationCount: { type: Number, default: 0 },
     
-    // System Status
+    
     lastActiveAt: { type: Date },
     notifications: [{
         message: { type: String, required: true },
@@ -88,12 +88,12 @@ const BusinessSchema = new mongoose.Schema({
  * MIDDLEWARE: Pre-save hooks
  */
 BusinessSchema.pre('save', function(next) {
-    // Set default botName if missing
+    
     if (!this.appearance.botName) {
         this.appearance.botName = this.name;
     }
 
-    // Auto-generate API Key for new business
+    
     if (this.isNew && !this.apiKey) {
         this.apiKey = `sb_${crypto.randomBytes(16).toString('hex')}`;
     }
@@ -108,7 +108,12 @@ BusinessSchema.methods.hasReachedLimit = function() {
     return this.conversationCount >= this.conversationLimit;
 };
 
-// CRITICAL: OverwriteModelError check
+
+BusinessSchema.index({ owner: 1, createdAt: -1 });            
+BusinessSchema.index({ plan: 1, createdAt: -1 });             
+BusinessSchema.index({ lastActiveAt: 1 });                    
+
+
 const Business = mongoose.models.Business || mongoose.model('Business', BusinessSchema);
 
 export default Business;
