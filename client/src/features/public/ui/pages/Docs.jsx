@@ -1,20 +1,15 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  UserPlus, 
-  Settings, 
   Bot, 
   Palette, 
   Code2, 
   ChevronRight,
   CheckCircle2,
-  BookOpen,
   Search,
-  MessageSquare,
   Zap,
   Globe,
   Lock,
-  ArrowRight,
   Terminal,
   ExternalLink,
   Info
@@ -22,32 +17,20 @@ import {
 import { API_URL } from '../../../../shared/services/config';
 
 const SectionHeader = ({ title, icon: Icon, color = "var(--primary)" }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
-    <div style={{ 
-      width: '48px', height: '48px', borderRadius: '14px', 
-      background: `${color}15`, display: 'flex', alignItems: 'center', 
-      justifyContent: 'center', color: color 
-    }}>
-      <Icon size={24} />
+  <div className="section-header-title">
+    <div className="section-header-icon" style={{ background: `${color}15`, color: color }}>
+      <Icon size={20} />
     </div>
-    <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: 0 }}>{title}</h2>
+    <h2>{title}</h2>
   </div>
 );
 
 const CodeBlock = ({ code }) => (
-  <div style={{ 
-    background: '#0f172a', 
-    borderRadius: '20px', 
-    padding: '32px', 
-    border: '1px solid var(--outline-variant)',
-    margin: '32px 0',
-    position: 'relative',
-    fontFamily: 'JetBrains Mono, monospace'
-  }}>
-    <div style={{ position: 'absolute', top: '16px', right: '16px', opacity: 0.5, color: '#94a3b8' }}>
-      <Terminal size={18} />
+  <div className="code-block">
+    <div className="code-block-icon">
+      <Terminal size={14} />
     </div>
-    <pre style={{ margin: 0, overflowX: 'auto', fontSize: '0.95rem', color: '#10b981', lineHeight: '1.6' }}>
+    <pre>
       <code>{code}</code>
     </pre>
   </div>
@@ -74,7 +57,7 @@ export default function Docs() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <div className="title-tag" style={{ margin: '0 auto 24px' }}>DOCUMENTATION HUB</div>
+            <div className="title-tag">DOCUMENTATION HUB</div>
             <h1 className="hero-title">
               Build better <span className="gradient-text">support experiences</span>
             </h1>
@@ -83,7 +66,7 @@ export default function Docs() {
             </p>
 
             <div className="docs-search-container">
-              <Search className="search-icon" size={22} />
+              <Search className="search-icon" size={18} />
               <input 
                 type="text" 
                 placeholder="Search documentation..." 
@@ -98,7 +81,7 @@ export default function Docs() {
       <section className="container docs-main-grid">
         <aside className="docs-sidebar">
           <div className="sticky-sidebar">
-            <h4 className="sidebar-label">Guides & References</h4>
+            <h4 className="sidebar-label desktop-only">Guides & References</h4>
             <div className="sidebar-links">
               {categories.map(cat => (
                 <button 
@@ -106,14 +89,14 @@ export default function Docs() {
                   onClick={() => setActiveCategory(cat.id)}
                   className={`sidebar-btn ${activeCategory === cat.id ? 'active' : ''}`}
                 >
-                  <cat.icon size={20} />
+                  <cat.icon size={18} className="sidebar-icon" />
                   <span>{cat.label}</span>
-                  {activeCategory === cat.id && <ChevronRight size={16} className="ml-auto" />}
+                  {activeCategory === cat.id && <ChevronRight size={14} className="ml-auto desktop-only" />}
                 </button>
               ))}
             </div>
 
-            <div className="api-status-card">
+            <div className="api-status-card desktop-only">
               <div className="status-header">
                 <div className="status-dot"></div>
                 <span>API Operational</span>
@@ -135,7 +118,7 @@ export default function Docs() {
 
                 <div className="docs-roadmap">
                   {[
-                    { step: 1, title: 'Connect Your Domain', desc: 'Add your business name and primary website URL in the workspace settings.', icon: Globe },
+                    { step: 1, title: 'Connect Your Domain', desc: 'Add your business name and website URL in the settings.', icon: Globe },
                     { step: 2, title: 'Train the Engine', desc: 'Use our Intelligent Scanner to crawl your existing website or manually add FAQs.', icon: Bot },
                     { step: 3, title: 'Style Your Widget', desc: 'Match colors, logos, and greeting messages to your brand personality.', icon: Palette },
                     { step: 4, title: 'One-Click Deployment', desc: 'Copy the lightweight script tag and paste it before your site\'s body end tag.', icon: Code2 },
@@ -144,7 +127,7 @@ export default function Docs() {
                       <div className="step-circle">{item.step}</div>
                       <div className="card step-card">
                         <div className="step-card-header">
-                          <item.icon size={20} color="var(--primary)" />
+                          <item.icon size={18} color="var(--primary)" />
                           <h4>{item.title}</h4>
                         </div>
                         <p>{item.desc}</p>
@@ -163,7 +146,7 @@ export default function Docs() {
                 </p>
 
                 <div className="info-callout">
-                  <Info size={24} color="var(--primary)" />
+                  <Info size={20} color="var(--primary)" className="callout-icon" />
                   <p>
                     <strong>Security Note:</strong> Always keep your API key private. Do not commit it to public repositories.
                   </p>
@@ -175,12 +158,20 @@ export default function Docs() {
                 <div className="platform-grid">
                   {['React / Next.js', 'WordPress', 'Webflow', 'Shopify', 'HTML/JS', 'Bubble.io'].map(p => (
                     <div key={p} className="platform-tag">
-                      <CheckCircle2 size={16} color="var(--primary)" />
+                      <CheckCircle2 size={16} color="var(--primary)" className="flex-shrink-0" />
                       <span>{p}</span>
                     </div>
                   ))}
                 </div>
               </motion.div>
+            )}
+            
+            {/* Fallback for other categories just to prevent blank screen */}
+            {activeCategory !== 'getting-started' && activeCategory !== 'integration' && (
+               <motion.div key="other" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                  <SectionHeader title={categories.find(c => c.id === activeCategory)?.label || 'Documentation'} icon={categories.find(c => c.id === activeCategory)?.icon || Zap} />
+                  <p className="content-intro">This section is currently under construction. Please check back later.</p>
+               </motion.div>
             )}
           </AnimatePresence>
 
@@ -188,8 +179,8 @@ export default function Docs() {
             <h3>Still stuck?</h3>
             <p>Our engineering team is ready to help you with custom implementations.</p>
             <div className="cta-buttons">
-              <button className="btn btn-secondary">Contact Engineering</button>
-              <button className="btn btn-primary">Join Discord Community</button>
+              <button className="btn btn-secondary w-full">Contact Engineering</button>
+              <button className="btn btn-primary w-full">Join Discord</button>
             </div>
           </div>
         </main>
@@ -197,51 +188,135 @@ export default function Docs() {
 
       <style>{`
         .docs-page { background: var(--surface); min-height: 100vh; }
-        .docs-hero { padding: 100px 0 60px; background: var(--surface-container-low); border-bottom: 1px solid var(--outline-variant); }
-        .hero-title { font-size: 3.5rem; margin-bottom: 20px; }
-        .hero-subtitle { color: var(--on-surface-variant); font-size: 1.25rem; max-width: 700px; margin: 0 auto 40px; }
         
-        .docs-search-container { position: relative; max-width: 600px; margin: 0 auto; }
-        .docs-search-container .search-icon { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: var(--outline); }
-        .docs-search-container input { width: 100%; padding: 18px 20px 18px 60px; border-radius: 16px; background: white; border: 1.5px solid var(--outline-variant); font-size: 1rem; box-shadow: var(--shadow-2); }
-        .docs-search-container input:focus { border-color: var(--primary); }
-        
-        .docs-main-grid { display: grid; grid-template-columns: 280px 1fr; gap: 80px; padding: 80px 0; }
-        .sidebar-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--on-surface-variant); margin-bottom: 24px; }
-        .sidebar-links { display: flex; flex-direction: column; gap: 8px; }
-        .sidebar-btn { display: flex; align-items: center; gap: 14px; padding: 14px 20px; background: transparent; border: none; border-radius: 14px; color: var(--on-surface-variant); font-weight: 600; cursor: pointer; transition: 0.2s; text-align: left; }
-        .sidebar-btn:hover { background: var(--surface-container-low); color: var(--on-surface); }
-        .sidebar-btn.active { background: var(--primary-fixed); color: var(--primary); }
-        
-        .api-status-card { margin-top: 60px; padding: 24px; background: var(--surface-container-low); border-radius: 20px; border: 1px solid var(--outline-variant); }
-        .status-header { display: flex; align-items: center; gap: 10px; font-weight: 700; color: #10b981; font-size: 0.9rem; margin-bottom: 8px; }
-        .status-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }
-        .api-status-card p { font-size: 0.8rem; color: var(--on-surface-variant); margin-bottom: 16px; }
-        
-        .content-intro { font-size: 1.2rem; color: var(--on-surface-variant); line-height: 1.7; margin-bottom: 48px; }
-        .docs-roadmap { position: relative; padding-left: 32px; margin-top: 40px; }
-        .docs-roadmap::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: linear-gradient(180deg, var(--primary), transparent); }
-        .roadmap-step { position: relative; margin-bottom: 40px; }
-        .step-circle { position: absolute; left: -44px; top: 0; width: 24px; height: 24px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 900; }
-        .step-card { padding: 32px; border-radius: 24px; }
-        .step-card-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
-        .step-card-header h4 { margin: 0; font-size: 1.15rem; }
-        .step-card p { color: var(--on-surface-variant); margin: 0; font-size: 0.95rem; line-height: 1.6; }
-        
-        .info-callout { display: flex; gap: 20px; padding: 20px; background: var(--primary-fixed); border-radius: 16px; color: var(--on-primary-container); margin-bottom: 32px; }
-        .info-callout p { margin: 0; font-size: 0.95rem; line-height: 1.5; }
-        
-        .platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
-        .platform-tag { display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--surface-container-low); border-radius: 12px; border: 1px solid var(--outline-variant); font-weight: 600; font-size: 0.9rem; }
-        
-        .docs-footer-cta { margin-top: 100px; padding: 60px 40px; text-align: center; border-top: 1px solid var(--outline-variant); }
-        .cta-buttons { display: flex; gap: 16px; justify-content: center; margin-top: 32px; }
-        
-        @media (max-width: 992px) {
-          .docs-main-grid { grid-template-columns: 1fr; }
-          .docs-sidebar { display: none; }
-          .hero-title { font-size: 2.5rem; }
+        .docs-hero { 
+          padding: 60px 0 40px; 
+          background: var(--surface-container-low); 
+          border-bottom: 1px solid var(--outline-variant); 
         }
+
+        @media (min-width: 768px) { .docs-hero { padding: 100px 0 60px; } }
+
+        .title-tag { font-size: 10px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 auto 16px; background: var(--primary-fixed); width: fit-content; padding: 4px 12px; border-radius: 20px; }
+        @media (min-width: 768px) { .title-tag { font-size: 11px; margin: 0 auto 24px; } }
+
+        .hero-title { font-size: 2rem; margin-bottom: 16px; line-height: 1.2; font-weight: 800; }
+        @media (min-width: 768px) { .hero-title { font-size: 3.5rem; margin-bottom: 20px; } }
+
+        .hero-subtitle { color: var(--on-surface-variant); font-size: 1rem; max-width: 700px; margin: 0 auto 32px; line-height: 1.5; }
+        @media (min-width: 768px) { .hero-subtitle { font-size: 1.25rem; margin: 0 auto 40px; } }
+        
+        .docs-search-container { position: relative; max-width: 600px; margin: 0 auto; width: 100%; }
+        .docs-search-container .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--outline); }
+        .docs-search-container input { width: 100%; padding: 14px 16px 14px 48px; border-radius: 12px; background: white; border: 1.5px solid var(--outline-variant); font-size: 0.95rem; box-shadow: var(--shadow-1); }
+        @media (min-width: 768px) { .docs-search-container input { padding: 18px 20px 18px 54px; border-radius: 16px; font-size: 1rem; } }
+        .docs-search-container input:focus { border-color: var(--primary); outline: none; }
+        
+        .docs-main-grid { 
+          display: flex;
+          flex-direction: column;
+          gap: 40px; 
+          padding: 40px 0; 
+        }
+
+        @media (min-width: 1024px) {
+          .docs-main-grid { display: grid; grid-template-columns: 260px 1fr; gap: 60px; padding: 80px 0; }
+        }
+
+        .sidebar-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--on-surface-variant); margin-bottom: 24px; }
+        
+        .sidebar-links { 
+          display: flex; 
+          gap: 8px; 
+          overflow-x: auto; 
+          padding-bottom: 8px; 
+          -webkit-overflow-scrolling: touch; 
+          scrollbar-width: none; 
+        }
+        .sidebar-links::-webkit-scrollbar { display: none; }
+
+        @media (min-width: 1024px) {
+          .sidebar-links { flex-direction: column; overflow-x: visible; padding-bottom: 0; }
+        }
+
+        .sidebar-btn { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--surface-container-low); border: 1px solid var(--outline-variant); border-radius: 12px; color: var(--on-surface-variant); font-weight: 600; cursor: pointer; transition: 0.2s; text-align: left; white-space: nowrap; font-size: 13px; }
+        @media (min-width: 1024px) {
+          .sidebar-btn { background: transparent; border: none; padding: 14px 16px; font-size: 14px; white-space: normal; }
+        }
+
+        .sidebar-btn:hover { background: var(--surface-container-low); color: var(--on-surface); }
+        .sidebar-btn.active { background: var(--primary-fixed); color: var(--primary); border-color: var(--primary-fixed); }
+        
+        .api-status-card { margin-top: 40px; padding: 20px; background: var(--surface-container-low); border-radius: 16px; border: 1px solid var(--outline-variant); }
+        .status-header { display: flex; align-items: center; gap: 8px; font-weight: 700; color: #10b981; font-size: 0.85rem; margin-bottom: 8px; }
+        .status-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px rgba(16,185,129,0.4); }
+        .api-status-card p { font-size: 0.8rem; color: var(--on-surface-variant); margin-bottom: 16px; }
+
+        .section-header-title { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        @media (min-width: 768px) { .section-header-title { gap: 16px; margin-bottom: 32px; } }
+        .section-header-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        @media (min-width: 768px) { .section-header-icon { width: 48px; height: 48px; border-radius: 14px; } }
+        .section-header-title h2 { font-size: 1.5rem; font-weight: 800; margin: 0; }
+        @media (min-width: 768px) { .section-header-title h2 { font-size: 2rem; } }
+        
+        .content-intro { font-size: 1rem; color: var(--on-surface-variant); line-height: 1.6; margin-bottom: 32px; }
+        @media (min-width: 768px) { .content-intro { font-size: 1.15rem; margin-bottom: 48px; } }
+
+        .docs-roadmap { position: relative; padding-left: 24px; margin-top: 32px; }
+        @media (min-width: 768px) { .docs-roadmap { padding-left: 32px; margin-top: 40px; } }
+
+        .docs-roadmap::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: linear-gradient(180deg, var(--primary), transparent); }
+        
+        .roadmap-step { position: relative; margin-bottom: 32px; }
+        @media (min-width: 768px) { .roadmap-step { margin-bottom: 40px; } }
+
+        .step-circle { position: absolute; left: -35px; top: 0; width: 20px; height: 20px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 900; }
+        @media (min-width: 768px) { .step-circle { left: -44px; width: 24px; height: 24px; font-size: 0.75rem; } }
+
+        .step-card { padding: 20px; border-radius: 16px; }
+        @media (min-width: 768px) { .step-card { padding: 24px; border-radius: 20px; } }
+
+        .step-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .step-card-header h4 { margin: 0; font-size: 1rem; font-weight: 700; }
+        @media (min-width: 768px) { .step-card-header h4 { font-size: 1.1rem; } }
+
+        .step-card p { color: var(--on-surface-variant); margin: 0; font-size: 0.9rem; line-height: 1.5; }
+        
+        .info-callout { display: flex; gap: 16px; padding: 16px; background: var(--primary-fixed); border-radius: 12px; color: var(--on-primary-container); margin-bottom: 24px; align-items: flex-start; }
+        @media (min-width: 768px) { .info-callout { padding: 20px; border-radius: 16px; margin-bottom: 32px; } }
+        .callout-icon { flex-shrink: 0; margin-top: 2px; }
+        .info-callout p { margin: 0; font-size: 0.9rem; line-height: 1.5; }
+        
+        .code-block { background: #0f172a; border-radius: 16px; padding: 24px 16px; border: 1px solid var(--outline-variant); margin: 24px 0; position: relative; font-family: 'JetBrains Mono', monospace; }
+        @media (min-width: 768px) { .code-block { border-radius: 20px; padding: 32px; margin: 32px 0; } }
+
+        .code-block-icon { position: absolute; top: 12px; right: 12px; opacity: 0.5; color: #94a3b8; }
+        .code-block pre { margin: 0; overflow-x: auto; font-size: 0.85rem; color: #10b981; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+        @media (min-width: 768px) { .code-block pre { font-size: 0.9rem; white-space: pre; } }
+        
+        .section-subtitle { font-size: 1.25rem; font-weight: 700; margin: 40px 0 20px; }
+
+        .platform-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 12px; }
+        @media (min-width: 480px) { .platform-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
+        @media (min-width: 768px) { .platform-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+
+        .platform-tag { display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--surface-container-low); border-radius: 10px; border: 1px solid var(--outline-variant); font-weight: 600; font-size: 0.85rem; }
+        @media (min-width: 768px) { .platform-tag { padding: 16px; border-radius: 12px; font-size: 0.9rem; } }
+        
+        .docs-footer-cta { margin-top: 60px; padding: 40px 20px; text-align: center; border-top: 1px solid var(--outline-variant); }
+        @media (min-width: 768px) { .docs-footer-cta { margin-top: 100px; padding: 60px 40px; } }
+
+        .docs-footer-cta h3 { font-size: 1.5rem; margin-bottom: 8px; }
+        .docs-footer-cta p { font-size: 0.95rem; color: var(--on-surface-variant); margin-bottom: 24px; }
+
+        .cta-buttons { display: flex; flex-direction: column; gap: 12px; justify-content: center; }
+        @media (min-width: 640px) { .cta-buttons { flex-direction: row; gap: 16px; } }
+
+        .w-full { width: 100%; }
+        @media (min-width: 640px) { .w-full { width: auto; } }
+
+        .desktop-only { display: none; }
+        @media (min-width: 1024px) { .desktop-only { display: block; } }
       `}</style>
     </div>
   );

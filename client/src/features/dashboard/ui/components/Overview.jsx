@@ -1,23 +1,17 @@
 import { 
   MessageSquare, 
   Bot, 
-  AlertCircle, 
-  TrendingUp, 
   ArrowUpRight,
-  UserCheck,
   Zap,
   Activity,
   Users,
-  CheckCircle2,
   Sparkles,
   Code2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
 
 export default function Overview({ business, conversations = [], setActiveTab, setSelectedConversationId, onUpgrade }) {
-  if (!conversations) return <div className="p-4">Loading operational data...</div>;
+  if (!conversations) return <div className="loading-state">Synchronizing operational data...</div>;
 
   const stats = [
     { 
@@ -114,7 +108,7 @@ export default function Overview({ business, conversations = [], setActiveTab, s
             <div className="display-stat">{stat.value}</div>
             <div className={`metric-trend ${stat.trend.startsWith('+') ? 'up' : 'down'}`}>
               {stat.trend.startsWith('+') ? <ArrowUpRight size={14} /> : null}
-              {stat.trend} <span style={{ opacity: 0.6, fontWeight: 400 }}>vs prev period</span>
+              {stat.trend} <span className="trend-vs">vs prev period</span>
             </div>
           </motion.div>
         ))}
@@ -124,11 +118,11 @@ export default function Overview({ business, conversations = [], setActiveTab, s
         {/* Activity Intelligence Panel */}
         <div className="card activity-panel">
           <div className="panel-header">
-            <div>
+            <div className="panel-title-group">
               <h3>Neural Activity Stream</h3>
-              <p>Real-time telemetry from AI-customer interactions.</p>
+              <p>Real-time telemetry from AI interactions.</p>
             </div>
-            <button className="btn btn-secondary" onClick={() => setActiveTab('conversations')}>Full Logs</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('conversations')}>Full Logs</button>
           </div>
           
           <div className="activity-stream">
@@ -136,12 +130,12 @@ export default function Overview({ business, conversations = [], setActiveTab, s
               {conversations.length === 0 ? (
                 <div className="empty-state">
                   <MessageSquare size={40} style={{ opacity: 0.1, marginBottom: '16px' }} />
-                  <p>Awaiting initial system telemetry...</p>
+                  <p>Awaiting system telemetry...</p>
                 </div>
               ) : [...conversations]
                 .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
                 .slice(0, 6)
-                .map((conv, idx) => {
+                .map((conv) => {
                   const initials = (conv.userName || 'U').charAt(0).toUpperCase();
                   const avatarColors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
                   const color = avatarColors[initials.charCodeAt(0) % avatarColors.length];
@@ -161,7 +155,7 @@ export default function Overview({ business, conversations = [], setActiveTab, s
                       
                       <div className="row-content">
                         <div className="row-header">
-                          <span className="user-identity">{conv.userName || 'Visitor Node'}</span>
+                          <span className="user-identity">{conv.userName || 'Visitor'}</span>
                           <span className="row-time">{new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                         <p className="row-preview">{conv.messages[conv.messages.length - 1]?.content || 'Initializing...'}</p>
@@ -171,12 +165,6 @@ export default function Overview({ business, conversations = [], setActiveTab, s
                          <span className={`chip chip-${conv.status === 'human_needed' ? 'error' : 'pending'}`}>
                           {conv.status?.replace('_', ' ')}
                          </span>
-                         {conv.isAiActive && (
-                           <div className="ai-label">
-                             <Sparkles size={10} />
-                             <span>AI Guided</span>
-                           </div>
-                         )}
                       </div>
                     </motion.div>
                   );
@@ -191,7 +179,7 @@ export default function Overview({ business, conversations = [], setActiveTab, s
           {business?.plan === 'free' && (
             <div className="card upgrade-card ai-enhanced">
               <h4 className="element-spacing">Resource Usage</h4>
-              <p className="block-spacing">You are using <strong>{business.conversationCount}</strong> of <strong>{business.conversationLimit}</strong> neural slots.</p>
+              <p className="block-spacing">Using <strong>{business.conversationCount}</strong> of <strong>{business.conversationLimit}</strong> slots.</p>
               <div className="progress-track">
                 <div className="progress-fill" style={{ width: `${(business.conversationCount / business.conversationLimit) * 100}%` }}></div>
               </div>
@@ -233,52 +221,115 @@ export default function Overview({ business, conversations = [], setActiveTab, s
       </div>
 
       <style>{`
-        .live-status-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .live-status-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
         .live-pulse { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
-        .live-status-header h3 { font-size: var(--text-label-sm); font-weight: 700; color: #22c55e; text-transform: uppercase; letter-spacing: 0.05em; }
+        .live-status-header h3 { font-size: 11px; font-weight: 700; color: #22c55e; text-transform: uppercase; letter-spacing: 0.05em; }
         
-        .live-sessions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-        .live-session-card { cursor: pointer; border-color: #22c55e33; }
-        .session-user { font-weight: 700; font-size: var(--text-body-sm); color: var(--on-surface); margin-bottom: 4px; }
-        .session-preview { font-size: 0.8rem; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .session-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
-        .session-time { font-size: 0.7rem; color: var(--outline); font-weight: 500; }
+        .live-sessions-grid { 
+          display: grid; 
+          grid-template-columns: 1fr;
+          gap: 12px; 
+        }
+
+        @media (min-width: 640px) {
+          .live-sessions-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        }
+
+        .live-session-card { cursor: pointer; border-color: #22c55e33; padding: 16px; }
+        .session-user { font-weight: 700; font-size: 14px; color: var(--on-surface); margin-bottom: 4px; }
+        .session-preview { font-size: 13px; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .session-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+        .session-time { font-size: 11px; color: var(--outline); font-weight: 500; }
         
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+        .stats-grid { 
+          display: grid; 
+          grid-template-columns: repeat(2, 1fr); 
+          gap: 12px; 
+        }
+
+        @media (min-width: 1024px) {
+          .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 24px; }
+        }
+
+        .metric-card { padding: 16px; }
+        @media (min-width: 768px) { .metric-card { padding: 24px; } }
+
         .metric-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-        .metric-icon { padding: 10px; border-radius: 12px; }
-        .metric-trend { font-size: var(--text-label-sm); font-weight: 700; display: flex; align-items: center; gap: 4px; margin-top: 12px; }
+        .metric-icon { padding: 8px; border-radius: 10px; }
+        .label { font-size: 12px; font-weight: 600; color: var(--outline); text-transform: uppercase; }
+        
+        .metric-trend { font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 4px; margin-top: 12px; flex-wrap: wrap; }
         .metric-trend.up { color: #10b981; }
         .metric-trend.down { color: var(--error); }
+        .trend-vs { opacity: 0.6; font-weight: 400; display: none; }
+        @media (min-width: 640px) { .trend-vs { display: inline; } }
         
-        .overview-main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 32px; }
-        .panel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
-        .panel-header p { font-size: var(--text-body-sm); color: var(--on-surface-variant); margin-top: 4px; }
+        .overview-main-grid { 
+          display: flex;
+          flex-direction: column;
+          gap: 24px; 
+        }
+
+        @media (min-width: 1024px) {
+          .overview-main-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 320px; 
+            gap: 32px; 
+          }
+        }
+
+        .activity-panel { padding: 16px; }
+        @media (min-width: 768px) { .activity-panel { padding: 32px; } }
+
+        .panel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 16px; }
+        .panel-title-group h3 { font-size: 1.25rem; }
+        .panel-header p { font-size: 13px; color: var(--on-surface-variant); margin-top: 4px; line-height: 1.4; }
         
-        .activity-stream { display: flex; flex-direction: column; gap: 12px; }
-        .activity-row { display: flex; align-items: center; gap: 16px; padding: 16px; border-radius: 14px; border: 1px solid var(--surface-container-highest); transition: var(--transition-fast); cursor: pointer; }
+        .activity-stream { display: flex; flex-direction: column; gap: 10px; }
+        .activity-row { 
+          display: flex; 
+          align-items: center; 
+          gap: 12px; 
+          padding: 12px; 
+          border-radius: 12px; 
+          border: 1px solid var(--surface-container-highest); 
+          transition: var(--transition-fast); 
+          cursor: pointer; 
+          width: 100%;
+        }
+
+        @media (min-width: 768px) {
+          .activity-row { gap: 16px; padding: 16px; }
+        }
+
         .activity-row:hover { border-color: var(--primary); background: var(--surface-container-low); }
-        .row-avatar { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+        .row-avatar { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
         .row-content { flex: 1; min-width: 0; }
-        .row-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .user-identity { font-weight: 700; font-size: var(--text-body-sm); }
-        .row-time { font-size: 0.75rem; color: var(--outline); }
-        .row-preview { font-size: var(--text-body-sm); color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
-        .row-status { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-        .ai-label { display: flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 700; color: var(--primary); }
+        .row-header { display: flex; justify-content: space-between; margin-bottom: 2px; align-items: baseline; }
+        .user-identity { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .row-time { font-size: 11px; color: var(--outline); flex-shrink: 0; }
+        .row-preview { font-size: 13px; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
         
+        .row-status { display: none; }
+        @media (min-width: 480px) { .row-status { display: flex; align-items: flex-end; flex-shrink: 0; } }
+        
+        .intelligence-sidebar { display: flex; flex-direction: column; gap: 16px; }
         .progress-track { height: 6px; background: var(--surface-container-high); border-radius: 3px; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--primary); border-radius: 3px; }
-        .system-health { margin-bottom: 16px; }
-        .health-top { display: flex; justify-content: space-between; font-size: var(--text-label-sm); font-weight: 600; margin-bottom: 12px; }
+        
+        .health-top { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
         .status-ok { color: #10b981; }
         .health-bar-bg { height: 4px; background: var(--surface-container-high); border-radius: 2px; margin-bottom: 12px; }
         .health-bar-fill { width: 100%; height: 100%; background: #10b981; border-radius: 2px; }
-        .health-metrics { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--outline); font-weight: 500; }
+        .health-metrics { display: flex; justify-content: space-between; font-size: 11px; color: var(--outline); font-weight: 500; }
         
-        .action-stack { display: flex; flex-direction: column; gap: 8px; }
-        .action-button { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: var(--radius-btn-input); border: 1px solid var(--outline-variant); background: white; color: var(--on-surface); font-weight: 600; font-size: var(--text-body-sm); cursor: pointer; transition: var(--transition-fast); text-align: left; width: 100%; }
+        .action-stack { display: grid; grid-template-columns: 1fr; gap: 8px; }
+        @media (min-width: 480px) and (max-width: 1023px) {
+          .action-stack { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        .action-button { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; border: 1px solid var(--outline-variant); background: white; color: var(--on-surface); font-weight: 600; font-size: 13px; cursor: pointer; transition: var(--transition-fast); text-align: left; width: 100%; min-height: 44px; }
         .action-button:hover { border-color: var(--primary); background: var(--surface-container-low); color: var(--primary); }
       `}</style>
     </div>

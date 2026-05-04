@@ -18,12 +18,12 @@ const SAOverview = () => {
   return (
     <div className="sa-overview-page animate-fade-in">
       <header className="sa-view-header">
-        <div>
+        <div className="header-text-block">
           <h1>Global Intelligence</h1>
-          <p>Real-time network performance and business metrics across all clusters.</p>
+          <p>Real-time network performance and metrics across all clusters.</p>
         </div>
         <div className="sa-header-actions">
-          <button className="btn btn-primary">Download Report</button>
+          <button className="btn btn-primary sa-dl-btn">Download Report</button>
         </div>
       </header>
 
@@ -38,10 +38,10 @@ const SAOverview = () => {
           >
             <div className="sa-stat-header">
               <div className="sa-stat-icon" style={{ background: `${stat.color}15`, color: stat.color }}>
-                <stat.icon size={22} />
+                <stat.icon size={20} />
               </div>
               <div className={`sa-stat-trend ${stat.trend.startsWith('+') ? 'up' : 'down'}`}>
-                {stat.trend.startsWith('+') ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                {stat.trend.startsWith('+') ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                 {stat.trend}
               </div>
             </div>
@@ -56,7 +56,7 @@ const SAOverview = () => {
       <div className="sa-secondary-grid">
         <div className="card sa-network-card">
           <div className="sa-card-header">
-            <h3><Globe size={20} /> Network Infrastructure</h3>
+            <h3><Globe size={18} /> Network Infra</h3>
             <span className="status-badge">GLOBAL STABLE</span>
           </div>
           <div className="sa-network-list">
@@ -72,7 +72,7 @@ const SAOverview = () => {
                     <span className="m-value">{item.latency}</span>
                   </div>
                   <div className="metric">
-                    <span className="m-label">Cluster Load</span>
+                    <span className="m-label">Load</span>
                     <span className="m-value">{item.load}</span>
                   </div>
                 </div>
@@ -83,7 +83,7 @@ const SAOverview = () => {
 
         <div className="card sa-alerts-card">
           <div className="sa-card-header">
-            <h3><Zap size={20} /> System Alerts</h3>
+            <h3><Zap size={18} /> System Alerts</h3>
           </div>
           <div className="sa-alerts-list">
             <div className="sa-alert-item warning">
@@ -105,44 +105,79 @@ const SAOverview = () => {
       </div>
 
       <style>{`
-        .sa-overview-page h1 { font-size: 2rem; margin-bottom: 8px; font-weight: 800; }
-        .sa-overview-page p { color: var(--on-surface-variant); font-size: 0.95rem; }
-        .sa-view-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        .sa-overview-page h1 { font-size: 1.5rem; margin-bottom: 8px; font-weight: 800; }
+        @media (min-width: 768px) { .sa-overview-page h1 { font-size: 2rem; } }
+
+        .sa-overview-page p { color: var(--on-surface-variant); font-size: 0.9rem; margin-bottom: 0; }
+        @media (min-width: 768px) { .sa-overview-page p { font-size: 0.95rem; } }
+
+        .sa-view-header { 
+          display: flex; 
+          flex-direction: column;
+          gap: 20px; 
+          margin-bottom: 32px; 
+        }
+
+        @media (min-width: 768px) {
+          .sa-view-header { flex-direction: row; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
+        }
+
+        .sa-dl-btn { width: 100%; }
+        @media (min-width: 768px) { .sa-dl-btn { width: auto; } }
         
-        .sa-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 32px; }
-        .sa-stat-card { background: white; padding: 24px; border-radius: 20px; border: 1px solid var(--outline-variant); }
-        .sa-stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .sa-stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-        .sa-stat-trend { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
+        .sa-stats-grid { 
+          display: grid; 
+          grid-template-columns: repeat(1, 1fr); 
+          gap: 16px; 
+          margin-bottom: 32px; 
+        }
+
+        @media (min-width: 480px) { .sa-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; } }
+        @media (min-width: 1024px) { .sa-stats-grid { grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 40px; } }
+
+        .sa-stat-card { background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--outline-variant); }
+        .sa-stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .sa-stat-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .sa-stat-trend { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
         .sa-stat-trend.up { background: #d1fae5; color: #065f46; }
         .sa-stat-trend.down { background: #fee2e2; color: #991b1b; }
-        .sa-stat-label { font-size: 0.875rem; color: var(--on-surface-variant); font-weight: 600; display: block; margin-bottom: 4px; }
-        .sa-stat-value { font-size: 1.75rem; font-weight: 800; margin: 0; }
+        .sa-stat-label { font-size: 0.8rem; color: var(--on-surface-variant); font-weight: 600; display: block; margin-bottom: 4px; }
+        .sa-stat-value { font-size: 1.5rem; font-weight: 800; margin: 0; }
+        @media (min-width: 768px) { .sa-stat-value { font-size: 1.75rem; } }
 
-        .sa-secondary-grid { display: grid; grid-template-columns: 1fr 400px; gap: 24px; }
+        .sa-secondary-grid { 
+          display: flex;
+          flex-direction: column;
+          gap: 24px; 
+        }
+
+        @media (min-width: 1024px) {
+          .sa-secondary-grid { display: grid; grid-template-columns: 1fr 400px; gap: 24px; }
+        }
+
         .sa-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .sa-card-header h3 { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 1.1rem; }
-        .status-badge { font-size: 0.65rem; font-weight: 900; color: #10b981; background: #d1fae5; padding: 4px 10px; border-radius: 6px; }
+        .sa-card-header h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1rem; }
+        .status-badge { font-size: 0.6rem; font-weight: 900; color: #10b981; background: #d1fae5; padding: 4px 8px; border-radius: 6px; }
         
-        .sa-network-list { display: flex; flex-direction: column; gap: 16px; }
-        .sa-network-item { display: flex; justify-content: space-between; padding: 16px; background: var(--surface-container-low); border-radius: 14px; border: 1px solid var(--outline-variant); }
-        .region-info { display: flex; flex-direction: column; gap: 4px; }
-        .region-name { font-weight: 700; font-size: 0.95rem; }
-        .region-status { font-size: 0.75rem; font-weight: 700; color: #10b981; }
-        .region-metrics { display: flex; gap: 24px; }
+        .sa-network-list { display: flex; flex-direction: column; gap: 12px; }
+        .sa-network-item { display: flex; justify-content: space-between; padding: 16px; background: var(--surface-container-low); border-radius: 12px; border: 1px solid var(--outline-variant); flex-wrap: wrap; gap: 12px; }
+        .region-info { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
+        .region-name { font-weight: 700; font-size: 0.9rem; }
+        .region-status { font-size: 0.7rem; font-weight: 700; color: #10b981; }
+        .region-metrics { display: flex; gap: 16px; align-items: center; justify-content: flex-end; flex: 1; }
         .metric { text-align: right; }
-        .m-label { display: block; font-size: 0.7rem; color: var(--on-surface-variant); font-weight: 600; margin-bottom: 2px; }
-        .m-value { font-weight: 700; font-size: 0.9rem; }
+        .m-label { display: block; font-size: 0.65rem; color: var(--on-surface-variant); font-weight: 600; margin-bottom: 2px; }
+        .m-value { font-weight: 700; font-size: 0.85rem; }
 
         .sa-alerts-list { display: flex; flex-direction: column; gap: 12px; }
-        .sa-alert-item { display: flex; gap: 16px; padding: 16px; border-radius: 14px; border: 1px solid var(--outline-variant); }
+        .sa-alert-item { display: flex; gap: 12px; padding: 16px; border-radius: 12px; border: 1px solid var(--outline-variant); }
         .sa-alert-item.warning { border-left: 4px solid #f59e0b; background: #fffbeb; }
         .sa-alert-item.info { border-left: 4px solid var(--primary); background: var(--primary-fixed); }
-        .alert-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; }
+        .alert-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
         .warning .alert-dot { background: #f59e0b; }
         .info .alert-dot { background: var(--primary); }
-        .alert-content strong { display: block; font-size: 0.9rem; margin-bottom: 4px; }
-        .alert-content p { font-size: 0.85rem; margin: 0; line-height: 1.4; }
+        .alert-content strong { display: block; font-size: 0.85rem; margin-bottom: 4px; }
+        .alert-content p { font-size: 0.8rem; margin: 0; line-height: 1.4; }
       `}</style>
     </div>
   );
