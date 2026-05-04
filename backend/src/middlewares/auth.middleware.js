@@ -16,6 +16,12 @@ export const protect = async (req, res, next) => {
     try {
         const decoded = jwt.verify(token, config.JWT_SECRET);
 
+        // Special handling for superadmin token which might not be a DB user
+        if (decoded.role === 'superadmin') {
+            req.user = { role: 'superadmin', email: decoded.email };
+            return next();
+        }
+
         req.user = await User.findById(decoded.id).select('-password').lean();
 
         if (!req.user) {
@@ -40,4 +46,7 @@ export const authorize = (...roles) => {
     };
 };
 
-export const admin = authorize('owner');
+export const admin = authorize('owner', 'superadmin');
+export const ownerOnly = authorize('owner');
+export const superAdminOnly = authorize('superadmin');
+export const agentOnly = authorize('agent');

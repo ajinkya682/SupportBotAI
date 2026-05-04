@@ -1,24 +1,17 @@
 import Conversation from '../models/conversation.model.js';
 import Business from '../models/business.model.js';
-
-/**
- * Helper function to determine the correct business owner ID
- */
-const getOwnerId = (user) => user.role === 'agent' ? user.ownerId : user._id;
+import User from '../models/user.model.js';
 
 export const getConversations = async (req, res) => {
     try {
-        const ownerId = getOwnerId(req.user);
-        
-        const business = await Business.findOne({ owner: ownerId }).select('_id').lean();
+        const ownerId = req.user.role === 'agent' ? req.user.ownerId : req.user._id;
+        const business = await Business.findOne({ owner: ownerId });
         if (!business) return res.status(404).json({ message: "Business not found" });
 
         const conversations = await Conversation.find({ business: business._id })
-            .populate('agent', 'displayName profilePhoto roleTitle')
             .sort({ updatedAt: -1 })
-            .limit(50)
-            .lean();
-            
+            .populate('agent', 'name displayName profilePhoto');
+
         res.json(conversations);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -27,9 +20,9 @@ export const getConversations = async (req, res) => {
 
 export const getConversationById = async (req, res) => {
     try {
-        const conversation = await Conversation.findById(req.params.id).lean();
+        const conversation = await Conversation.findById(req.params.id)
+            .populate('agent', 'name displayName profilePhoto');
         if (!conversation) return res.status(404).json({ message: "Conversation not found" });
-        
         res.json(conversation);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -38,15 +31,29 @@ export const getConversationById = async (req, res) => {
 
 export const resolveConversation = async (req, res) => {
     try {
-        const conversation = await Conversation.findByIdAndUpdate(
-            req.params.id,
-            { status: 'human_resolved' },
-            { new: true }
-        ).lean();
-        
+        const conversation = await Conversation.findById(req.params.id);
         if (!conversation) return res.status(404).json({ message: "Conversation not found" });
-        
-        res.json(conversation);
+
+        conversation.status = 'human_resolved';
+        conversation.isAiActive = true;
+        await conversation.save();
+
+        res.json({ success: true, conversation });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const toggleAi = async (req, res) => {
+    const { isAiActive } = req.body;
+    try {
+        const conversation = await Conversation.findById(req.params.id);
+        if (!conversation) return res.status(404).json({ message: "Conversation not found" });
+
+        conversation.isAiActive = isAiActive;
+        await conversation.save();
+
+        res.json({ success: true, isAiActive });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -55,70 +62,33 @@ export const resolveConversation = async (req, res) => {
 export const sendAgentReply = async (req, res) => {
     const { content } = req.body;
     try {
-        const ownerId = getOwnerId(req.user);
-        
-        // Optimization: Only fetch the _id field
-        const business = await Business.findOne({ owner: ownerId }).select('_id').lean();
-        if (!business) return res.status(404).json({ message: "Business not found" });
-
-        const conversation = await Conversation.findOne({
-            _id: req.params.id,
-            business: business._id
-        });
+        const conversation = await Conversation.findById(req.params.id).populate('business');
         if (!conversation) return res.status(404).json({ message: "Conversation not found" });
 
-        const isAgent = req.user.role === 'agent';
-        const senderType = isAgent ? 'agent' : 'owner';
-        const senderName = isAgent ? (req.user.displayName || req.user.name) : req.user.name;
-        const senderAvatar = req.user.profilePhoto || null;
-
-        const newMessage = {
+        const agentMsg = {
             role: 'assistant',
             content,
             timestamp: new Date(),
-            senderType,
-            senderName,
-            senderAvatar,
-            senderRole: isAgent ? (req.user.roleTitle || null) : null,
-            sender: {
-                name: senderName,
-                profilePhoto: senderAvatar,
-                userType: senderType
-            }
+            senderType: req.user.role === 'owner' ? 'owner' : 'agent',
+            senderName: req.user.displayName || req.user.name,
+            senderAvatar: req.user.profilePhoto
         };
 
-        conversation.messages.push(newMessage);
-        
-        if (conversation.status !== 'in_progress') {
-            conversation.status = 'in_progress';
-        }
+        conversation.messages.push(agentMsg);
+        conversation.updatedAt = new Date();
         await conversation.save();
 
+        // Emit to dashboard and widget
         if (req.io) {
-            req.io.to(ownerId.toString()).emit('new_message', {
+            const room = conversation.business.owner.toString();
+            req.io.to(room).emit('new_message', {
                 conversationId: conversation._id.toString(),
-                ...newMessage
+                ...agentMsg
             });
+            req.io.to(room).emit('update_conversation', conversation);
         }
 
-        res.json(conversation);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
-export const toggleAi = async (req, res) => {
-    try {
-        const conversation = await Conversation.findById(req.params.id);
-        if (!conversation) return res.status(404).json({ message: "Conversation not found" });
-
-        conversation.isAiActive = !conversation.isAiActive;
-        if (!conversation.isAiActive) {
-            conversation.status = 'human_needed';
-        }
-        await conversation.save();
-        
-        res.json(conversation);
+        res.json({ success: true, message: agentMsg });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -128,13 +98,13 @@ export const upgradePlan = async (req, res) => {
     try {
         const business = await Business.findOneAndUpdate(
             { owner: req.user._id },
-            { plan: 'pro', conversationLimit: 999999 },
+            { 
+                plan: 'pro',
+                conversationLimit: 10000 
+            },
             { new: true }
-        ).lean();
-        
-        if (!business) return res.status(404).json({ message: "Business not found" });
-        
-        res.json(business);
+        );
+        res.json({ success: true, business });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
