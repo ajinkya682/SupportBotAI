@@ -110,6 +110,23 @@ exports.registerUser = async (req, res) => {
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
   try {
+    // 1. Check if it's the Super Admin (Hardcoded in .env)
+    if (email === process.env.SUPER_ADMIN_EMAIL && password === process.env.SUPER_ADMIN_PASSWORD) {
+      const token = jwt.sign(
+        { id: 'superadmin', email: process.env.SUPER_ADMIN_EMAIL, role: 'superadmin' },
+        process.env.SUPER_ADMIN_JWT_SECRET,
+        { expiresIn: '30d' }
+      );
+      return res.json({
+        _id: 'superadmin',
+        name: 'Super Admin',
+        email: process.env.SUPER_ADMIN_EMAIL,
+        role: 'superadmin',
+        token: token
+      });
+    }
+
+    // 2. Normal User/Agent Login
     const user = await User.findOne({ email });
     if (user && (await user.comparePassword(password))) {
       if (user.role === 'agent') {
