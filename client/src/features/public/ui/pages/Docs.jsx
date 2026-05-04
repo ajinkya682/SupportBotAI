@@ -148,11 +148,11 @@ export default function Docs() {
                 <div className="info-callout">
                   <Info size={20} color="var(--primary)" className="callout-icon" />
                   <p>
-                    <strong>Security Note:</strong> Always keep your API key private. Do not commit it to public repositories.
+                    <strong>Security Note:</strong> Replace <code>'YOUR_API_KEY'</code> below with the unique key found in your <strong>Dashboard &gt; Integration</strong> tab.
                   </p>
                 </div>
 
-                <CodeBlock code={`<!-- SupportBotAI Widget -->\n<script src="${API_URL}/widget.js"></script>\n<script>\n  window.SupportBotAI.init({\n    apiKey: 'YOUR_API_KEY',\n    theme: 'dark'\n  });\n</script>`} />
+                <CodeBlock code={`<!-- SupportBotAI Widget -->\n<script src="${API_URL}/widget.js"></script>\n<script>\n  window.SupportBotAI.init({\n    apiKey: 'YOUR_API_KEY', // Replace with your real key from Dashboard\n    theme: 'dark'\n  });\n</script>`} />
 
                 <h3 className="section-subtitle">Official SDK Support</h3>
                 <div className="platform-grid">

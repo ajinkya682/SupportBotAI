@@ -21,7 +21,8 @@ export default function Integration({ business, onSave, isLoading, onUpgrade }) 
   const domainLimit = isFree ? 1 : 10;
   const currentDomains = business?.allowedDomains || [];
 
-  const scriptTag = `<!-- SupportBotAI Widget -->\n<script \n  src="${BASE_URL}/widget.js" \n  data-api-key="${business?.apiKey || 'YOUR_API_KEY'}" \n  data-client-url="${APP_URL}" \n  defer\n></script>\n<!-- End SupportBotAI Widget -->`;
+  const apiKey = business?.apiKey || 'Generating your key...';
+  const scriptTag = `<!-- SupportBotAI Widget -->\n<script \n  src="${BASE_URL}/widget.js" \n  data-api-key="${apiKey}" \n  data-client-url="${APP_URL}" \n  defer\n></script>\n<!-- End SupportBotAI Widget -->`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(scriptTag);

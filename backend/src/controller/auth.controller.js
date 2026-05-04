@@ -1,4 +1,5 @@
 import User from '../models/user.model.js';
+import Business from '../models/business.model.js';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import axios from 'axios';
@@ -57,6 +58,11 @@ export const googleLogin = async (req, res) => {
         email: profile.email,
         googleId: profile.googleId,
       });
+      // Create Business record immediately
+      await Business.create({
+        owner: user._id,
+        name: `${user.name}'s Business`,
+      });
     }
 
     if (user.role === 'agent') {
@@ -88,6 +94,13 @@ export const registerUser = async (req, res) => {
     }
 
     const user = await User.create({ name, email, password });
+    
+    // Create Business record immediately
+    await Business.create({
+      owner: user._id,
+      name: `${user.name}'s Business`,
+    });
+
     res.status(201).json({
       _id: user._id,
       name: user.name,
