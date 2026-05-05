@@ -39,6 +39,8 @@ const io = new Server(server, {
 // Pass io to req before routes
 app.use((req, res, next) => {
   req.io = io;
+  // Fix for Google Login COOP issues
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   console.log(`[REQ] ${req.method} ${req.url}`);
   next();
 });

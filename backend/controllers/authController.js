@@ -217,12 +217,21 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
     const html = buildOtpEmail(user.name, otp);
+    
+    // Log OTP to console in development for easier testing if email fails
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`\n🔑 [DEV ONLY] Password Reset OTP for ${user.email}: ${otp}\n`);
+    }
+
     await sendEmail({ email: user.email, subject: 'Password Reset OTP - SupportBotAI', html });
 
-    res.json({ message: 'OTP sent to email' });
+    res.json({ 
+      message: 'OTP sent to email',
+      devOTP: process.env.NODE_ENV !== 'production' ? otp : undefined
+    });
   } catch (error) {
     console.error('Forgot Password Error:', error);
-    res.status(500).json({ message: 'Failed to send OTP' });
+    res.status(500).json({ message: 'Failed to send OTP: ' + error.message });
   }
 };
 
@@ -270,8 +279,17 @@ exports.resetPassword = async (req, res) => {
     user.resetPasswordOTP = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
-
-    res.json({ message: 'Password reset successful' });
+    
+    // Return user info and token for auto-login
+    res.json({ 
+      message: 'Password reset successful',
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      ownerId: user.ownerId,
+      token: generateToken(user._id)
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

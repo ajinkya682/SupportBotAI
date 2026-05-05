@@ -234,16 +234,33 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
 
           <div className={`preview-container ${previewMode}`}>
             <div className="mock-site">
+              <div className="mock-site-overlay"></div>
               <div className="mock-nav">
-                <div className="mock-logo"></div>
+                <div className="mock-logo">
+                  <div className="logo-dot"></div>
+                  <div className="logo-text"></div>
+                </div>
                 <div className="mock-links">
                   <span></span><span></span><span></span>
                 </div>
               </div>
-              <div className="mock-hero">
-                <div className="mock-text-lg"></div>
-                <div className="mock-text-sm"></div>
-                <div className="mock-btn"></div>
+              <div className="mock-content">
+                <div className="mock-hero">
+                  <div className="mock-badge"></div>
+                  <div className="mock-text-lg"></div>
+                  <div className="mock-text-lg short"></div>
+                  <div className="mock-text-sm"></div>
+                  <div className="mock-text-sm middle"></div>
+                  <div className="mock-btn-group">
+                    <div className="mock-btn primary"></div>
+                    <div className="mock-btn secondary"></div>
+                  </div>
+                </div>
+                <div className="mock-features">
+                  <div className="feature-item"></div>
+                  <div className="feature-item"></div>
+                  <div className="feature-item"></div>
+                </div>
               </div>
             </div>
 
@@ -360,75 +377,145 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
         .p-btn.active { background: white; color: var(--on-surface); box-shadow: var(--shadow-1); }
         
         .preview-container { 
-          height: 500px; 
-          background: #e5e7eb; 
-          border-radius: 20px; 
-          border: 4px solid #1f2937; 
+          height: 540px; 
+          background: #f8fafc; 
+          border-radius: 24px; 
+          border: 12px solid #1e293b; 
           position: relative; 
           overflow: hidden; 
-          transition: 0.4s; 
+          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
           margin: 0 auto; 
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
         }
 
         @media (min-width: 1024px) {
-          .preview-container { height: 600px; border-radius: 32px; border: 8px solid #1f2937; }
+          .preview-container { height: 640px; border-radius: 40px; border: 16px solid #1e293b; }
         }
 
         .preview-container.desktop { width: 100%; }
-        .preview-container.mobile { width: 280px; }
+        .preview-container.mobile { width: 280px; border-width: 18px; border-radius: 44px; }
         @media (min-width: 480px) { .preview-container.mobile { width: 320px; } }
         
-        .mock-site { padding: 16px; height: 100%; background: white; }
-        .mock-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-        .mock-logo { width: 60px; height: 12px; background: #e5e7eb; border-radius: 2px; }
-        .mock-links { display: flex; gap: 8px; }
-        .mock-links span { width: 30px; height: 8px; background: #f3f4f6; border-radius: 2px; }
-        .mock-hero { text-align: center; max-width: 90%; margin: 0 auto; }
-        .mock-text-lg { height: 24px; background: #f3f4f6; border-radius: 4px; margin-bottom: 12px; }
-        .mock-text-sm { height: 12px; background: #f9fafb; border-radius: 2px; margin-bottom: 20px; width: 70%; margin: 0 auto 20px; }
-        .mock-btn { width: 100px; height: 32px; background: #e5e7eb; border-radius: 6px; margin: 0 auto; }
+        /* Mobile notch */
+        .preview-container.mobile::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 120px;
+          height: 20px;
+          background: #1e293b;
+          border-bottom-left-radius: 12px;
+          border-bottom-right-radius: 12px;
+          z-index: 10;
+        }
+
+        .mock-site { padding: 0; height: 100%; background: #ffffff; position: relative; overflow: hidden; }
+        .mock-site-overlay { position: absolute; inset: 0; background: radial-gradient(circle at 70% 20%, rgba(53, 37, 205, 0.05) 0%, transparent 50%); pointer-events: none; }
+        
+        .mock-nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; position: relative; z-index: 2; }
+        .mock-logo { display: flex; align-items: center; gap: 8px; }
+        .logo-dot { width: 12px; height: 12px; background: var(--primary); border-radius: 4px; }
+        .logo-text { width: 60px; height: 8px; background: #e2e8f0; border-radius: 2px; }
+        .mock-links { display: flex; gap: 12px; }
+        .mock-links span { width: 32px; height: 6px; background: #f1f5f9; border-radius: 2px; }
+        
+        .mock-content { padding: 40px 24px; position: relative; z-index: 1; }
+        .mock-hero { text-align: left; max-width: 100%; margin-bottom: 40px; }
+        .mock-badge { width: 80px; height: 16px; background: #f1f5f9; border-radius: 99px; margin-bottom: 20px; }
+        .mock-text-lg { height: 32px; background: #f1f5f9; border-radius: 6px; margin-bottom: 12px; width: 90%; }
+        .mock-text-lg.short { width: 60%; }
+        .mock-text-sm { height: 10px; background: #f8fafc; border-radius: 2px; margin-bottom: 8px; width: 100%; }
+        .mock-text-sm.middle { width: 80%; }
+        
+        .mock-btn-group { display: flex; gap: 12px; margin-top: 24px; }
+        .mock-btn { width: 100px; height: 36px; border-radius: 8px; }
+        .mock-btn.primary { background: #e2e8f0; }
+        .mock-btn.secondary { background: #f1f5f9; width: 80px; }
+
+        .mock-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+        .feature-item { aspect-ratio: 1; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; }
         
         .widget-mockup { 
           position: absolute; 
-          bottom: 16px; 
-          right: 16px; 
-          width: 240px; 
-          height: 360px; 
-          background: white; 
-          border-radius: 16px; 
-          box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+          bottom: 24px; 
+          right: 24px; 
+          width: 260px; 
+          height: 400px; 
+          background: rgba(255, 255, 255, 0.95); 
+          backdrop-filter: blur(10px);
+          border-radius: 24px; 
+          box-shadow: 0 20px 50px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05); 
           display: flex; 
           flex-direction: column; 
           overflow: hidden; 
-          border: 1px solid #f3f4f6; 
           transform-origin: bottom right;
-          scale: 0.9;
+          scale: 0.85;
+          z-index: 20;
         }
 
         @media (min-width: 768px) {
-          .widget-mockup { width: 280px; height: 420px; scale: 1; bottom: 20px; right: 20px; }
+          .widget-mockup { width: 300px; height: 460px; scale: 1; bottom: 32px; right: 32px; }
         }
 
-        .widget-header { padding: 12px 16px; color: white; display: flex; justify-content: space-between; align-items: flex-start; }
-        .header-info { display: flex; gap: 10px; align-items: center; }
-        .bot-avatar { width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .preview-container.mobile .widget-mockup {
+          scale: 0.75;
+          bottom: 16px;
+          right: 16px;
+          width: 100%;
+          height: 90%;
+          max-width: 280px;
+        }
+
+        .widget-header { 
+          padding: 16px 20px; 
+          color: white; 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .header-info { display: flex; gap: 12px; align-items: center; }
+        .bot-avatar { 
+          width: 36px; 
+          height: 36px; 
+          background: rgba(255,255,255,0.25); 
+          border-radius: 12px; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.2);
+        }
         .bot-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .bot-name { font-weight: 700; font-size: 13px; }
-        .bot-status { font-size: 10px; opacity: 0.8; display: flex; align-items: center; gap: 4px; }
-        .bot-status::before { content: ''; width: 5px; height: 5px; background: #4ade80; border-radius: 50%; }
+        .bot-name { font-weight: 700; font-size: 14px; letter-spacing: -0.01em; }
+        .bot-status { font-size: 11px; opacity: 0.9; display: flex; align-items: center; gap: 5px; }
+        .bot-status::before { content: ''; width: 6px; height: 6px; background: #4ade80; border-radius: 50%; box-shadow: 0 0 8px #4ade80; }
         
-        .widget-body { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: #fafafa; overflow-y: hidden; }
-        .msg { max-width: 90%; }
-        .msg-content { padding: 10px 14px; border-radius: 12px; font-size: 12px; line-height: 1.4; }
+        .widget-body { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 16px; background: linear-gradient(to bottom, #ffffff, #f9fafb); overflow-y: hidden; }
+        .msg { max-width: 85%; position: relative; }
+        .msg-content { padding: 12px 16px; border-radius: 18px; font-size: 13px; line-height: 1.5; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .bot-msg { align-self: flex-start; }
-        .bot-msg .msg-content { background: white; color: #1f2937; border-bottom-left-radius: 4px; border: 1px solid #e5e7eb; }
+        .bot-msg .msg-content { background: white; color: #1e293b; border-bottom-left-radius: 4px; border: 1px solid #f1f5f9; }
         .user-msg { align-self: flex-end; }
-        .user-msg .msg-content { color: white; border-bottom-right-radius: 4px; }
+        .user-msg .msg-content { color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         
-        .widget-footer { padding: 12px; background: white; border-top: 1px solid #f3f4f6; }
-        .input-mock { display: flex; justify-content: space-between; align-items: center; background: #f9fafb; padding: 8px 12px; border-radius: 10px; border: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px; }
-        .send-icon { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
-        .powered-by { text-align: center; font-size: 8px; color: #d1d5db; margin-top: 10px; text-transform: uppercase; font-weight: 700; }
+        .widget-footer { padding: 16px 20px 20px; background: white; border-top: 1px solid #f1f5f9; }
+        .input-mock { 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          background: #f8fafc; 
+          padding: 10px 14px; 
+          border-radius: 14px; 
+          border: 1px solid #f1f5f9; 
+          color: #94a3b8; 
+          font-size: 13px;
+          box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .send-icon { width: 28px; height: 28px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .powered-by { text-align: center; font-size: 9px; color: #cbd5e1; margin-top: 14px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em; }
         
         .desktop-only { display: none; }
         @media (min-width: 768px) { .desktop-only { display: inline; } }
