@@ -56,6 +56,7 @@ export default function Integration({ business, onSave, isLoading, onUpgrade }) 
                 <button 
                   onClick={copyToClipboard}
                   className={`copy-btn ${copied ? 'copied' : ''}`}
+                  disabled={apiKey === 'Generating your key...'}
                 >
                   {copied ? <><Check size={14} /> <span className="desktop-only">Copied</span></> : <><Copy size={14} /> <span className="desktop-only">Copy</span></>}
                 </button>
@@ -196,6 +197,7 @@ export default function Integration({ business, onSave, isLoading, onUpgrade }) 
         .code-lang { font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 0.05em; }
         .copy-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
         .copy-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+        .copy-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .copy-btn.copied { background: #059669; color: white; border-color: #059669; }
         
         .code-content { padding: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; }

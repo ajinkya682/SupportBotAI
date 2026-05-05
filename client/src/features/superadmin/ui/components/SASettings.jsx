@@ -6,7 +6,7 @@ import {
   DollarSign, Loader2, RefreshCcw
 } from 'lucide-react';
 import axios from 'axios';
-import { API_URL } from '../../../shared/services/config';
+import { API_URL } from '../../../../shared/services/config';
 import toast from 'react-hot-toast';
 
 const SASettings = () => {
@@ -32,7 +32,8 @@ const SASettings = () => {
 
   const fetchSettings = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
       const { data } = await axios.get(`${API_URL}/super-admin/settings`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -50,7 +51,8 @@ const SASettings = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
       const { data } = await axios.put(`${API_URL}/super-admin/settings`, config, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -71,7 +73,8 @@ const SASettings = () => {
     }
     
     try {
-      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
       const { data } = await axios.put(`${API_URL}/super-admin/settings/change-password`, 
         passwordData,
         { headers: { Authorization: `Bearer ${token}` } }

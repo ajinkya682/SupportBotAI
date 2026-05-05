@@ -6,7 +6,7 @@ import {
   MoreVertical, User, MessageSquare, Loader2
 } from 'lucide-react';
 import axios from 'axios';
-import { API_URL } from '../../../shared/services/config';
+import { API_URL } from '../../../../shared/services/config';
 import toast from 'react-hot-toast';
 
 const SABusinessOwners = () => {
@@ -21,7 +21,8 @@ const SABusinessOwners = () => {
 
   const fetchBusinesses = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
       const { data } = await axios.get(`${API_URL}/super-admin/businesses`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -37,7 +38,8 @@ const SABusinessOwners = () => {
 
   const handleUpdatePlan = async (id, newPlan) => {
     try {
-      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
       const { data } = await axios.patch(`${API_URL}/super-admin/businesses/${id}/plan`, 
         { plan: newPlan },
         { headers: { Authorization: `Bearer ${token}` } }

@@ -4,6 +4,7 @@ const PlatformConfig = require('../models/PlatformConfig');
 const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/email');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
 const axios = require('axios');
 
@@ -41,8 +42,10 @@ const resolveGoogleUser = async (idToken, accessToken) => {
 
 exports.googleLogin = async (req, res) => {
   const { idToken, accessToken, plan } = req.body;
+  console.log("Google Login Request Received:", { hasIdToken: !!idToken, hasAccessToken: !!accessToken, plan });
   try {
     const profile = await resolveGoogleUser(idToken, accessToken);
+    console.log("Resolved Google Profile:", profile);
     if (!profile) {
       return res.status(400).json({ message: 'No token provided' });
     }
@@ -79,6 +82,7 @@ exports.googleLogin = async (req, res) => {
       await user.save();
     }
 
+    console.log("Google Login Success, returning user:", user._id);
     res.json({
       _id: user._id,
       name: user.name,

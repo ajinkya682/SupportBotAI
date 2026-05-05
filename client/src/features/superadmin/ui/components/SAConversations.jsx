@@ -6,7 +6,7 @@ import {
   ExternalLink, Loader2, Calendar, AlertCircle
 } from 'lucide-react';
 import axios from 'axios';
-import { API_URL } from '../../../shared/services/config';
+import { API_URL } from '../../../../shared/services/config';
 import toast from 'react-hot-toast';
 
 const SAConversations = () => {
@@ -21,7 +21,8 @@ const SAConversations = () => {
 
   const fetchConversations = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
       const { data } = await axios.get(`${API_URL}/super-admin/conversations`, {
         headers: { Authorization: `Bearer ${token}` }
       });

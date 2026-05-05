@@ -6,7 +6,7 @@ import {
   PieChart as PieIcon, Loader2 
 } from 'lucide-react';
 import axios from 'axios';
-import { API_URL } from '../../../shared/services/config';
+import { API_URL } from '../../../../shared/services/config';
 import toast from 'react-hot-toast';
 
 const SASubscriptions = () => {
@@ -25,7 +25,8 @@ const SASubscriptions = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
       const [subRes, statsRes] = await Promise.all([
         axios.get(`${API_URL}/super-admin/subscriptions`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${API_URL}/super-admin/overview/stats`, { headers: { Authorization: `Bearer ${token}` } })

@@ -6,7 +6,8 @@ const {
     getNotifications, 
     markNotificationsRead,
     scrapeAndTrain,
-    uploadLogo 
+    uploadLogo,
+    upgradePlan
 } = require('../controllers/businessController');
 const { protect } = require('../middleware/authMiddleware');
 
