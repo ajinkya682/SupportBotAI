@@ -119,13 +119,38 @@ const FLOW_STEPS = [
   { id: 4, label: "Human Resolves", icon: <UserCheck size={16} />, desc: "Expert finalization" }
 ];
 
-const MOCK_RESPONSES = [
-  "Our AI platform learns from your documentation in seconds.",
-  "Setup takes less than 2 minutes. Just paste a script tag on your site.",
-  "We support over 100 languages natively.",
-  "Security is built-in with enterprise-grade encryption.",
-  "Our dashboard provides deep insights into resolution rates."
+const KNOWLEDGE_BASE = [
+  {
+    keywords: ['pricing', 'cost', 'price', 'plan', 'free', 'pro'],
+    response: "We offer a Free plan (100 convos/mo) and a Pro plan at $49/mo with unlimited conversations and advanced AI training."
+  },
+  {
+    keywords: ['register', 'signup', 'sign up', 'account', 'create'],
+    response: "You can register in less than 2 minutes! Just click the 'Get Started Free' button to create your account and start training your AI."
+  },
+  {
+    keywords: ['integrate', 'setup', 'install', 'script', 'website'],
+    response: "Integration is simple: just copy the single-line script tag from your dashboard and paste it before the </body> tag on your website."
+  },
+  {
+    keywords: ['train', 'learning', 'crawl', 'url', 'faq'],
+    response: "Our AI trains by crawling your website URLs or by importing your existing FAQs. It takes just seconds to process and start responding."
+  },
+  {
+    keywords: ['language', 'support', 'native'],
+    response: "SupportBotAI natively supports over 100 languages, allowing you to serve customers globally with a single assistant."
+  },
+  {
+    keywords: ['security', 'safe', 'data', 'encryption'],
+    response: "We use enterprise-grade AES-256 encryption and JWT authentication to ensure your business data and customer conversations remain private."
+  },
+  {
+    keywords: ['human', 'agent', 'escalate', 'live'],
+    response: "When the AI detects complex queries or high-intent requests, it can seamlessly escalate the conversation to a human support agent."
+  }
 ];
+
+const DEFAULT_RESPONSE = "That's a great question about SupportBotAI! Our platform is designed to automate customer success with high-fidelity AI. Anything else you'd like to know?";
 
 export default function HeroAnimation() {
   const [messages, setMessages] = useState([]);
@@ -192,6 +217,7 @@ export default function HeroAnimation() {
     e.preventDefault();
     if (!inputValue.trim() || isTyping) return;
 
+    const query = inputValue.toLowerCase();
     const userMsg = {
       id: Date.now(),
       type: 'user',
@@ -203,11 +229,17 @@ export default function HeroAnimation() {
     setIsTyping('ai');
 
     setTimeout(() => {
-      const randomResponse = MOCK_RESPONSES[Math.floor(Math.random() * MOCK_RESPONSES.length)];
+      // Find matching response in knowledge base
+      const match = KNOWLEDGE_BASE.find(item => 
+        item.keywords.some(keyword => query.includes(keyword))
+      );
+      
+      const responseText = match ? match.response : DEFAULT_RESPONSE;
+
       const aiMsg = {
         id: Date.now() + 1,
         type: 'ai',
-        text: randomResponse,
+        text: responseText,
       };
       setIsTyping(null);
       setMessages(prev => [...prev, aiMsg]);

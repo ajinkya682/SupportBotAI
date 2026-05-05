@@ -381,6 +381,24 @@ const getSubscriptions = async (req, res) => {
 
 // --- SETTINGS ---
 
+const getPublicConfig = async (req, res) => {
+    try {
+        let config = await PlatformConfig.findOne();
+        if (!config) {
+            config = await PlatformConfig.create({});
+        }
+        res.json({ 
+            success: true, 
+            config: {
+                platformName: config.platformName,
+                heroVideoUrl: config.heroVideoUrl
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
 const getSettings = async (req, res) => {
     try {
         let config = await PlatformConfig.findOne();
@@ -396,7 +414,7 @@ const getSettings = async (req, res) => {
 
 const updateSettings = async (req, res) => {
     try {
-        const { platformName, proPlanPrice, freeConversationLimit, proConversationLimit } = req.body;
+        const { platformName, proPlanPrice, freeConversationLimit, proConversationLimit, heroVideoUrl } = req.body;
         let config = await PlatformConfig.findOne();
         if (!config) {
             config = new PlatformConfig();
@@ -405,6 +423,7 @@ const updateSettings = async (req, res) => {
         config.proPlanPrice = proPlanPrice;
         config.freeConversationLimit = freeConversationLimit;
         config.proConversationLimit = proConversationLimit;
+        if (heroVideoUrl) config.heroVideoUrl = heroVideoUrl;
         
         await config.save();
         res.json({ success: true, settings: config });
@@ -679,6 +698,7 @@ module.exports = {
     getConversations,
     getConversationDetails,
     getSubscriptions,
+    getPublicConfig,
     getSettings,
     updateSettings,
     changePassword,

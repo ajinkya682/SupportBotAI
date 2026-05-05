@@ -6,7 +6,8 @@ const platformConfigSchema = new mongoose.Schema({
     freeConversationLimit: { type: Number, default: 100 },
     proConversationLimit: { type: Number, default: 999999 },
     maintenanceMode: { type: Boolean, default: false },
-    superAdminPasswordHash: { type: String }
+    superAdminPasswordHash: { type: String },
+    heroVideoUrl: { type: String, default: 'https://drive.google.com/file/d/1pLfBH1QpokINZq0_7NW7an-lSC_kzYQy/preview' }
 });
 
 module.exports = mongoose.model('PlatformConfig', platformConfigSchema);

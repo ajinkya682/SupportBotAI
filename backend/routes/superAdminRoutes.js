@@ -3,8 +3,9 @@ const router = express.Router();
 const superAdminController = require('../controllers/superAdminController');
 const { superAdminProtect } = require('../middleware/superAdminMiddleware');
 
-// Public route for login
+// Public routes for login and config
 router.post('/login', superAdminController.login);
+router.get('/config', superAdminController.getPublicConfig);
 
 // Protected routes
 router.use(superAdminProtect);

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   Settings, Save, Lock, Globe, 
   Database, Shield, MessageSquare, 
-  DollarSign, Loader2, RefreshCcw, Download 
+  DollarSign, Loader2, RefreshCcw, Download, PlayCircle 
 } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../../../../shared/services/config';
@@ -17,7 +17,8 @@ const SASettings = () => {
     proPlanPrice: 49,
     freeConversationLimit: 100,
     proConversationLimit: 999999,
-    maintenanceMode: false
+    maintenanceMode: false,
+    heroVideoUrl: ''
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -159,6 +160,20 @@ const SASettings = () => {
                   />
                 </div>
               </div>
+            </div>
+            
+            <div className="form-group" style={{ marginTop: '20px' }}>
+              <label>Hero Video URL (Google Drive Preview/YouTube/Direct)</label>
+              <div className="input-with-icon">
+                <PlayCircle size={16} />
+                <input 
+                  type="text" 
+                  value={config.heroVideoUrl || ''} 
+                  onChange={(e) => setConfig({...config, heroVideoUrl: e.target.value})}
+                  placeholder="e.g. https://drive.google.com/file/d/.../preview"
+                />
+              </div>
+              <p className="side-desc" style={{ marginTop: '8px', marginBottom: 0 }}>This video appears when users click "Watch Video Tour" on the landing page.</p>
             </div>
 
             <div className="sa-divider" />

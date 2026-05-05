@@ -1,5 +1,6 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { 
   Bot, 
   Zap, 
@@ -17,12 +18,33 @@ import {
   Cpu,
   Inbox,
   Languages,
-  Code
+  Users,
+  Code,
+  X
 } from "lucide-react";
 import PricingSection from "../components/PricingSection";
 import HeroAnimation from "../components/HeroAnimation";
+import { API_URL } from "../../../../shared/services/config";
+import axios from "axios";
 
 export default function Home() {
+  const [showVideo, setShowVideo] = useState(false);
+  const [videoUrl, setVideoUrl] = useState("https://drive.google.com/file/d/1pLfBH1QpokINZq0_7NW7an-lSC_kzYQy/preview");
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/super-admin/config`);
+        if (res.data.success && res.data.config.heroVideoUrl) {
+          setVideoUrl(res.data.config.heroVideoUrl);
+        }
+      } catch (err) {
+        console.error("Failed to fetch public config:", err);
+      }
+    };
+    fetchConfig();
+  }, []);
+
   return (
     <div className="landing-page animate-fade-in">
       {/* Hero Section */}
@@ -50,9 +72,12 @@ export default function Home() {
               <Link to="/signup" className="btn btn-primary btn-lg full-width-mobile">
                 Get Started Free <ArrowRight size={20} />
               </Link>
-              <Link to="/product" className="btn btn-secondary btn-lg full-width-mobile">
+              <button 
+                onClick={() => setShowVideo(true)}
+                className="btn btn-secondary btn-lg full-width-mobile"
+              >
                 <PlayCircle size={20} /> Watch Video Tour
-              </Link>
+              </button>
             </div>
 
             <div className="hero-highlights">
@@ -182,6 +207,48 @@ export default function Home() {
 
       <PricingSection />
 
+      {/* Simple Billing CTA Section */}
+      <section className="cta-final-section">
+        <div className="container">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="cta-card"
+          >
+            <div className="cta-content">
+              <div className="cta-badge">SIMPLE BILLING</div>
+              <h2>Ready to scale your support?</h2>
+              <p>Join 2,000+ companies automating their customer success with SupportBotAI. Setup takes less than 5 minutes.</p>
+              <div className="cta-actions">
+                <Link to="/signup" className="btn btn-primary btn-lg">
+                  Get Started Free <ArrowRight size={20} />
+                </Link>
+                <Link to="/pricing" className="btn btn-secondary btn-lg">
+                  View Pricing
+                </Link>
+              </div>
+            </div>
+            <div className="cta-visual desktop-only">
+              <div className="floating-stat">
+                <div className="stat-icon"><Users size={20} /></div>
+                <div className="stat-text">
+                  <strong>2,000+</strong>
+                  <span>Businesses</span>
+                </div>
+              </div>
+              <div className="floating-stat second">
+                <div className="stat-icon"><Zap size={20} /></div>
+                <div className="stat-text">
+                  <strong>99.9%</strong>
+                  <span>Resolution</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="landing-footer">
         <div className="container">
@@ -227,7 +294,112 @@ export default function Home() {
         </div>
       </footer>
 
+      {/* Video Modal */}
+      <AnimatePresence>
+        {showVideo && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="video-modal-overlay"
+            onClick={() => setShowVideo(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="video-modal-content"
+              onClick={e => e.stopPropagation()}
+            >
+              <button className="close-video" onClick={() => setShowVideo(false)}>
+                <X size={24} />
+              </button>
+              <div className="video-wrapper">
+                <iframe 
+                  src={videoUrl} 
+                  width="100%" 
+                  height="100%" 
+                  allow="autoplay"
+                  title="SupportBotAI Video Tour"
+                ></iframe>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <style>{`
+        .video-modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.95);
+          backdrop-filter: blur(12px);
+          z-index: 1000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 12px;
+        }
+
+        .video-modal-content {
+          width: 100%;
+          max-width: 1000px;
+          position: relative;
+          background: #000;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @media (min-width: 768px) {
+          .video-modal-overlay { padding: 40px; }
+          .video-modal-content { border-radius: 24px; }
+        }
+
+        .close-video {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          background: rgba(0,0,0,0.5);
+          backdrop-filter: blur(4px);
+          border: 1px solid rgba(255,255,255,0.1);
+          color: white;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 100;
+          transition: all 0.2s ease;
+        }
+
+        @media (min-width: 768px) {
+          .close-video { width: 44px; height: 44px; top: 20px; right: 20px; }
+        }
+
+        .close-video:hover {
+          background: rgba(255,255,255,0.2);
+          transform: scale(1.1);
+        }
+
+        .video-wrapper {
+          position: relative;
+          padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+          height: 0;
+        }
+
+        .video-wrapper iframe {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border: none;
+        }
+
         .landing-page { background: #ffffff; color: #1e293b; }
         
         .hero-section { padding: 100px 0 120px; overflow: hidden; position: relative; }
@@ -318,6 +490,54 @@ export default function Home() {
         .footer-col h4 { font-size: 14px; font-weight: 800; margin-bottom: 24px; }
         .footer-col a { display: block; color: #64748b; text-decoration: none; margin-bottom: 12px; font-weight: 600; font-size: 14px; }
         .footer-bottom { border-top: 1px solid #f1f5f9; padding-top: 40px; margin-top: 60px; display: flex; justify-content: space-between; align-items: center; }
+
+        /* Final CTA Section */
+        .cta-final-section { padding: 100px 0; background: #ffffff; }
+        .cta-card { 
+          background: #7c3aed; 
+          border-radius: 32px; 
+          padding: 60px; 
+          color: white; 
+          display: grid; 
+          grid-template-columns: 1fr; 
+          gap: 48px; 
+          position: relative;
+          overflow: hidden;
+          box-shadow: 0 40px 80px -20px rgba(124, 58, 237, 0.4);
+        }
+        @media (min-width: 1024px) { .cta-card { grid-template-columns: 1fr 300px; align-items: center; } }
+        
+        .cta-badge { background: rgba(255,255,255,0.15); color: white; padding: 6px 14px; border-radius: 99px; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; width: fit-content; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.2); }
+        .cta-card h2 { font-size: 3rem; font-weight: 900; margin-bottom: 16px; letter-spacing: -0.02em; }
+        .cta-card p { font-size: 1.2rem; opacity: 0.9; margin-bottom: 40px; max-width: 500px; line-height: 1.6; }
+        .cta-actions { display: flex; flex-wrap: wrap; gap: 16px; }
+        .cta-actions .btn-secondary { background: white; color: #7c3aed; border: none; }
+        
+        .cta-visual { position: relative; height: 100%; min-height: 200px; }
+        .floating-stat { 
+          position: absolute; 
+          top: 0; 
+          right: 0; 
+          background: white; 
+          padding: 20px; 
+          border-radius: 20px; 
+          color: #1e293b; 
+          display: flex; 
+          align-items: center; 
+          gap: 16px;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+          animation: float 6s ease-in-out infinite;
+        }
+        .floating-stat.second { top: 120px; right: -40px; animation-delay: 3s; }
+        .stat-icon { width: 44px; height: 44px; border-radius: 12px; background: #f5f3ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; }
+        .stat-text { display: flex; flex-direction: column; }
+        .stat-text strong { font-size: 1.25rem; font-weight: 800; }
+        .stat-text span { font-size: 0.8rem; color: #64748b; font-weight: 600; }
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-20px); }
+        }
       `}</style>
     </div>
   );
