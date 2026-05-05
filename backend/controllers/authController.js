@@ -154,6 +154,9 @@ exports.loginUser = async (req, res) => {
 
     // 2. Normal User/Agent Login
     const user = await User.findOne({ email });
+    if (user && user.isBlocked) {
+      return res.status(403).json({ message: 'Your account has been blocked. Please contact support.' });
+    }
     if (user && (await user.comparePassword(password))) {
       if (user.role === 'agent') {
         user.status = 'online';

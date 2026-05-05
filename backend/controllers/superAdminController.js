@@ -513,6 +513,127 @@ const exportReport = async (req, res) => {
     }
 };
 
+const exportBusinesses = async (req, res) => {
+    try {
+        const businesses = await Business.find().populate('owner', 'email name');
+        let csv = 'Business ID,Name,Owner,Email,Plan,Created At,Is Blocked\n';
+        businesses.forEach(b => {
+            csv += `${b._id},"${b.name}","${b.owner?.name || 'N/A'}","${b.owner?.email || 'N/A'}","${b.plan}","${b.createdAt.toLocaleDateString()}",${b.isBlocked}\n`;
+        });
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=SB_Businesses.csv');
+        res.send(csv);
+    } catch (error) { res.status(500).json({ success: false }); }
+};
+
+const exportAgents = async (req, res) => {
+    try {
+        const agents = await User.find({ role: 'agent' }).populate('ownerId', 'name');
+        let csv = 'Agent ID,Name,Email,Status,Created At,Is Blocked\n';
+        agents.forEach(a => {
+            csv += `${a._id},"${a.name}","${a.email}","${a.status}","${a.createdAt.toLocaleDateString()}",${a.isBlocked}\n`;
+        });
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=SB_Agents.csv');
+        res.send(csv);
+    } catch (error) { res.status(500).json({ success: false }); }
+};
+
+const exportConversations = async (req, res) => {
+    try {
+        const convs = await Conversation.find().populate('business', 'name');
+        let csv = 'Conv ID,Business,User,Status,Messages,Date\n';
+        convs.forEach(c => {
+            csv += `${c._id},"${c.business?.name || 'N/A'}","${c.userEmail || 'Anon'}","${c.status}",${c.messages.length},"${c.createdAt.toLocaleDateString()}"\n`;
+        });
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=SB_Conversations.csv');
+        res.send(csv);
+    } catch (error) { res.status(500).json({ success: false }); }
+};
+
+const exportSubscriptions = async (req, res) => {
+    try {
+        const businesses = await Business.find({ plan: 'pro' }).populate('owner', 'email');
+        let csv = 'Business Name,Owner Email,Plan,Price,Subscribed At\n';
+        const config = await PlatformConfig.findOne() || { proPlanPrice: 49 };
+        businesses.forEach(b => {
+            csv += `"${b.name}","${b.owner?.email || 'N/A'}","${b.plan}",$${config.proPlanPrice},"${b.updatedAt.toLocaleDateString()}"\n`;
+        });
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=SB_Subscriptions.csv');
+        res.send(csv);
+    } catch (error) { res.status(500).json({ success: false }); }
+};
+
+const exportNotifications = async (req, res) => {
+    try {
+        const notes = await Notification.find().sort({ createdAt: -1 });
+        let csv = 'Subject,Recipient,Total,Read,Date\n';
+        notes.forEach(n => {
+            csv += `"${n.subject}","${n.recipient}",${n.totalRecipients},${n.readCount},"${n.createdAt.toLocaleDateString()}"\n`;
+        });
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=SB_Notifications.csv');
+        res.send(csv);
+    } catch (error) { res.status(500).json({ success: false }); }
+};
+
+const blockBusiness = async (req, res) => {
+    try {
+        const business = await Business.findById(req.params.id);
+        if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
+        business.isBlocked = !business.isBlocked;
+        await business.save();
+        res.json({ success: true, message: `Business ${business.isBlocked ? 'blocked' : 'unblocked'}` });
+    } catch (error) { res.status(500).json({ success: false }); }
+};
+
+const deleteBusiness = async (req, res) => {
+    try {
+        await Business.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: 'Business removed successfully' });
+    } catch (error) { res.status(500).json({ success: false }); }
+};
+
+const blockAgent = async (req, res) => {
+    try {
+        const agent = await User.findById(req.params.id);
+        if (!agent) return res.status(404).json({ success: false, message: 'Agent not found' });
+        agent.isBlocked = !agent.isBlocked;
+        await agent.save();
+        res.json({ success: true, message: `Agent ${agent.isBlocked ? 'blocked' : 'unblocked'}` });
+    } catch (error) { res.status(500).json({ success: false }); }
+};
+
+const deleteAgent = async (req, res) => {
+    try {
+        await User.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: 'Agent removed successfully' });
+    } catch (error) { res.status(500).json({ success: false }); }
+};
+
+exports.exportSettings = async (req, res) => {
+  try {
+    const settings = await Setting.findOne();
+    const csvData = [
+      ['Parameter', 'Value'],
+      ['Platform Name', settings?.platformName || 'SupportBot AI'],
+      ['Pro Plan Price', settings?.proPlanPrice || '49'],
+      ['Free Conv Limit', settings?.freeConversationLimit || '100'],
+      ['Pro Conv Limit', settings?.proConversationLimit || 'Unlimited'],
+      ['Maintenance Mode', settings?.maintenanceMode ? 'ON' : 'OFF']
+    ];
+    
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=SupportBot_System_Config.csv');
+    res.status(200).send(csvContent);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
     login,
     getOverviewStats,
@@ -529,5 +650,15 @@ module.exports = {
     getSettings,
     updateSettings,
     changePassword,
-    exportReport
+    exportReport,
+    exportBusinesses,
+    exportAgents,
+    exportConversations,
+    exportSubscriptions,
+    exportNotifications,
+    blockBusiness,
+    deleteBusiness,
+    blockAgent,
+    deleteAgent,
+    exportSettings
 };

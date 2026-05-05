@@ -34,7 +34,8 @@ const BusinessSchema = new mongoose.Schema({
         message: String,
         isRead: { type: Boolean, default: false },
         createdAt: { type: Date, default: Date.now }
-    }]
+    }],
+    isBlocked: { type: Boolean, default: false }
 }, { timestamps: true });
 
 BusinessSchema.pre('save', function(next) {

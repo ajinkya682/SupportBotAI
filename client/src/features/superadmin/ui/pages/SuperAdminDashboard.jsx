@@ -203,7 +203,7 @@ const SuperAdminDashboard = () => {
         .sa-nav-link { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: 0.2s; position: relative; }
         @media (min-width: 1024px) { .sa-nav-link { padding: 14px 16px; font-size: 0.95rem; } }
 
-        .sa-nav-link:hover { color: #f8fafc; background: rgba(255,255,255,0.08); }
+        .sa-nav-link:hover { background: rgba(255,255,255,0.08); }
         .sa-nav-link.active { color: white; background: var(--primary); }
         .active-pill { position: absolute; left: -16px; width: 4px; height: 24px; background: white; border-radius: 0 4px 4px 0; }
         
