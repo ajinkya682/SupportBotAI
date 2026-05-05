@@ -21,7 +21,9 @@ export default function Integration({ business, onSave, isLoading, onUpgrade }) 
   const domainLimit = isFree ? 1 : 10;
   const currentDomains = business?.allowedDomains || [];
 
-  const apiKey = business?.apiKey || 'Generating your key...';
+  const isGenerating = !business?.apiKey && !isLoading;
+  const apiKey = business?.apiKey || (isLoading ? 'Connecting to neural node...' : 'Generating your key...');
+  
   const scriptTag = `<!-- SupportBotAI Widget -->\n<script \n  src="${BASE_URL}/widget.js" \n  data-api-key="${apiKey}" \n  data-client-url="${APP_URL}" \n  defer\n></script>\n<!-- End SupportBotAI Widget -->`;
 
   const copyToClipboard = () => {
@@ -35,7 +37,12 @@ export default function Integration({ business, onSave, isLoading, onUpgrade }) 
       <div className="integration-header">
         <div className="page-title">
           <h1>Website Integration</h1>
-          <p>Connect your AI to your website with a single line of code.</p>
+          <p>Connect your AI to your website with a single line of code. {business?._id && <span style={{fontSize: '10px', opacity: 0.5}}>(Node ID: {business._id})</span>}</p>
+          {!business?.apiKey && !isLoading && business && (
+            <div style={{color: 'var(--error)', fontSize: '12px', marginTop: '8px', fontWeight: 'bold'}}>
+              ⚠️ No API key found for this node. Please click "Re-sync" or contact support.
+            </div>
+          )}
         </div>
       </div>
 
@@ -60,6 +67,16 @@ export default function Integration({ business, onSave, isLoading, onUpgrade }) 
                 >
                   {copied ? <><Check size={14} /> <span className="desktop-only">Copied</span></> : <><Copy size={14} /> <span className="desktop-only">Copy</span></>}
                 </button>
+                {isGenerating && (
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="copy-btn"
+                    title="Refresh to sync API key"
+                    style={{ marginLeft: '8px' }}
+                  >
+                    <ArrowRight size={14} /> <span>Re-sync</span>
+                  </button>
+                )}
               </div>
               <div className="code-content">
                 <pre>{scriptTag}</pre>

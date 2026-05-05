@@ -96,7 +96,7 @@ export default function Analytics({ conversations = [], business, onUpgrade }) {
             </div>
           </div>
           <div className="chart-wrapper">
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={260}>
               <AreaChart data={data} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
@@ -121,7 +121,7 @@ export default function Analytics({ conversations = [], business, onUpgrade }) {
         <div className="card side-chart-card">
           <h3>Resolution Breakdown</h3>
           <div className="chart-wrapper" style={{ height: '200px' }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minHeight={200}>
               <PieChart>
                 <Pie
                   data={pieData}
@@ -263,6 +263,7 @@ export default function Analytics({ conversations = [], business, onUpgrade }) {
         @media (min-width: 640px) { .card-header { flex-direction: row; justify-content: space-between; align-items: center; } }
         
         .card-header h3 { font-size: 1.1rem; }
+        .chart-wrapper { height: 300px; width: 100%; position: relative; margin-top: 10px; }
         .chart-legend { display: flex; gap: 12px; }
         .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--on-surface-variant); }
         .legend-item span { width: 8px; height: 8px; border-radius: 50%; }

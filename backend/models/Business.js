@@ -39,7 +39,7 @@ const BusinessSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 BusinessSchema.pre('save', async function(next) {
-    if (!this.appearance.botName) {
+    if (this.appearance && !this.appearance.botName) {
         this.appearance.botName = this.name;
     }
     // Auto-generate apiKey if missing
