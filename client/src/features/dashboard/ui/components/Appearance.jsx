@@ -17,11 +17,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { API_URL } from '../../../../shared/services/config';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../../../../shared/ui/components/ConfirmModal';
 
 export default function Appearance({ formData, setFormData, onSave, isLoading, business, onUpgrade }) {
   const [previewMode, setPreviewMode] = useState('desktop'); 
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef();
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const handleColorChange = (color) => {
     setFormData(prev => ({
@@ -79,6 +81,17 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
 
   return (
     <div className="animate-fade-in appearance-container">
+      <ConfirmModal 
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={() => {
+          setFormData(prev => ({ ...prev, appearance: { ...prev.appearance, companyLogo: '' } }));
+          setShowConfirmModal(false);
+        }}
+        title="Remove Logo"
+        message="Are you sure you want to remove your company logo?"
+      />
+
       <div className="appearance-header">
         <div className="page-title">
           <h1>Widget Branding</h1>
@@ -197,7 +210,7 @@ export default function Appearance({ formData, setFormData, onSave, isLoading, b
                     <button 
                       className="btn btn-text btn-sm" 
                       style={{ color: 'var(--error)' }}
-                      onClick={() => setFormData(prev => ({ ...prev, appearance: { ...prev.appearance, companyLogo: '' } }))}
+                      onClick={() => setShowConfirmModal(true)}
                     >
                       <Trash2 size={14} /> Remove
                     </button>

@@ -248,7 +248,7 @@ export default function Overview({ business, conversations = [], setActiveTab, s
           gap: 12px; 
         }
 
-        @media (min-width: 1024px) {
+        @media (min-width: 900px) {
           .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 24px; }
         }
 
@@ -271,7 +271,7 @@ export default function Overview({ business, conversations = [], setActiveTab, s
           gap: 24px; 
         }
 
-        @media (min-width: 1024px) {
+        @media (min-width: 800px) {
           .overview-main-grid { 
             display: grid; 
             grid-template-columns: 1fr 320px; 
@@ -279,14 +279,26 @@ export default function Overview({ business, conversations = [], setActiveTab, s
           }
         }
 
-        .activity-panel { padding: 16px; }
+        .activity-panel { padding: 16px; min-width: 0; }
         @media (min-width: 768px) { .activity-panel { padding: 32px; } }
 
         .panel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 16px; }
         .panel-title-group h3 { font-size: 1.25rem; }
         .panel-header p { font-size: 13px; color: var(--on-surface-variant); margin-top: 4px; line-height: 1.4; }
         
-        .activity-stream { display: flex; flex-direction: column; gap: 10px; }
+        .activity-stream { 
+          display: flex; 
+          flex-direction: column; 
+          gap: 10px; 
+          max-height: 480px; 
+          overflow-y: auto; 
+          padding-right: 6px;
+        }
+
+        .activity-stream::-webkit-scrollbar { width: 4px; }
+        .activity-stream::-webkit-scrollbar-track { background: transparent; }
+        .activity-stream::-webkit-scrollbar-thumb { background: var(--surface-container-highest); border-radius: 10px; }
+        .activity-stream::-webkit-scrollbar-thumb:hover { background: var(--outline); }
         .activity-row { 
           display: flex; 
           align-items: center; 
@@ -305,11 +317,11 @@ export default function Overview({ business, conversations = [], setActiveTab, s
 
         .activity-row:hover { border-color: var(--primary); background: var(--surface-container-low); }
         .row-avatar { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
-        .row-content { flex: 1; min-width: 0; }
+        .row-content { flex: 1; min-width: 0; max-width: 60%; }
         .row-header { display: flex; justify-content: space-between; margin-bottom: 2px; align-items: baseline; }
         .user-identity { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .row-time { font-size: 11px; color: var(--outline); flex-shrink: 0; }
-        .row-preview { font-size: 13px; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+        .row-preview { font-size: 13px; color: var(--on-surface-variant); white-space: normal; overflow: hidden; text-overflow: ellipsis; margin: 0; line-height: 1.5; }
         
         .row-status { display: none; }
         @media (min-width: 480px) { .row-status { display: flex; align-items: flex-end; flex-shrink: 0; } }

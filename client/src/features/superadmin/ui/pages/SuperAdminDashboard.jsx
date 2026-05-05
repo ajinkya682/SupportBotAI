@@ -160,7 +160,8 @@ const SuperAdminDashboard = () => {
           bottom: 0;
           left: 0;
           width: 280px; 
-          background: var(--inverse-surface); 
+          background: white; 
+          border-right: 1px solid var(--outline-variant);
           display: flex; 
           flex-direction: column; 
           padding: 24px 16px; 
@@ -192,27 +193,26 @@ const SuperAdminDashboard = () => {
 
         .sa-header-main { display: flex; align-items: center; gap: 16px; }
         .sa-logo-wrapper { width: 40px; height: 40px; background: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(53, 37, 205, 0.3); }
-        .sa-sidebar-header h3 { color: #f8fafc; margin: 0; font-size: 1.1rem; font-weight: 800; }
-        .sa-sidebar-header span { color: #94a3b8; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        .sa-sidebar-header h3 { color: var(--on-surface); margin: 0; font-size: 1.1rem; font-weight: 800; }
+        .sa-sidebar-header span { color: var(--on-surface-variant); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
         
         .mobile-close-btn { background: transparent; border: none; padding: 4px; display: flex; }
         @media (min-width: 1024px) { .mobile-close-btn { display: none; } }
-[diff_block_end]
-[diff_block_start]
+
         .sa-sidebar-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        .sa-nav-link { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: 0.2s; position: relative; }
+        .sa-nav-link { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 12px; color: var(--on-surface-variant); text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: 0.2s; position: relative; }
         @media (min-width: 1024px) { .sa-nav-link { padding: 14px 16px; font-size: 0.95rem; } }
 
-        .sa-nav-link:hover { background: rgba(255,255,255,0.08); }
-        .sa-nav-link.active { color: white; background: var(--primary); }
-        .active-pill { position: absolute; left: -16px; width: 4px; height: 24px; background: white; border-radius: 0 4px 4px 0; }
+        .sa-nav-link:hover { background: var(--surface-container); }
+        .sa-nav-link.active { color: white; background: var(--primary); box-shadow: 0 8px 16px -4px rgba(53, 37, 205, 0.3); }
+        .active-pill { position: absolute; left: -16px; width: 4px; height: 24px; background: var(--primary); border-radius: 0 4px 4px 0; }
         
-        .sa-sidebar-footer { padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: auto; }
+        .sa-sidebar-footer { padding-top: 16px; border-top: 1px solid var(--outline-variant); margin-top: auto; }
         @media (min-width: 1024px) { .sa-sidebar-footer { padding-top: 24px; } }
 
-        .sa-logout-btn { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 16px; border-radius: 12px; background: transparent; border: none; color: #f87171; cursor: pointer; font-weight: 700; transition: 0.2s; font-size: 0.9rem; }
+        .sa-logout-btn { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 16px; border-radius: 12px; background: transparent; border: none; color: #ef4444; cursor: pointer; font-weight: 700; transition: 0.2s; font-size: 0.9rem; }
         @media (min-width: 1024px) { .sa-logout-btn { padding: 14px 16px; font-size: 0.95rem; } }
-        .sa-logout-btn:hover { background: rgba(248, 113, 113, 0.1); }
+        .sa-logout-btn:hover { background: #fef2f2; }
         
         .sa-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
         

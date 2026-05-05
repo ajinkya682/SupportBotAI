@@ -317,22 +317,21 @@ export default function Conversations({
             <div className="neural-content" ref={messagesContainerRef}>
               <div className="neural-messages">
                 {selectedConv.messages.map((msg, idx) => {
-                  const isUser = msg.role === "user";
-                  const senderName = msg.senderName || msg.sender?.name || (isUser ? "User" : "AI Assistant");
-                  const senderType = msg.senderType || msg.sender?.userType || (isUser ? "user" : "ai");
-                  const isHuman = senderType === "agent" || senderType === "owner";
+                  const isUs = msg.senderType === "ai" || msg.senderType === "agent" || msg.senderType === "owner";
+                  const displaySide = isUs ? "us" : "customer";
+                  const senderName = msg.senderName || msg.sender?.name || (msg.role === "user" ? "User" : "AI Assistant");
 
                   return (
-                    <div key={idx} className={`neural-message ${isUser ? "user" : "assistant"}`}>
-                      {!isUser && (
+                    <div key={idx} className={`neural-message ${displaySide}`}>
+                      {displaySide === "customer" && (
                         <div className="message-source">
-                          <div className={`source-avatar ${senderType}`}>
-                            {senderType === 'ai' ? <Bot size={12} /> : <User size={12} />}
+                          <div className="source-avatar customer">
+                            <User size={12} />
                           </div>
                         </div>
                       )}
                       <div className="message-envelope">
-                        {!isUser && isHuman && (
+                        {displaySide === "us" && msg.senderType !== "ai" && (
                           <div className="message-attribution">
                             {senderName} <span className="attribution-role">{msg.senderRole || 'Node'}</span>
                           </div>
@@ -499,19 +498,19 @@ export default function Conversations({
 
         .neural-messages { display: flex; flex-direction: column; gap: 24px; max-width: 800px; margin: 0 auto; }
         .neural-message { display: flex; gap: 12px; width: 100%; }
-        .neural-message.user { flex-direction: row-reverse; }
         .message-source { flex-shrink: 0; }
         .source-avatar { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
         .source-avatar.ai { background: var(--primary-container); color: white; }
         .source-avatar.agent, .source-avatar.owner { background: var(--surface-container-highest); color: var(--on-surface); }
         
-        .message-envelope { max-width: 85%; display: flex; flex-direction: column; }
-        .neural-message.user .message-envelope { align-items: flex-end; }
+        .message-envelope { max-width: 60%; display: flex; flex-direction: column; }
+        .neural-message.us { flex-direction: row-reverse; }
+        .neural-message.us .message-envelope { align-items: flex-end; }
         .message-attribution { font-size: 11px; font-weight: 700; margin-bottom: 4px; color: var(--on-surface-variant); }
         .attribution-role { font-weight: 500; opacity: 0.6; }
         .message-body { padding: 12px 16px; border-radius: 14px; font-size: 14px; line-height: 1.5; word-break: break-word; }
-        .user .message-body { background: var(--primary); color: white; border-top-right-radius: 2px; }
-        .assistant .message-body { background: white; color: var(--on-surface); border: 1px solid var(--outline-variant); border-top-left-radius: 2px; }
+        .us .message-body { background: var(--primary); color: white; border-top-right-radius: 2px; }
+        .customer .message-body { background: white; color: var(--on-surface); border: 1px solid var(--outline-variant); border-top-left-radius: 2px; }
         .message-meta { font-size: 10px; color: var(--outline); margin-top: 6px; }
         
         .interface-footer { 

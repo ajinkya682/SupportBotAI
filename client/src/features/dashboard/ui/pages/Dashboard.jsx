@@ -265,7 +265,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="dashboard-root">
+    <div className="dashboard-root sa-layout">
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -275,20 +275,20 @@ export default function Dashboard() {
         onClose={() => setIsSidebarOpen(false)}
       />
       
-      <div className="dashboard-content">
-        <header className="dashboard-header">
-          <div className="header-left">
+      <div className="sa-main-content">
+        <header className="sa-top-bar">
+          <div className="sa-top-bar-left">
             <button 
-              className="sidebar-toggle" 
+              className="mobile-menu-btn" 
               onClick={() => setIsSidebarOpen(true)}
               aria-label="Toggle sidebar"
             >
               <Menu size={24} />
             </button>
-            <div className="header-breadcrumb">
-              <span className="crumb-root">Platform</span>
-              <ChevronRight size={14} className="crumb-sep" />
-              <span className="crumb-current">
+            <div className="sa-breadcrumb">
+              <span className="sa-root desktop-only">Business Console</span>
+              <ChevronRight size={14} className="sa-sep desktop-only" />
+              <span className="sa-current">
                 {activeTab
                   .replace("_", " ")
                   .replace(/\b\w/g, (l) => l.toUpperCase())}
@@ -296,26 +296,25 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="header-controls">
-            <NotificationBell />
-            <div className="header-divider" />
+          <div className="sa-top-actions">
+            <div className="notification-wrap">
+              <NotificationBell />
+            </div>
+            <div className="sa-admin-badge">
+              {business?.plan?.toUpperCase() || 'STARTER'}
+            </div>
             <div className="header-user">
               <div className="user-text desktop-only">
                 <span className="user-name">{user?.name}</span>
-                <span className="user-role">
-                  {business?.plan === "pro"
-                    ? "ENTERPRISE NODE"
-                    : "STARTER NODE"}
-                </span>
               </div>
-              <div className="user-avatar">
+              <div className="sa-avatar">
                 {user?.name?.charAt(0).toUpperCase()}
               </div>
             </div>
           </div>
         </header>
 
-        <main className="dashboard-viewport">
+        <main className="sa-viewport">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -404,94 +403,68 @@ export default function Dashboard() {
 
       <style>{`
         .dashboard-root { display: flex; height: 100vh; background: var(--surface); position: relative; overflow: hidden; }
-        .dashboard-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .sa-layout { background: var(--surface); display: flex; flex-direction: column; }
+        @media (min-width: 1024px) { .sa-layout { flex-direction: row; } }
+
+        .sa-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
         
-        .dashboard-header {
+        .sa-top-bar { 
           height: 64px; 
           padding: 0 16px; 
           display: flex; 
           justify-content: space-between; 
-          align-items: center;
+          align-items: center; 
           background: white; 
           border-bottom: 1px solid var(--outline-variant); 
+          flex-shrink: 0; 
           z-index: 50;
         }
+        @media (min-width: 768px) { .sa-top-bar { height: 72px; padding: 0 32px; } }
+        @media (min-width: 1024px) { .sa-top-bar { height: 80px; padding: 0 40px; } }
 
-        @media (min-width: 1024px) {
-          .dashboard-header { height: 72px; padding: 0 40px; }
-        }
+        .sa-top-bar-left { display: flex; align-items: center; gap: 16px; }
+        .mobile-menu-btn { background: transparent; border: none; padding: 4px; color: var(--on-surface); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        @media (min-width: 1024px) { .mobile-menu-btn { display: none; } }
 
-        .header-left { display: flex; align-items: center; gap: 12px; }
+        .sa-breadcrumb { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.9rem; }
+        .sa-root { color: var(--on-surface-variant); }
+        .sa-sep { color: var(--outline); }
+        .sa-current { color: var(--on-surface); text-transform: capitalize; }
         
-        .sidebar-toggle {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 40px;
-          height: 40px;
-          background: transparent;
-          border: none;
-          color: var(--on-surface-variant);
-          cursor: pointer;
-          border-radius: 10px;
-        }
+        .sa-top-actions { display: flex; align-items: center; gap: 16px; }
+        @media (min-width: 768px) { .sa-top-actions { gap: 24px; } }
 
-        @media (min-width: 1024px) {
-          .sidebar-toggle { display: none; }
-        }
-
-        .header-breadcrumb { display: flex; align-items: center; gap: 8px; }
-        .crumb-root { font-size: 0.8rem; font-weight: 500; color: var(--outline); }
-        .crumb-sep { color: var(--outline-variant); }
-        .crumb-current { font-size: 0.8rem; font-weight: 600; color: var(--on-surface); }
+        .notification-wrap { display: flex; align-items: center; }
+        .sa-admin-badge { font-size: 0.6rem; font-weight: 900; background: var(--inverse-surface); color: white; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.05em; }
         
-        @media (min-width: 768px) {
-          .crumb-root, .crumb-current { font-size: var(--text-label-md); }
-          .header-breadcrumb { gap: 10px; }
-        }
-
-        .header-controls { display: flex; align-items: center; gap: 12px; }
-        @media (min-width: 768px) { .header-controls { gap: 24px; } }
-
-        .header-divider { width: 1px; height: 24px; background: var(--outline-variant); }
         .header-user { display: flex; align-items: center; gap: 12px; }
-        .user-text { text-align: right; }
-        .desktop-only { display: none; }
-        @media (min-width: 1024px) { .desktop-only { display: block; } }
-
-        .user-name { display: block; font-size: var(--text-label-md); font-weight: 700; color: var(--on-surface); }
-        .user-role { font-size: 10px; font-weight: 800; color: var(--primary); letter-spacing: 0.05em; }
-        .user-avatar { width: 36px; height: 36px; border-radius: 10px; background: var(--surface-container-high); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; flex-shrink: 0; }
+        .user-name { font-size: 0.85rem; font-weight: 700; color: var(--on-surface); }
+        .sa-avatar { width: 32px; height: 32px; background: var(--primary-low); color: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; }
+        @media (min-width: 768px) { .sa-avatar { width: 36px; height: 36px; border-radius: 10px; } }
         
-        .dashboard-viewport { flex: 1; padding: 16px; overflow-y: auto; background: var(--surface); }
-        @media (min-width: 768px) { .dashboard-viewport { padding: 32px 40px; } }
+        .sa-viewport { flex: 1; padding: 16px; overflow-y: auto; background: var(--surface-container-low); -webkit-overflow-scrolling: touch; }
+        @media (min-width: 768px) { .sa-viewport { padding: 32px; } }
+        @media (min-width: 1024px) { .sa-viewport { padding: 40px; } }
 
         .loading-state { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--outline); gap: 24px; font-weight: 500; }
         
-        .modal-backdrop { position: fixed; inset: 0; background: rgba(27, 27, 36, 0.4); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(27, 27, 36, 0.4); backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; }
         .modal-surface { background: white; width: 100%; max-width: 480px; border-radius: 20px; padding: 32px 24px; position: relative; border: 1px solid var(--outline-variant); box-shadow: var(--shadow-modal); }
-        
-        @media (min-width: 768px) {
-          .modal-surface { border-radius: var(--radius-card-modal); padding: 40px; }
-        }
-
         .modal-close { position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--outline); cursor: pointer; transition: 0.2s; padding: 8px; border-radius: 8px; }
-        .modal-close:hover { color: var(--on-surface); background: var(--surface-container-low); }
         
         .upgrade-content { text-align: center; }
         .upgrade-icon { width: 56px; height: 56px; background: var(--primary-low); color: var(--primary); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
-        .upgrade-content h2 { margin-bottom: 8px; font-size: 1.5rem; }
-        .upgrade-content p { color: var(--on-surface-variant); margin-bottom: 24px; font-size: 0.9rem; line-height: 1.5; }
+        .upgrade-content h2 { margin-bottom: 8px; font-size: 1.5rem; font-weight: 800; }
         
         .price-display { display: flex; align-items: baseline; justify-content: center; gap: 4px; margin-bottom: 24px; }
-        .price-display .value { font-size: 2.5rem; font-weight: 700; color: var(--on-surface); letter-spacing: -0.02em; }
-        .price-display .cycle { font-size: 0.9rem; font-weight: 600; color: var(--outline); }
+        .price-display .value { font-size: 2.5rem; font-weight: 700; color: var(--on-surface); }
         
         .feature-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; text-align: left; background: var(--surface-container-low); padding: 16px; border-radius: 12px; }
         .feature-item { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 600; color: var(--on-surface-variant); }
-        .feature-item svg { color: var(--primary); flex-shrink: 0; }
+        .feature-item svg { color: var(--primary); }
         
-        .guarantee { display: block; font-size: 10px; color: var(--outline); font-weight: 500; margin-top: 12px; }
+        .desktop-only { display: none; }
+        @media (min-width: 1024px) { .desktop-only { display: inline-flex; } }
       `}</style>
     </div>
   );

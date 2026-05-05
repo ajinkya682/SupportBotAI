@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { API_URL } from "../../../../shared/services/config";
 import toast from "react-hot-toast";
+import ConfirmModal from "../../../../shared/ui/components/ConfirmModal";
 
 export default function TeamMembers() {
   const [agents, setAgents] = useState([]);
@@ -21,6 +22,7 @@ export default function TeamMembers() {
   const [inviteData, setInviteData] = useState({ name: '', email: '', password: '', roleTitle: 'Support Agent' });
   const [isInviting, setIsInviting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, agentId: null, agentName: '' });
 
   useEffect(() => {
     fetchAgents();
@@ -60,17 +62,25 @@ export default function TeamMembers() {
   };
 
   const handleRemove = async (id) => {
-    if (!window.confirm('Are you sure you want to remove this team member?')) return;
     try {
       const user = JSON.parse(localStorage.getItem('user'));
       await axios.delete(`${API_URL}/agents/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       setAgents(agents.filter(a => a._id !== id));
+      setConfirmModal({ isOpen: false, agentId: null, agentName: '' });
       toast.success('Team member removed');
     } catch (err) {
       toast.error('Failed to remove team member');
     }
+  };
+
+  const openConfirmModal = (agent) => {
+    setConfirmModal({
+      isOpen: true,
+      agentId: agent._id,
+      agentName: agent.name
+    });
   };
 
   const filteredAgents = agents.filter(a => 
@@ -173,7 +183,7 @@ export default function TeamMembers() {
                         <span className="join-date">{new Date(agent.createdAt).toLocaleDateString()}</span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <button className="icon-btn delete" onClick={() => handleRemove(agent._id)}>
+                        <button className="icon-btn delete" onClick={() => openConfirmModal(agent)}>
                           <Trash2 size={18} />
                         </button>
                       </td>
@@ -197,7 +207,7 @@ export default function TeamMembers() {
                         <div className="member-email">{agent.email}</div>
                       </div>
                     </div>
-                    <button className="icon-btn delete" onClick={() => handleRemove(agent._id)}>
+                    <button className="icon-btn delete" onClick={() => openConfirmModal(agent)}>
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -294,6 +304,16 @@ export default function TeamMembers() {
           </div>
         )}
       </AnimatePresence>
+
+      <ConfirmModal 
+         isOpen={confirmModal.isOpen}
+         onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+         onConfirm={() => handleRemove(confirmModal.agentId)}
+         title="Remove Team Member?"
+         message={`Are you sure you want to remove ${confirmModal.agentName}? This agent will immediately lose all access to the dashboard and pending conversations.`}
+         confirmText="Remove Agent"
+         type="danger"
+       />
 
       <style>{`
         .team-container { padding-bottom: 40px; }

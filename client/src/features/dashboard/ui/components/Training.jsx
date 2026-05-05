@@ -7,6 +7,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useDispatch } from "react-redux";
 import { scrapeWebsite } from "../../state/businessSlice";
+import ConfirmModal from "../../../../shared/ui/components/ConfirmModal";
 
 const FAQItem = ({ faq, index, onUpdate, onRemove }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -85,6 +86,7 @@ export default function Training({ formData, setFormData, onSave, isLoading, bus
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, index: null });
 
   const stages = [
     { message: "Establishing connection...", target: 10, duration: 1500 },
@@ -160,6 +162,11 @@ export default function Training({ formData, setFormData, onSave, isLoading, bus
       ...prev,
       faqs: prev.faqs.filter((_, i) => i !== index)
     }));
+    setConfirmModal({ isOpen: false, index: null });
+  };
+
+  const openConfirmModal = (index) => {
+    setConfirmModal({ isOpen: true, index });
   };
 
   return (
@@ -338,7 +345,7 @@ export default function Training({ formData, setFormData, onSave, isLoading, bus
 
               <div className="faq-list">
                 {formData.faqs.map((faq, i) => (
-                  <FAQItem key={i} faq={faq} index={i} onUpdate={updateFaq} onRemove={removeFaq} />
+                  <FAQItem key={i} faq={faq} index={i} onUpdate={updateFaq} onRemove={openConfirmModal} />
                 ))}
                 
                 {formData.faqs.length === 0 && (
@@ -575,6 +582,15 @@ export default function Training({ formData, setFormData, onSave, isLoading, bus
         .empty-faqs { text-align: center; padding: 32px 16px; color: var(--outline); }
         .empty-faqs p { margin-top: 12px; font-size: 14px; }
       `}</style>
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={() => removeFaq(confirmModal.index)}
+        title="Remove FAQ?"
+        message="Are you sure you want to delete this FAQ? You will need to manually recreate it if you change your mind."
+        confirmText="Delete FAQ"
+        type="danger"
+      />
     </div>
   );
 }

@@ -10,7 +10,8 @@ import {
   Activity,
   History,
   Menu,
-  X
+  X,
+  Clock
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { logout, reset } from "../../../auth/state/authSlice";
@@ -26,7 +27,7 @@ export default function AgentDashboard({ user }) {
   const [activeTab, setActiveTab] = useState('conversations');
   const [conversations, setConversations] = useState([]);
   const [business, setBusiness] = useState(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { conversations: reduxConversations } = useSelector((state) => state.conversations);
 
   useEffect(() => {
@@ -103,8 +104,14 @@ export default function AgentDashboard({ user }) {
 
   const switchTab = (tab) => {
     setActiveTab(tab);
-    setIsMobileMenuOpen(false);
+    setIsSidebarOpen(false);
   };
+
+  const navItems = [
+    { id: 'overview', icon: LayoutDashboard, label: 'Agent Console' },
+    { id: 'conversations', icon: MessageSquare, label: 'Live Inbox', badge: conversations.filter(c => c.status === 'human_needed' && !c.agent).length },
+    { id: 'history', icon: History, label: 'Session Archive' }
+  ];
 
   const renderContent = () => {
     switch (activeTab) {
@@ -123,30 +130,60 @@ export default function AgentDashboard({ user }) {
           </div>
         );
       case 'overview':
+        const agentStats = [
+          { 
+            label: 'Assigned Chats', 
+            value: conversations.filter(c => c.agent?._id === user._id).length, 
+            icon: MessageSquare, 
+            color: 'var(--primary)' 
+          },
+          { 
+            label: 'Waiting for You', 
+            value: conversations.filter(c => c.status === 'human_needed' && !c.agent).length, 
+            icon: Clock, 
+            color: '#ef4444',
+            alert: conversations.filter(c => c.status === 'human_needed' && !c.agent).length > 0
+          },
+          { 
+            label: 'Resolved Today', 
+            value: 12, 
+            icon: CheckCircle2, 
+            color: '#10b981' 
+          }
+        ];
+
         return (
-          <div className="agent-overview">
-             <div className="stats-row">
-               <div className="card stat-card">
-                 <div className="stat-label">Assigned Chats</div>
-                 <div className="stat-value">{conversations.filter(c => c.agent?._id === user._id).length}</div>
-               </div>
-               <div className="card stat-card">
-                 <div className="stat-label">Waiting for You</div>
-                 <div className="stat-value" style={{ color: 'var(--error)' }}>
-                   {conversations.filter(c => c.status === 'human_needed' && !c.agent).length}
-                 </div>
-               </div>
-               <div className="card stat-card">
-                 <div className="stat-label">Resolved Today</div>
-                 <div className="stat-value" style={{ color: '#10b981' }}>12</div>
-               </div>
+          <div className="agent-overview animate-fade-in">
+             <div className="ag-stats-grid">
+               {agentStats.map((stat, i) => (
+                 <motion.div 
+                   key={i} 
+                   className={`ag-stat-card ${stat.alert ? 'stat-alert' : ''}`}
+                   initial={{ opacity: 0, y: 20 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   transition={{ delay: i * 0.1 }}
+                 >
+                   <div className="ag-stat-header">
+                     <div className="ag-stat-icon" style={{ background: `${stat.color}15`, color: stat.color }}>
+                       <stat.icon size={20} />
+                     </div>
+                     {stat.alert && <span className="ag-stat-badge">PRIORITY</span>}
+                   </div>
+                   <div className="ag-stat-body">
+                     <span className="ag-stat-label">{stat.label}</span>
+                     <h2 className="ag-stat-value">{stat.value}</h2>
+                   </div>
+                 </motion.div>
+               ))}
              </div>
              
              <div className="card active-now">
-               <h3><Activity size={18} /> My Active Workload</h3>
+               <div className="card-header">
+                 <h3><Activity size={18} /> My Active Workload</h3>
+               </div>
                <div className="workload-list">
                  {conversations.filter(c => c.agent?._id === user._id && c.status === 'in_progress').map(conv => (
-                   <div key={conv._id} className="workload-item" onClick={() => setActiveTab('conversations')}>
+                   <div key={conv._id} className="workload-item" onClick={() => switchTab('conversations')}>
                      <div className="workload-info">
                        <div className="user-icon"><User size={16} /></div>
                        <div className="workload-text">
@@ -169,66 +206,109 @@ export default function AgentDashboard({ user }) {
         );
       default: return (
         <div className="empty-workload">
-          <History size={40} style={{opacity: 0.3}} />
-          <p>History feature coming soon.</p>
+          <div className="empty-icon-wrap">
+            <History size={48} />
+          </div>
+          <h3>Session Archive</h3>
+          <p>This feature is coming soon. You'll be able to review all past customer interactions here.</p>
         </div>
       );
     }
   };
 
   return (
-    <div className="agent-layout">
-      {/* Desktop Sidebar */}
-      <aside className="agent-sidebar desktop-only">
-        <div className="sidebar-top">
-          <div className="brand-icon">
-            <Bot size={24} color="white" />
+    <div className="dashboard-root ag-layout">
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            className="ag-sidebar-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Enterprise Sidebar */}
+      <aside className={`ag-sidebar ${isSidebarOpen ? 'open' : ''}`}>
+        <div className="ag-sidebar-header">
+          <div className="ag-header-main">
+            <div className="ag-logo-wrapper">
+              <Bot size={20} color="white" />
+            </div>
+            <div>
+              <h3>Agent Pro</h3>
+              <span>Support Console</span>
+            </div>
           </div>
-          <nav className="nav-icons">
-            <button className={`icon-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => switchTab('overview')} title="Overview">
-              <LayoutDashboard size={20} />
-            </button>
-            <button className={`icon-btn ${activeTab === 'conversations' ? 'active' : ''}`} onClick={() => switchTab('conversations')} title="Chats">
-              <MessageSquare size={20} />
-              {conversations.filter(c => c.status === 'human_needed' && !c.agent).length > 0 && (
-                <span className="nav-badge"></span>
-              )}
-            </button>
-            <button className={`icon-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => switchTab('history')} title="History">
-              <History size={20} />
-            </button>
-          </nav>
+          <button className="mobile-close-btn" onClick={() => setIsSidebarOpen(false)}>
+            <X size={20} color="var(--outline)" />
+          </button>
         </div>
-        <div className="sidebar-bottom">
-          <button className="icon-btn logout" onClick={onLogout} title="Logout">
-            <LogOut size={20} />
+        
+        <nav className="ag-sidebar-nav">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => switchTab(item.id)}
+                className={`ag-nav-link ${isActive ? 'active' : ''}`}
+              >
+                <Icon size={18} className="ag-icon" />
+                <span>{item.label}</span>
+                {item.badge > 0 && <span className="nav-badge-pill">{item.badge}</span>}
+                {isActive && <motion.div layoutId="ag-active-pill" className="active-pill desktop-only" />}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="ag-sidebar-footer">
+          <button onClick={onLogout} className="ag-logout-btn">
+            <LogOut size={18} />
+            <span>Sign Out</span>
           </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="agent-main">
-        <header className="agent-header">
-          <div className="header-left">
-            <h2>{activeTab === 'conversations' ? 'Inbox' : (activeTab === 'overview' ? 'Console' : 'Archive')}</h2>
-            <div className="agent-status">
-              <span className="dot"></span> <span className="desktop-only">Online</span>
+      <div className="ag-main-content">
+        <header className="ag-top-bar">
+          <div className="ag-top-bar-left">
+            <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)}>
+              <Menu size={24} />
+            </button>
+            <div className="ag-breadcrumb">
+              <span className="ag-root desktop-only">Support</span>
+              <ChevronRight size={14} className="ag-sep desktop-only" />
+              <span className="ag-current">
+                {activeTab === 'conversations' ? 'Live Inbox' : (activeTab === 'overview' ? 'Console' : 'Archive')}
+              </span>
             </div>
           </div>
-          <div className="header-right">
-            <div className="agent-profile desktop-flex">
-              <div className="profile-info">
-                <span className="name">{user.name}</span>
-                <span className="role">{user.roleTitle || 'Support Agent'}</span>
-              </div>
-              <div className="avatar">
-                {user.profilePhoto ? <img src={user.profilePhoto} alt="" /> : user.name.charAt(0)}
-              </div>
+          
+          <div className="ag-top-actions">
+            <div className="ag-status-pill online">
+              <span className="dot" />
+              ONLINE
+            </div>
+            <div className="ag-profile">
+               <div className="profile-text desktop-only">
+                 <span className="name">{user.name}</span>
+                 <span className="role">{user.roleTitle || 'Support Agent'}</span>
+               </div>
+               <div className="avatar">
+                 {user.profilePhoto ? <img src={user.profilePhoto} alt="" /> : user.name.charAt(0)}
+               </div>
             </div>
           </div>
         </header>
-
-        <div className={`content-inner ${activeTab === 'conversations' ? 'no-pad' : ''}`}>
+        
+        <main className={`ag-viewport ${activeTab === 'conversations' ? 'no-pad' : ''}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -241,143 +321,161 @@ export default function AgentDashboard({ user }) {
               {renderContent()}
             </motion.div>
           </AnimatePresence>
-        </div>
-      </main>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="mobile-bottom-nav mobile-only">
-        <button className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => switchTab('overview')}>
-          <LayoutDashboard size={20} />
-          <span>Console</span>
-        </button>
-        <button className={`nav-item ${activeTab === 'conversations' ? 'active' : ''}`} onClick={() => switchTab('conversations')}>
-          <div className="icon-wrapper">
-            <MessageSquare size={20} />
-            {conversations.filter(c => c.status === 'human_needed' && !c.agent).length > 0 && (
-              <span className="nav-badge"></span>
-            )}
-          </div>
-          <span>Inbox</span>
-        </button>
-        <button className="nav-item text-error" onClick={onLogout}>
-          <LogOut size={20} />
-          <span>Logout</span>
-        </button>
-      </nav>
+        </main>
+      </div>
 
       <style>{`
-        .agent-layout { 
-          display: flex; 
-          flex-direction: column;
-          height: 100vh; 
-          height: 100dvh;
+        .ag-layout { 
           background: var(--surface); 
-          overflow: hidden; 
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+          overflow: hidden;
         }
 
         @media (min-width: 1024px) {
-          .agent-layout { flex-direction: row; }
+          .ag-layout { flex-direction: row; }
         }
-        
-        .agent-sidebar { width: 72px; background: var(--inverse-surface); display: flex; flex-direction: column; justify-content: space-between; padding: 20px 0; align-items: center; z-index: 10; }
-        .brand-icon { width: 40px; height: 40px; background: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 32px; }
-        .nav-icons { display: flex; flex-direction: column; gap: 16px; }
-        .icon-btn { width: 44px; height: 44px; border-radius: 12px; border: none; background: transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; position: relative; }
-        .icon-btn:hover { background: rgba(255,255,255,0.05); color: white; }
-        .icon-btn.active { background: var(--primary-container); color: white; box-shadow: var(--shadow-1); }
-        .nav-badge { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: var(--error); border: 2px solid var(--inverse-surface); border-radius: 50%; }
-        .icon-btn.logout { color: #f87171; }
-        .icon-btn.logout:hover { background: rgba(248,113,113,0.1); }
-        
-        .agent-main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-        .agent-header { height: 60px; padding: 0 16px; display: flex; justify-content: space-between; align-items: center; background: var(--surface-container-lowest); border-bottom: 1px solid var(--outline-variant); flex-shrink: 0; }
-        @media (min-width: 768px) { .agent-header { height: 72px; padding: 0 32px; } }
 
-        .header-left { display: flex; align-items: center; gap: 12px; }
-        @media (min-width: 768px) { .header-left { gap: 24px; } }
-        .header-left h2 { font-size: 1.1rem; margin: 0; }
-        @media (min-width: 768px) { .header-left h2 { font-size: 1.25rem; } }
+        .ag-sidebar-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(4px);
+          z-index: 90;
+        }
 
-        .agent-status { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 700; color: #10b981; background: #d1fae5; padding: 4px 8px; border-radius: 20px; }
-        @media (min-width: 768px) { .agent-status { padding: 4px 12px; } }
-        .agent-status .dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; }
+        @media (min-width: 1024px) {
+          .ag-sidebar-overlay { display: none; }
+        }
+
+        .ag-sidebar { 
+          position: fixed;
+          top: 0;
+          bottom: 0;
+          left: 0;
+          width: 280px; 
+          background: white; 
+          border-right: 1px solid var(--outline-variant);
+          display: flex; 
+          flex-direction: column; 
+          padding: 24px 16px; 
+          z-index: 100; 
+          transform: translateX(-100%);
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ag-sidebar.open { transform: translateX(0); }
+
+        @media (min-width: 1024px) {
+          .ag-sidebar {
+            position: static;
+            width: 300px;
+            transform: none;
+            padding: 32px 16px;
+          }
+        }
+
+        .ag-sidebar-header { 
+          display: flex; 
+          align-items: center; 
+          justify-content: space-between;
+          padding: 0 16px; 
+          margin-bottom: 32px; 
+        }
+
+        @media (min-width: 1024px) { .ag-sidebar-header { margin-bottom: 48px; } }
+
+        .ag-header-main { display: flex; align-items: center; gap: 16px; }
+        .ag-logo-wrapper { width: 40px; height: 40px; background: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(53, 37, 205, 0.3); }
+        .ag-sidebar-header h3 { color: var(--on-surface); margin: 0; font-size: 1.1rem; font-weight: 800; }
+        .ag-sidebar-header span { color: var(--on-surface-variant); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
         
-        .agent-profile { display: flex; align-items: center; gap: 12px; }
-        .profile-info { text-align: right; }
-        .profile-info .name { display: block; font-weight: 700; color: var(--on-surface); font-size: 0.85rem; }
-        .profile-info .role { display: block; font-size: 0.7rem; color: var(--on-surface-variant); font-weight: 600; }
-        .avatar { width: 36px; height: 36px; border-radius: 10px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; overflow: hidden; }
-        @media (min-width: 768px) { .avatar { width: 40px; height: 40px; border-radius: 12px; font-size: 1rem; } }
+        .mobile-close-btn { background: transparent; border: none; padding: 4px; display: flex; }
+        @media (min-width: 1024px) { .mobile-close-btn { display: none; } }
+
+        .ag-sidebar-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; overflow-y: auto; }
+        .ag-nav-link { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 12px; color: var(--on-surface-variant); text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: 0.2s; position: relative; border: none; background: transparent; width: 100%; text-align: left; cursor: pointer; }
+        @media (min-width: 1024px) { .ag-nav-link { padding: 14px 16px; font-size: 0.95rem; } }
+
+        .ag-nav-link:hover { background: var(--surface-container); }
+        .ag-nav-link.active { color: white; background: var(--primary); box-shadow: 0 8px 16px -4px rgba(53, 37, 205, 0.3); }
+        .active-pill { position: absolute; left: -16px; width: 4px; height: 24px; background: var(--primary); border-radius: 0 4px 4px 0; }
+        
+        .nav-badge-pill { margin-left: auto; background: var(--error); color: white; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 20px; box-shadow: 0 2px 8px rgba(186, 26, 26, 0.3); }
+        .ag-nav-link.active .nav-badge-pill { background: white; color: var(--primary); }
+
+        .ag-sidebar-footer { padding-top: 16px; border-top: 1px solid var(--outline-variant); margin-top: auto; }
+        .ag-logout-btn { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 16px; border-radius: 12px; background: transparent; border: none; color: #ef4444; cursor: pointer; font-weight: 700; transition: 0.2s; font-size: 0.9rem; }
+        .ag-logout-btn:hover { background: #fef2f2; }
+        
+        .ag-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        
+        .ag-top-bar { height: 60px; padding: 0 16px; display: flex; justify-content: space-between; align-items: center; background: white; border-bottom: 1px solid var(--outline-variant); flex-shrink: 0; }
+        @media (min-width: 768px) { .ag-top-bar { height: 72px; padding: 0 32px; } }
+        @media (min-width: 1024px) { .ag-top-bar { height: 80px; padding: 0 40px; } }
+
+        .ag-top-bar-left { display: flex; align-items: center; gap: 16px; }
+        .mobile-menu-btn { background: transparent; border: none; padding: 4px; color: var(--on-surface); display: flex; align-items: center; justify-content: center; }
+        @media (min-width: 1024px) { .mobile-menu-btn { display: none; } }
+
+        .ag-breadcrumb { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.9rem; }
+        .ag-root { color: var(--on-surface-variant); }
+        .ag-sep { color: var(--outline); }
+        .ag-current { color: var(--on-surface); }
+        
+        .ag-top-actions { display: flex; align-items: center; gap: 16px; }
+        .ag-status-pill { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; }
+        .ag-status-pill.online { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
+        .ag-status-pill .dot { width: 6px; height: 6px; background: currentColor; border-radius: 50%; }
+
+        .ag-profile { display: flex; align-items: center; gap: 12px; }
+        .profile-text { text-align: right; }
+        .profile-text .name { display: block; font-weight: 700; color: var(--on-surface); font-size: 0.85rem; }
+        .profile-text .role { display: block; font-size: 0.7rem; color: var(--on-surface-variant); font-weight: 600; }
+        .avatar { width: 36px; height: 36px; border-radius: 10px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; overflow: hidden; border: 1px solid var(--outline-variant); }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
         
-        .content-inner { flex: 1; padding: 16px; overflow-y: auto; background: var(--surface-container-low); -webkit-overflow-scrolling: touch; }
-        @media (min-width: 768px) { .content-inner { padding: 32px; } }
-        .content-inner.no-pad { padding: 0; }
-        
-        .agent-chat-wrapper { height: 100%; display: flex; flex-direction: column; }
-        
-        .stats-row { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
-        @media (min-width: 640px) { .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; } }
-        .stat-card { padding: 20px; }
-        .stat-label { font-size: 0.8rem; font-weight: 600; color: var(--on-surface-variant); margin-bottom: 4px; }
-        .stat-value { font-size: 1.75rem; font-weight: 800; }
-        
-        .active-now { padding: 20px; }
-        @media (min-width: 768px) { .active-now { padding: 32px; } }
-        .active-now h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; font-size: 1.1rem; }
-        .workload-list { display: flex; flex-direction: column; gap: 12px; }
-        .workload-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--surface-container-low); border: 1px solid var(--outline-variant); border-radius: 12px; cursor: pointer; transition: 0.2s; gap: 12px; }
-        .workload-item:hover { border-color: var(--primary); background: var(--surface-container-lowest); }
-        .workload-info { display: flex; gap: 12px; align-items: center; min-width: 0; flex: 1; }
-        .workload-item .user-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .ag-viewport { flex: 1; padding: 16px; overflow-y: auto; background: var(--surface-container-low); }
+        @media (min-width: 768px) { .ag-viewport { padding: 32px; } }
+        .ag-viewport.no-pad { padding: 0; }
+
+        .ag-stats-grid { 
+          display: grid; 
+          grid-template-columns: repeat(1, 1fr); 
+          gap: 16px; 
+          margin-bottom: 24px; 
+        }
+        @media (min-width: 640px) { .ag-stats-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1024px) { .ag-stats-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; } }
+
+        .ag-stat-card { background: white; padding: 24px; border-radius: 16px; border: 1px solid var(--outline-variant); transition: 0.3s; }
+        .ag-stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-overlay); }
+        .ag-stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .ag-stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .ag-stat-badge { font-size: 0.6rem; font-weight: 900; color: #ef4444; background: #fee2e2; padding: 4px 8px; border-radius: 6px; }
+        .ag-stat-label { font-size: 0.85rem; color: var(--on-surface-variant); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 8px; }
+        .ag-stat-value { font-size: 2.25rem; font-weight: 800; margin: 0; color: var(--on-surface); }
+        .stat-alert { border-color: #fecaca; background: #fffafb; }
+
+        .active-now { padding: 0; overflow: hidden; }
+        .active-now .card-header { padding: 20px 24px; border-bottom: 1px solid var(--outline-variant); }
+        .workload-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .workload-item { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-radius: 12px; cursor: pointer; transition: 0.2s; background: white; border: 1px solid var(--outline-variant); }
+        .workload-item:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .workload-info { display: flex; align-items: center; gap: 16px; min-width: 0; flex: 1; }
+        .user-icon { width: 40px; height: 40px; background: var(--surface-container); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary); flex-shrink: 0; }
         .workload-text { min-width: 0; flex: 1; }
-        .workload-item .name { font-weight: 700; font-size: 0.9rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .workload-item .preview { font-size: 0.8rem; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .chevron { flex-shrink: 0; }
-        
-        .empty-workload { padding: 40px 20px; text-align: center; color: var(--on-surface-variant); display: flex; flex-direction: column; align-items: center; }
-        .empty-workload p { margin-top: 12px; font-weight: 600; font-size: 14px; }
+        .workload-text .name { font-weight: 700; color: var(--on-surface); font-size: 0.95rem; margin-bottom: 2px; }
+        .workload-text .preview { font-size: 0.8rem; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Mobile Bottom Nav */
-        .mobile-bottom-nav {
-          display: flex;
-          justify-content: space-around;
-          align-items: center;
-          height: 64px;
-          background: var(--surface-container-lowest);
-          border-top: 1px solid var(--outline-variant);
-          padding-bottom: env(safe-area-inset-bottom);
-          flex-shrink: 0;
-        }
-
-        .nav-item {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 4px;
-          background: none;
-          border: none;
-          color: var(--outline);
-          font-size: 10px;
-          font-weight: 600;
-          padding: 8px;
-          flex: 1;
-        }
-
-        .nav-item.active { color: var(--primary); }
-        .nav-item.text-error { color: var(--error); }
-        
-        .icon-wrapper { position: relative; }
-        .icon-wrapper .nav-badge { top: -2px; right: -4px; border: 2px solid var(--surface-container-lowest); }
+        .empty-workload { padding: 80px 20px; text-align: center; }
+        .empty-icon-wrap { width: 80px; height: 80px; background: var(--surface-container); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: var(--outline); }
+        .empty-workload h3 { font-size: 1.25rem; font-weight: 800; color: var(--on-surface); margin-bottom: 8px; }
+        .empty-workload p { color: var(--on-surface-variant); max-width: 400px; margin: 0 auto; font-weight: 500; }
 
         .desktop-only { display: none; }
-        @media (min-width: 1024px) { .desktop-only { display: flex; } }
-        
-        .desktop-flex { display: none; }
-        @media (min-width: 768px) { .desktop-flex { display: flex; } }
-
-        .mobile-only { display: flex; }
-        @media (min-width: 1024px) { .mobile-only { display: none; } }
+        @media (min-width: 1024px) { .desktop-only { display: inline-flex; } }
       `}</style>
     </div>
   );
