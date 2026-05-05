@@ -11,7 +11,8 @@ import {
   History,
   Menu,
   X,
-  Clock
+  Clock,
+  Bell
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { logout, reset } from "../../../auth/state/authSlice";
@@ -21,6 +22,8 @@ import Conversations from "./Conversations";
 import socket from "../../../../shared/services/socket";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+import NotificationBell from "./NotificationBell";
+import Notifications from "./Notifications";
 
 export default function AgentDashboard({ user }) {
   const dispatch = useDispatch();
@@ -110,6 +113,7 @@ export default function AgentDashboard({ user }) {
   const navItems = [
     { id: 'overview', icon: LayoutDashboard, label: 'Agent Console' },
     { id: 'conversations', icon: MessageSquare, label: 'Live Inbox', badge: conversations.filter(c => c.status === 'human_needed' && !c.agent).length },
+    { id: 'notifications', icon: Bell, label: 'Notifications' },
     { id: 'history', icon: History, label: 'Session Archive' }
   ];
 
@@ -204,6 +208,8 @@ export default function AgentDashboard({ user }) {
              </div>
           </div>
         );
+      case 'notifications':
+        return <Notifications />;
       default: return (
         <div className="empty-workload">
           <div className="empty-icon-wrap">
@@ -295,6 +301,9 @@ export default function AgentDashboard({ user }) {
             <div className="ag-status-pill online">
               <span className="dot" />
               ONLINE
+            </div>
+            <div className="ag-notification-wrap">
+              <NotificationBell onViewAll={() => switchTab('notifications')} />
             </div>
             <div className="ag-profile">
                <div className="profile-text desktop-only">
@@ -476,6 +485,12 @@ export default function AgentDashboard({ user }) {
 
         .desktop-only { display: none; }
         @media (min-width: 1024px) { .desktop-only { display: inline-flex; } }
+
+        .ag-notification-wrap {
+          display: flex;
+          align-items: center;
+          margin-right: 8px;
+        }
       `}</style>
     </div>
   );
