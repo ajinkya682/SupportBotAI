@@ -62,16 +62,8 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
       <aside className={`sa-sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sa-sidebar-header">
           <div className="sa-header-main">
-            <div className="sa-logo-wrapper">
-              {business?.appearance?.companyLogo ? (
-                <img 
-                  src={business.appearance.companyLogo} 
-                  alt={business.name} 
-                  style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} 
-                />
-              ) : (
-                <Building2 size={20} color="white" />
-              )}
+            <div className="sa-logo-wrapper" style={{ background: 'transparent', width: '48px', height: '48px' }}>
+              <img src="/logo.png" alt="SupportBot AI" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
             </div>
             <div className="sa-brand-text">
               <h3>{business?.name || 'SupportBot'}</h3>

@@ -2,6 +2,7 @@ import React from "react";
 import PricingSection from "../components/PricingSection";
 import { motion } from "framer-motion";
 import { HelpCircle, ChevronDown, Sparkles } from "lucide-react";
+import Footer from "../../../../shared/ui/components/Footer";
 
 export default function Pricing() {
   const faqs = [
@@ -28,8 +29,8 @@ export default function Pricing() {
       <div className="pricing-hero">
         <div className="container text-center">
           <div className="title-tag"><Sparkles size={16} /> SIMPLE BILLING</div>
-          <h1>Ready to scale your support?</h1>
-          <p>Join 2,000+ companies automating their customer success with SupportBotAI.</p>
+          <h1 style={{textAlign:"center"}}>Ready to scale your support?</h1>
+          <p style={{textAlign:"center"}}>Join 2,000+ companies automating their customer success with SupportBotAI.</p>
         </div>
       </div>
 
@@ -123,6 +124,7 @@ export default function Pricing() {
         .title-tag { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 10px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 auto 16px; background: var(--primary-fixed); width: fit-content; padding: 4px 12px; border-radius: 20px; }
         @media (min-width: 768px) { .title-tag { font-size: 11px; margin: 0 auto 24px; } }
       `}</style>
+      <Footer />
     </div>
   );
 }

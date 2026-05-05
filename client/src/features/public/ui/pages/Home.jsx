@@ -22,21 +22,31 @@ import {
   Code,
   X
 } from "lucide-react";
+import { FaTwitter, FaLinkedin, FaGithub } from 'react-icons/fa6';
 import PricingSection from "../components/PricingSection";
 import HeroAnimation from "../components/HeroAnimation";
+import Footer from "../../../../shared/ui/components/Footer";
 import { API_URL } from "../../../../shared/services/config";
 import axios from "axios";
 
 export default function Home() {
   const [showVideo, setShowVideo] = useState(false);
-  const [videoUrl, setVideoUrl] = useState("https://drive.google.com/file/d/1pLfBH1QpokINZq0_7NW7an-lSC_kzYQy/preview");
+  const [platformConfig, setPlatformConfig] = useState({
+    heroVideoUrl: "https://drive.google.com/file/d/1pLfBH1QpokINZq0_7NW7an-lSC_kzYQy/preview",
+    twitterUrl: "https://twitter.com",
+    linkedinUrl: "https://linkedin.com",
+    githubUrl: "https://github.com"
+  });
 
   useEffect(() => {
     const fetchConfig = async () => {
       try {
         const res = await axios.get(`${API_URL}/super-admin/config`);
-        if (res.data.success && res.data.config.heroVideoUrl) {
-          setVideoUrl(res.data.config.heroVideoUrl);
+        if (res.data.success) {
+          setPlatformConfig(prev => ({
+            ...prev,
+            ...res.data.config
+          }));
         }
       } catch (err) {
         console.error("Failed to fetch public config:", err);
@@ -248,53 +258,8 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+      <Footer />
 
-      {/* Footer */}
-      <footer className="landing-footer">
-        <div className="container">
-          <div className="footer-top">
-            <div className="footer-brand">
-              <Link to="/" className="footer-logo">
-                <Bot size={32} color="var(--primary)" />
-                <span>SUPPORTBOT <span style={{ color: 'var(--primary)' }}>AI</span></span>
-              </Link>
-              <p>Revolutionizing customer support with AI that understands, learns, and resolves issues instantly.</p>
-            </div>
-            
-            <div className="footer-nav">
-              <div className="footer-col">
-                <h4>Product</h4>
-                <Link to="/product">Features</Link>
-                <Link to="/pricing">Pricing</Link>
-                <Link to="/docs">Documentation</Link>
-              </div>
-              <div className="footer-col">
-                <h4>Company</h4>
-                <Link to="/about">About Us</Link>
-                <Link to="/blog">Blog</Link>
-                <Link to="/careers">Careers</Link>
-              </div>
-              <div className="footer-col">
-                <h4>Legal</h4>
-                <Link to="/privacy">Privacy Policy</Link>
-                <Link to="/terms">Terms of Service</Link>
-                <Link to="/security">Security</Link>
-              </div>
-            </div>
-          </div>
-          
-          <div className="footer-bottom">
-            <p>© 2026 SupportBotAI Inc. All rights reserved.</p>
-            <div className="social-links">
-              <a href="#">Twitter</a>
-              <a href="#">LinkedIn</a>
-              <a href="#">GitHub</a>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* Video Modal */}
       <AnimatePresence>
         {showVideo && (
           <motion.div 
@@ -316,7 +281,7 @@ export default function Home() {
               </button>
               <div className="video-wrapper">
                 <iframe 
-                  src={videoUrl} 
+                  src={platformConfig.heroVideoUrl} 
                   width="100%" 
                   height="100%" 
                   allow="autoplay"

@@ -65,8 +65,8 @@ const SuperAdminDashboard = () => {
       <aside className={`sa-sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sa-sidebar-header">
           <div className="sa-header-main">
-            <div className="sa-logo-wrapper">
-              <ShieldAlert size={20} color="white" />
+            <div className="sa-logo-wrapper" style={{ background: 'transparent', width: '48px', height: '48px' }}>
+              <img src="/logo.png" alt="SupportBot AI" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
             </div>
             <div>
               <h3>SuperAdmin</h3>
