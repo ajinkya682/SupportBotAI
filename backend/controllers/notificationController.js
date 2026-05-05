@@ -100,9 +100,14 @@ exports.getNotificationHistory = async (req, res) => {
 // Business Owner: Get their notifications
 exports.getMyNotifications = async (req, res) => {
     try {
-        // Find business for this user
-        const business = await Business.findOne({ owner: req.user._id });
-        if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
+        // Find business for this user (handle agents)
+        const ownerId = req.user.role === 'agent' ? req.user.ownerId : req.user._id;
+        const business = await Business.findOne({ owner: ownerId });
+        
+        if (!business) {
+            console.warn(`[getMyNotifications] No business found for ownerId: ${ownerId}`);
+            return res.status(404).json({ success: false, message: 'Business not found' });
+        }
 
         // Get targeted and broadcast notifications
         const notifications = await Notification.find({
@@ -130,7 +135,8 @@ exports.getMyNotifications = async (req, res) => {
 // Business Owner: Mark one as read
 exports.markAsRead = async (req, res) => {
     try {
-        const business = await Business.findOne({ owner: req.user._id });
+        const ownerId = req.user.role === 'agent' ? req.user.ownerId : req.user._id;
+        const business = await Business.findOne({ owner: ownerId });
         if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
 
         const notification = await Notification.findById(req.params.id);
@@ -151,7 +157,8 @@ exports.markAsRead = async (req, res) => {
 // Business Owner: Mark all as read
 exports.markAllAsRead = async (req, res) => {
     try {
-        const business = await Business.findOne({ owner: req.user._id });
+        const ownerId = req.user.role === 'agent' ? req.user.ownerId : req.user._id;
+        const business = await Business.findOne({ owner: ownerId });
         if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
 
         const notifications = await Notification.find({
