@@ -28,6 +28,11 @@
       justify-content: center;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       z-index: 999998;
+      animation: sbFloat 3s ease-in-out infinite;
+    }
+    @keyframes sbFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
     }
     #supportbot-bubble:hover {
       transform: scale(1.1) translateY(-4px);
@@ -103,6 +108,28 @@
 
   // ── LOGIC ──
   let isOpen = false;
+
+  async function applyBranding() {
+    try {
+      const res = await fetch(`${serverUrl}/api/chat/config/${apiKey}`);
+      const data = await res.json();
+      if (data && data.appearance) {
+        const theme = data.appearance.themeColor || '#6366f1';
+        bubble.style.background = theme;
+        bubble.style.boxShadow = `0 8px 24px ${theme}66`;
+        
+        const avatar = data.appearance.botAvatar || data.appearance.companyLogo;
+        if (avatar) {
+          bubble.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;border:2px solid #fff;box-shadow:inset 0 0 10px rgba(0,0,0,0.1);" />`;
+        }
+      }
+    } catch (e) {
+      console.error('SupportBotAI: Failed to load branding', e);
+    }
+  }
+
+  applyBranding();
+
   bubble.addEventListener('click', () => {
     isOpen = !isOpen;
     if (isOpen) {
@@ -115,10 +142,16 @@
 
   // Listen for close message from iframe
   window.addEventListener('message', (event) => {
-    if (event.data === 'close-supportbot') {
+    const data = event.data;
+    const isCloseAction = data === 'close-chat' || 
+                         data === 'close-supportbot' || 
+                         (data && typeof data === 'object' && (data.type === 'close-chat' || data.type === 'close-supportbot'));
+    
+    if (isCloseAction) {
       isOpen = false;
       container.classList.remove('visible');
       bubble.classList.remove('hidden');
+      bubble.style.display = 'flex'; // Ensure bubble is visible
     }
   });
 })();
