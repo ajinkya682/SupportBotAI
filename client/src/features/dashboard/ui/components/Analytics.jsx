@@ -17,9 +17,11 @@ import {
   Lock
 } from "lucide-react";
 import { motion } from 'framer-motion';
+import ProGate from '../../../../shared/components/ProGate';
+import usePlan from '../../../../shared/hooks/usePlan';
 
 export default function Analytics({ conversations = [], business, onUpgrade }) {
-  const isFree = business?.plan === 'free';
+  const { isFree, goUpgrade } = usePlan();
 
   const data = [
     { name: 'Mon', conversations: 45, resolved: 38 },
@@ -56,126 +58,114 @@ export default function Analytics({ conversations = [], business, onUpgrade }) {
             <Calendar size={14} />
             <span>7 Days</span>
           </div>
-          <button className="btn btn-secondary btn-sm"><Download size={14} /> <span className="desktop-only">Export</span></button>
-        </div>
-      </div>
-
-      <div className="metrics-grid">
-        {metrics.map((m, i) => (
-          <motion.div 
-            key={i} 
-            className="metric-card"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={isFree ? goUpgrade : undefined}
+            title={isFree ? 'Export is a Pro feature' : 'Export data'}
+            style={{ opacity: isFree ? 0.5 : 1 }}
           >
-            <div className="metric-icon" style={{ background: `${m.color}15`, color: m.color }}>
-              <m.icon size={18} />
-            </div>
-            <div className="metric-info">
-              <span className="metric-label">{m.label}</span>
-              <div className="metric-value-row">
-                <span className="metric-value">{m.value}</span>
-                <span className={`metric-trend ${m.trend.startsWith('+') ? 'up' : 'down'}`}>
-                  {m.trend.startsWith('+') ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                  {m.trend}
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        ))}
+            <Lock size={14} style={{ display: isFree ? 'inline' : 'none' }} />
+            <Download size={14} style={{ display: isFree ? 'none' : 'inline' }} />
+            <span className="desktop-only">Export</span>
+          </button>
+        </div>
       </div>
 
-      <div className="charts-grid">
-        <div className="card main-chart-card">
-          <div className="card-header">
-            <h3>Conversation Volume</h3>
-            <div className="chart-legend">
-              <div className="legend-item"><span style={{ background: 'var(--primary)' }}></span> Total</div>
-              <div className="legend-item"><span style={{ background: '#10b981' }}></span> Resolved</div>
-            </div>
-          </div>
-          <div className="chart-wrapper">
-            <ResponsiveContainer width="100%" height="100%" minHeight={260}>
-              <AreaChart data={data} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--outline-variant)" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--on-surface-variant)', fontSize: 10}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: 'var(--on-surface-variant)', fontSize: 10}} />
-                <Tooltip 
-                  contentStyle={{ background: 'var(--surface-container-lowest)', border: '1px solid var(--outline-variant)', borderRadius: '8px', boxShadow: 'var(--shadow-2)', fontSize: '12px' }}
-                  itemStyle={{ fontWeight: 600 }}
-                />
-                <Area type="monotone" dataKey="conversations" stroke="var(--primary)" strokeWidth={2} fillOpacity={1} fill="url(#colorTotal)" />
-                <Area type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={2} fill="transparent" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="card side-chart-card">
-          <h3>Resolution Breakdown</h3>
-          <div className="chart-wrapper" style={{ height: '200px' }}>
-            <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={70}
-                  paddingAngle={6}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="pie-legend">
-            {pieData.map((entry, index) => (
-              <div key={index} className="pie-legend-item">
-                <div className="legend-label-group">
-                  <span className="dot" style={{ background: entry.color }}></span>
-                  <span className="label">{entry.name}</span>
+      <ProGate
+        feature="Analytics & Performance"
+        description="Unlock full performance insights with Pro. See what's working and improve your support."
+      >
+        <div className="metrics-grid">
+          {metrics.map((m, i) => (
+            <motion.div 
+              key={i} 
+              className="metric-card"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+            >
+              <div className="metric-icon" style={{ background: `${m.color}15`, color: m.color }}>
+                <m.icon size={18} />
+              </div>
+              <div className="metric-info">
+                <span className="metric-label">{m.label}</span>
+                <div className="metric-value-row">
+                  <span className="metric-value">{m.value}</span>
+                  <span className={`metric-trend ${m.trend.startsWith('+') ? 'up' : 'down'}`}>
+                    {m.trend.startsWith('+') ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                    {m.trend}
+                  </span>
                 </div>
-                <span className="value">{entry.value}%</span>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="advanced-insights">
-        <div className="section-title">
-          <Sparkles size={18} style={{ color: 'var(--primary)' }} />
-          <h3>AI Intelligence Insights</h3>
+            </motion.div>
+          ))}
         </div>
 
-        {isFree ? (
-          <div className="card pro-gated-card">
-            <div className="lock-overlay">
-              <div className="lock-icon-wrapper">
-                <Lock size={24} />
+        <div className="charts-grid">
+          <div className="card main-chart-card">
+            <div className="card-header">
+              <h3>Conversation Volume</h3>
+              <div className="chart-legend">
+                <div className="legend-item"><span style={{ background: 'var(--primary)' }}></span> Total</div>
+                <div className="legend-item"><span style={{ background: '#10b981' }}></span> Resolved</div>
               </div>
-              <h3>Advanced Analytics</h3>
-              <p>Unlock emotion tracking and ROI reporting.</p>
-              <button className="btn btn-primary btn-sm" onClick={onUpgrade}>Upgrade to Pro</button>
             </div>
-            <div className="blurred-content">
-              <div className="mock-insight"></div>
-              <div className="mock-insight"></div>
+            <div className="chart-wrapper">
+              <ResponsiveContainer width="100%" height="100%" minHeight={260}>
+                <AreaChart data={data} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--outline-variant)" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'var(--on-surface-variant)', fontSize: 10}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: 'var(--on-surface-variant)', fontSize: 10}} />
+                  <Tooltip 
+                    contentStyle={{ background: 'var(--surface-container-lowest)', border: '1px solid var(--outline-variant)', borderRadius: '8px', boxShadow: 'var(--shadow-2)', fontSize: '12px' }}
+                    itemStyle={{ fontWeight: 600 }}
+                  />
+                  <Area type="monotone" dataKey="conversations" stroke="var(--primary)" strokeWidth={2} fillOpacity={1} fill="url(#colorTotal)" />
+                  <Area type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={2} fill="transparent" />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </div>
-        ) : (
+
+          <div className="card side-chart-card">
+            <h3>Resolution Breakdown</h3>
+            <div className="chart-wrapper" style={{ height: '200px' }}>
+              <ResponsiveContainer width="100%" height="100%" minHeight={200}>
+                <PieChart>
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={6} dataKey="value">
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="pie-legend">
+              {pieData.map((entry, index) => (
+                <div key={index} className="pie-legend-item">
+                  <div className="legend-label-group">
+                    <span className="dot" style={{ background: entry.color }}></span>
+                    <span className="label">{entry.name}</span>
+                  </div>
+                  <span className="value">{entry.value}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="advanced-insights">
+          <div className="section-title">
+            <Sparkles size={18} style={{ color: 'var(--primary)' }} />
+            <h3>AI Intelligence Insights</h3>
+          </div>
           <div className="insights-grid">
             <div className="card insight-card">
               <div className="insight-header">
@@ -200,8 +190,9 @@ export default function Analytics({ conversations = [], business, onUpgrade }) {
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      </ProGate>
+
 
       <style>{`
         .analytics-container { padding-bottom: 40px; }

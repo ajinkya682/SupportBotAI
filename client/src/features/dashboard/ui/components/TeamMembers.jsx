@@ -14,6 +14,7 @@ import axios from "axios";
 import { API_URL } from "../../../../shared/services/config";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../../../shared/ui/components/ConfirmModal";
+import ProGate from "../../../../shared/components/ProGate";
 
 export default function TeamMembers() {
   const [agents, setAgents] = useState([]);
@@ -89,6 +90,10 @@ export default function TeamMembers() {
   );
 
   return (
+    <ProGate
+      feature="Team Members"
+      description="Add team members and manage support agents with Pro. Upgrade to unlock your full support team."
+    >
     <div className="animate-fade-in team-container">
       <div className="team-header">
         <div className="page-title">
@@ -421,5 +426,6 @@ export default function TeamMembers() {
         @media (min-width: 768px) { .mobile-only { display: none; } }
       `}</style>
     </div>
+    </ProGate>
   );
 }

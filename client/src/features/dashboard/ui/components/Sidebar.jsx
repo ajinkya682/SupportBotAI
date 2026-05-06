@@ -10,16 +10,21 @@ import {
   Users,
   Palette,
   X,
-  Building2
+  Building2,
+  Lock
 } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { logout, reset } from "../../../auth/state/authSlice";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, isOpen, onClose }) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const isFree = business?.plan === 'free';
+
+  // Items that require Pro plan
+  const proItems = ['team', 'analytics'];
 
   const menuItems = [
     { id: 'overview', label: 'Control Center', icon: LayoutDashboard },
@@ -79,6 +84,7 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+            const isProLocked = isFree && proItems.includes(item.id);
             return (
               <button
                 key={item.id}
@@ -86,7 +92,23 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
                 onClick={() => handleTabClick(item.id)}
               >
                 <Icon size={18} className="sa-icon" />
-                <span>{item.label}</span>
+                <span style={{ flex: 1 }}>{item.label}</span>
+                {isProLocked && (
+                  <span style={{
+                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                    color: 'white',
+                    fontSize: '0.58rem',
+                    fontWeight: 800,
+                    padding: '2px 6px',
+                    borderRadius: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    letterSpacing: '0.02em',
+                  }}>
+                    <Lock size={8} /> PRO
+                  </span>
+                )}
                 {isActive && <motion.div layoutId="active-pill" className="active-pill desktop-only" />}
               </button>
             );
@@ -101,7 +123,7 @@ export default function Sidebar({ activeTab, setActiveTab, onUpgrade, business, 
                 <span>PRO UPGRADE</span>
               </div>
               <p>Scale your intelligence with advanced URL scanning and custom branding.</p>
-              <button className="btn-upgrade-sa" onClick={onUpgrade}>
+              <button className="btn-upgrade-sa" onClick={() => navigate('/dashboard/upgrade')}>
                 Upgrade Now
               </button>
             </div>

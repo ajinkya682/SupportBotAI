@@ -93,9 +93,25 @@ exports.getBusiness = async (req, res, next) => {
 exports.updateBusiness = async (req, res) => {
     const { name, supportEmail, knowledge, faqs, appearance } = req.body;
     try {
+        // Find current business to check if botName has been customized
+        const current = await Business.findOne({ owner: req.user._id });
+        
+        // Build the appearance update
+        let appearanceUpdate = appearance || {};
+        
+        // Auto-sync botName: if botName matches old business name (not customized),
+        // update it to match the new business name
+        if (name && current) {
+            const currentBotName = current.appearance?.botName;
+            const wasDefault = !currentBotName || currentBotName === current.name;
+            if (wasDefault) {
+                appearanceUpdate = { ...appearanceUpdate, botName: name };
+            }
+        }
+
         const business = await Business.findOneAndUpdate(
             { owner: req.user._id },
-            { name, supportEmail, knowledge, faqs, appearance },
+            { name, supportEmail, knowledge, faqs, appearance: appearanceUpdate },
             { new: true }
         );
         if (business) cache.del(business.apiKey);
