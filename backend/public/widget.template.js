@@ -1,8 +1,15 @@
 (function() {
   // ── CONFIGURATION ──
-  const script = document.currentScript;
-  const apiKey = script.getAttribute('data-api-key');
-  const clientUrl = script.getAttribute('data-client-url') || 'https://supportbotai.vercel.app';
+  const script = document.currentScript || (function() {
+    const scripts = document.getElementsByTagName('script');
+    for (let s of scripts) {
+      if (s.getAttribute('data-api-key')) return s;
+    }
+    return null;
+  })();
+  
+  const apiKey = script ? script.getAttribute('data-api-key') : null;
+  const clientUrl = script ? (script.getAttribute('data-client-url') || 'https://supportbotai.vercel.app') : 'https://supportbotai.vercel.app';
   const serverUrl = '__SERVER_BASE_URL__';
 
   if (!apiKey) {
@@ -56,18 +63,16 @@
       box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
       z-index: 999999;
       overflow: hidden;
-      visibility: hidden;
+      display: none;
       opacity: 0;
       transform: translateY(20px) scale(0.95);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       border: 1px solid rgba(0,0,0,0.05);
-      pointer-events: none;
     }
-    #supportbot-container.visible {
-      visibility: visible;
+    #supportbot-container.sb-visible {
+      display: block;
       opacity: 1;
       transform: translateY(0) scale(1);
-      pointer-events: auto;
     }
     #supportbot-iframe {
       width: 100%;
@@ -84,9 +89,8 @@
         max-height: 100vh;
         max-width: 100vw;
       }
-      #supportbot-container.visible {
-        visibility: visible;
-        opacity: 1;
+      #supportbot-container.sb-visible {
+        display: block;
       }
       #supportbot-bubble.hidden {
         display: none;
@@ -114,7 +118,8 @@
 
   async function applyBranding() {
     try {
-      const res = await fetch(`${serverUrl}/api/chat/config/${apiKey}`);
+      const finalServerUrl = serverUrl.includes('__SERVER_BASE_URL__') ? clientUrl.replace('vercel.app', 'onrender.com') : serverUrl;
+      const res = await fetch(`${finalServerUrl}/api/chat/config/${apiKey}`);
       const data = await res.json();
       if (data && data.appearance) {
         const theme = data.appearance.themeColor || '#6366f1';
@@ -137,10 +142,10 @@
   bubble.addEventListener('click', () => {
     isOpen = !isOpen;
     if (isOpen) {
-      container.classList.add('visible');
+      container.classList.add('sb-visible');
       if (window.innerWidth <= 480) bubble.classList.add('hidden');
     } else {
-      container.classList.remove('visible');
+      container.classList.remove('sb-visible');
     }
   });
 
@@ -149,17 +154,13 @@
     const data = event.data;
     const isCloseAction = data === 'close-chat' || 
                          data === 'close-supportbot' || 
-                         (data && data.type === 'close-chat') || 
-                         (data && data.type === 'close-supportbot');
+                         (data && typeof data === 'object' && (data.type === 'close-chat' || data.type === 'close-supportbot'));
     
     if (isCloseAction) {
-      console.log('SupportBotAI: Closing widget');
       isOpen = false;
-      container.classList.remove('visible');
+      container.classList.remove('sb-visible');
       bubble.classList.remove('hidden');
       bubble.style.display = 'flex';
-      bubble.style.visibility = 'visible';
-      bubble.style.opacity = '1';
     }
   });
 })();
