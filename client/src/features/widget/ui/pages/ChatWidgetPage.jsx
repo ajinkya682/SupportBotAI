@@ -464,8 +464,8 @@ export default function ChatWidgetPage() {
           <button className="cw-icon-btn" onClick={()=>setIsMuted(m=>!m)} title={isMuted?'Unmute':'Mute'}>
             {isMuted ? <VolumeX size={14} color="#94a3b8"/> : <Volume2 size={14} color="#94a3b8"/>}
           </button>
-          <button className="cw-icon-btn" onClick={()=>window.parent.postMessage({ type: "close-chat" },"*")}>
-            <X size={15} color="#94a3b8"/>
+          <button className="cw-icon-btn" onClick={()=>window.parent.postMessage({ type: "close-chat" },"*")} title="Close Chat">
+            <X size={18} color="#94a3b8"/>
           </button>
         </div>
       </div>

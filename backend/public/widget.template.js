@@ -120,7 +120,8 @@
         
         const avatar = data.appearance.botAvatar || data.appearance.companyLogo;
         if (avatar) {
-          bubble.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;border:2px solid #fff;box-shadow:inset 0 0 10px rgba(0,0,0,0.1);" />`;
+          const defaultIcon = '<svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 1.821.487 3.53 1.338 5L2.1 21.9l4.899-1.239C8.47 21.513 10.179 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18c-1.477 0-2.854-.396-4.042-1.085l-2.894.732.733-2.893A7.953 7.953 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/></svg>';
+          bubble.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;border:2px solid #fff;box-shadow:inset 0 0 10px rgba(0,0,0,0.1);" onerror="this.outerHTML='${defaultIcon}'" />`;
         }
       }
     } catch (e) {
