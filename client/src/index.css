@@ -82,6 +82,7 @@
 }
 
 html {
+  height: -webkit-fill-available;
   scroll-behavior: smooth;
   -webkit-tap-highlight-color: transparent;
 }
@@ -93,7 +94,16 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
-  overflow-x: hidden; /* Rule 2: Prevent horizontal page scroll */
+  overflow-x: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 a, button, .btn, .nav-link, .drawer-link, .login-link {

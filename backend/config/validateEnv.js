@@ -6,6 +6,8 @@ const REQUIRED_VARS = [
   { key: 'AI_PROVIDER', hint: 'Set AI_PROVIDER to: mistral' },
   { key: 'FRONTEND_URL', hint: 'Set FRONTEND_URL to the URL of your React frontend.' },
   { key: 'SERVER_BASE_URL', hint: 'Set SERVER_BASE_URL to the full URL of this backend server.' },
+  { key: 'VAPID_PUBLIC_KEY', hint: 'Generate using: npx web-push generate-vapid-keys' },
+  { key: 'VAPID_PRIVATE_KEY', hint: 'Generate using: npx web-push generate-vapid-keys' },
 ];
 
 const validateEnv = () => {

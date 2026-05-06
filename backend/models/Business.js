@@ -23,6 +23,7 @@ const BusinessSchema = new mongoose.Schema({
         placeholderText: { type: String, default: 'Type your message...' }
     },
     plan: { type: String, enum: ['free', 'pro'], default: 'free' },
+    planExpiryDate: { type: Date },
     conversationLimit: { type: Number, default: 100 },
     conversationCount: { type: Number, default: 0 },
     allowedDomains: { 

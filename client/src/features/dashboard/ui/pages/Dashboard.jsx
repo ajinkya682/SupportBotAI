@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { getBusiness, updateBusiness } from "../../state/businessSlice";
 import { getConversations } from "../../../conversations/state/conversationSlice";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, Sparkles, Loader2, Bell, ChevronRight, Menu } from "lucide-react";
+import { X, Check, Sparkles, Loader2, Bell, ChevronRight, Menu, Volume2, VolumeX } from "lucide-react";
 import axios from "axios";
 import socket from "../../../../shared/services/socket";
 import toast from "react-hot-toast";
@@ -21,6 +21,9 @@ import AgentDashboard from "../components/AgentDashboard";
 import NotificationBell from "../components/NotificationBell";
 import SystemSettings from "../components/SystemSettings";
 import Notifications from "../components/Notifications";
+import { usePushNotifications } from "../../../../shared/hooks/usePushNotifications";
+import useSound from "../../../../shared/services/useSound";
+import PushPrompt from "../../../../shared/ui/components/PushPrompt";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
@@ -38,6 +41,9 @@ export default function Dashboard() {
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const { isPromptVisible, subscribeToPush, handleLater } = usePushNotifications(user);
+  const { isMuted, toggleMute, playSound } = useSound();
 
   const loadAgents = async () => {
     if (!user?.token) return;
@@ -74,6 +80,7 @@ export default function Dashboard() {
     socket.emit("join_room", { ownerId: user._id, role: "owner" });
 
     socket.on("new_ticket", (newConv) => {
+      playSound('new_ticket');
       toast.success(
         `🎫 New support ticket from ${newConv.userName || "Anonymous"}`,
       );
@@ -86,6 +93,10 @@ export default function Dashboard() {
     });
 
     socket.on("new_message", (data) => {
+      // Only play sound if it's from a user (customer)
+      if (data.senderType === 'user') {
+        playSound('pop');
+      }
       setConversations((prev) =>
         prev.map((conv) => {
           if (conv._id !== data.conversationId) return conv;
@@ -372,6 +383,9 @@ export default function Dashboard() {
                 />
               )}
             </div>
+            <button className="mute-btn-header" onClick={toggleMute} title={isMuted ? "Unmute" : "Mute"}>
+              {isMuted ? <VolumeX size={18} color="#ef4444" /> : <Volume2 size={18} color="var(--primary)" />}
+            </button>
             <div className="sa-admin-badge">
               {business?.plan?.toUpperCase() || 'STARTER'}
             </div>
@@ -401,6 +415,12 @@ export default function Dashboard() {
           </AnimatePresence>
         </main>
       </div>
+
+      <PushPrompt 
+        isVisible={isPromptVisible}
+        onEnable={subscribeToPush}
+        onLater={handleLater}
+      />
 
       <AnimatePresence>
         {showUpgradeModal && (
@@ -474,11 +494,11 @@ export default function Dashboard() {
       </AnimatePresence>
 
       <style>{`
-        .dashboard-root { display: flex; height: 100vh; background: var(--surface); position: relative; overflow: hidden; }
-        .sa-layout { background: var(--surface); display: flex; flex-direction: column; }
+        .dashboard-root { display: flex; height: 100vh; height: 100dvh; background: var(--surface); position: relative; overflow: hidden; width: 100%; }
+        .sa-layout { background: var(--surface); display: flex; flex-direction: column; width: 100%; min-height: 0; }
         @media (min-width: 1024px) { .sa-layout { flex-direction: row; } }
 
-        .sa-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        .sa-main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; overflow: hidden; }
         
         .sa-top-bar { 
           height: 64px; 
@@ -507,6 +527,8 @@ export default function Dashboard() {
         @media (min-width: 768px) { .sa-top-actions { gap: 24px; } }
 
         .notification-wrap { display: flex; align-items: center; }
+        .mute-btn-header { background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 8px; transition: 0.2s; }
+        .mute-btn-header:hover { background: var(--primary-low); }
         .sa-admin-badge { font-size: 0.6rem; font-weight: 900; background: var(--inverse-surface); color: white; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.05em; }
         
         .header-user { display: flex; align-items: center; gap: 12px; }

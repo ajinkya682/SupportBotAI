@@ -16,6 +16,8 @@ const { protect } = require('../middleware/authMiddleware');
 router.post('/add', protect, addAgent);
 router.get('/list', protect, listAgents);
 router.delete('/:id', protect, deleteAgent);
+router.post('/notify/:id', protect, require('../controllers/agentController').notifyAgent);
+router.post('/notify-all', protect, require('../controllers/agentController').notifyAllAgents);
 
 // Agent Routes
 router.put('/update-profile', protect, updateProfile);

@@ -40,6 +40,7 @@ const ConversationSchema = new mongoose.Schema({
     userEmail: { type: String },
     userName: { type: String, default: 'Anonymous' },
     title: { type: String, default: 'New Conversation' },
+    origin: { type: String }, // The URL of the site where chat started
     metadata: { type: Map, of: String },
     routingStatus: { 
         type: String, 

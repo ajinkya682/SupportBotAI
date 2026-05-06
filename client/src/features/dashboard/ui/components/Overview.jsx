@@ -97,12 +97,34 @@ export default function Overview({ business, conversations = [], agents = [], se
                   {chat.messages[chat.messages.length - 1]?.content}
                 </div>
                 <div className="session-footer">
-                  <span className="chip chip-success" style={{ fontSize: '10px' }}>Active</span>
+                  <div className="sf-left">
+                    <span className="chip chip-success" style={{ fontSize: '10px' }}>Active</span>
+                    {chat.agent && (
+                      <div className="session-agent-tag">
+                        <div className="sat-avatar">
+                          {chat.agent.profilePhoto ? <img src={chat.agent.profilePhoto} alt="" /> : chat.agent.displayName?.charAt(0)}
+                        </div>
+                        <span>{chat.agent.displayName || chat.agent.name}</span>
+                      </div>
+                    )}
+                  </div>
                   <span className="session-time">{new Date(chat.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               </motion.div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* No Agents Online Banner */}
+      {agents.length > 0 && agents.filter(a => a.status === 'online' || a.status === 'in_conversation').length === 0 && (
+        <div className="no-agents-banner animate-fade-in">
+          <div className="nab-icon">🔴</div>
+          <div className="nab-content">
+             <h4>All Support Agents are Offline</h4>
+             <p>New tickets will sit in your unassigned queue until an agent comes online.</p>
+          </div>
+          <button className="nab-btn" onClick={() => setActiveTab('team')}>Manage Team</button>
         </div>
       )}
 
@@ -433,6 +455,19 @@ export default function Overview({ business, conversations = [], agents = [], se
         .agent-name { font-weight: 700; font-size: 0.9rem; color: var(--on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .agent-role { font-size: 0.75rem; color: var(--on-surface-variant); margin-top: 2px; }
         .agent-badge { font-size: 0.65rem; font-weight: 800; padding: 3px 10px; border-radius: 20px; white-space: nowrap; text-transform: uppercase; }
+
+        .no-agents-banner { display: flex; align-items: center; gap: 20px; background: #fff5f5; border: 1.5px solid #feb2b2; border-radius: 16px; padding: 20px 24px; margin-bottom: 32px; }
+        .nab-icon { font-size: 1.5rem; }
+        .nab-content { flex: 1; }
+        .nab-content h4 { margin: 0 0 4px; font-weight: 800; color: #9b2c2c; font-size: 1rem; }
+        .nab-content p { margin: 0; font-size: 0.88rem; color: #c53030; font-weight: 500; }
+        .nab-btn { background: #c53030; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .nab-btn:hover { background: #9b2c2c; }
+
+        .sf-left { display: flex; align-items: center; gap: 8px; }
+        .session-agent-tag { display: flex; align-items: center; gap: 6px; background: #f0fdf4; border: 1px solid #d1fae5; padding: 2px 8px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; color: #065f46; }
+        .sat-avatar { width: 14px; height: 14px; border-radius: 50%; overflow: hidden; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; }
+        .sat-avatar img { width: 100%; height: 100%; object-fit: cover; }
       `}</style>
     </div>
   );

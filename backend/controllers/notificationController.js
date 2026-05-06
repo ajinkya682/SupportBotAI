@@ -180,3 +180,90 @@ exports.markAllAsRead = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
+
+// ── PUSH NOTIFICATIONS ────────────────────────────────────────────────────────
+
+const PushSubscription = require('../models/PushSubscription');
+const User = require('../models/User');
+
+exports.getVapidPublicKey = (req, res) => {
+    res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+};
+
+exports.subscribe = async (req, res) => {
+    try {
+        const { subscription, browser, deviceType, sessionId } = req.body;
+        const userId = req.user ? req.user._id : null;
+
+        // If it's a guest session, ensure sessionId is provided
+        if (!userId && !sessionId) {
+            return res.status(400).json({ success: false, message: 'UserId or SessionId required' });
+        }
+
+        const query = userId 
+            ? { userId, 'subscription.endpoint': subscription.endpoint }
+            : { sessionId, 'subscription.endpoint': subscription.endpoint };
+
+        const existing = await PushSubscription.findOne(query);
+
+        if (existing) {
+            existing.isActive = true;
+            existing.lastActiveAt = Date.now();
+            await existing.save();
+        } else {
+            await PushSubscription.create({
+                userId,
+                sessionId,
+                userRole: req.user ? req.user.role : 'guest',
+                subscription,
+                browser,
+                deviceType
+            });
+        }
+
+        res.status(201).json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.unsubscribe = async (req, res) => {
+    try {
+        const { endpoint } = req.body;
+        await PushSubscription.findOneAndUpdate(
+            { 'subscription.endpoint': endpoint },
+            { isActive: false }
+        );
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.updatePreferences = async (req, res) => {
+    try {
+        const { preferences } = req.body;
+        await User.findByIdAndUpdate(req.user._id, {
+            notificationPreferences: preferences
+        });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.testPush = async (req, res) => {
+    try {
+        const pushService = require('../utils/pushService');
+        await pushService.sendNotification(req.user._id, {
+            type: 'team',
+            title: '🚀 SupportBotAI Push Active',
+            body: 'Congratulations! Your device is now correctly configured to receive real-time alerts.',
+            sound: 'team',
+            data: { url: '/dashboard' }
+        });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
