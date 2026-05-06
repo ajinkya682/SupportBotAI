@@ -147,6 +147,13 @@ export default function Conversations({
     }
   };
 
+  const handleReplyTyping = () => {
+    if (!socket || !selectedConv) return;
+    const ownerId = user.role === "owner" ? user._id : user.ownerId;
+    const agentName = user.role === "owner" ? `Admin (${user.name})` : user.displayName || user.name;
+    socket.emit("typing", { conversationId: selectedConv._id, agentName, ownerId });
+  };
+
   const handleSendReply = async (e) => {
     if (e) e.preventDefault();
     if (!replyText.trim() || isSending || !selectedConv || !user) return;
@@ -377,7 +384,7 @@ export default function Conversations({
                     <input
                       placeholder={!canSend ? "Access restricted..." : "Type reply..."}
                       value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
+                      onChange={(e) => { setReplyText(e.target.value); handleReplyTyping(); }}
                       disabled={!canSend}
                     />
                     <button type="submit" className="btn btn-primary send-btn" disabled={!replyText.trim() || isSending || !canSend}>
