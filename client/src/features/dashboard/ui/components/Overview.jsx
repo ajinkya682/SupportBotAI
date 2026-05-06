@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function Overview({ business, conversations = [], setActiveTab, setSelectedConversationId, onUpgrade }) {
+export default function Overview({ business, conversations = [], agents = [], setActiveTab, setSelectedConversationId, onUpgrade }) {
   if (!conversations) return <div className="loading-state">Synchronizing operational data...</div>;
 
   const stats = [
@@ -58,8 +58,25 @@ export default function Overview({ business, conversations = [], setActiveTab, s
     return (now - lastUpdate) < 1 * 60 * 1000;
   });
 
+  const holdingTickets = conversations.filter(
+    c => c.routingStatus === 'holding' || (c.status === 'human_needed' && !c.assignedAgentId && !c.agent)
+  );
+
   return (
     <div className="animate-fade-in">
+      {/* Unassigned Tickets Alert */}
+      {holdingTickets.length > 0 && (
+        <div className="unassigned-alert section-spacing">
+          <div className="ua-left">
+            <div className="ua-icon">⚠️</div>
+            <div>
+              <div className="ua-title">{holdingTickets.length} Unassigned Ticket{holdingTickets.length > 1 ? 's' : ''}</div>
+              <div className="ua-sub">No agent was available for auto-assignment. Assign manually.</div>
+            </div>
+          </div>
+          <button className="btn btn-primary btn-sm" onClick={() => setActiveTab('conversations')}>View All</button>
+        </div>
+      )}
       {/* Live Operational Status */}
       {activeChats.length > 0 && (
         <div className="section-spacing">
@@ -220,6 +237,46 @@ export default function Overview({ business, conversations = [], setActiveTab, s
         </div>
       </div>
 
+      {/* Agent Status Grid */}
+      {agents.length > 0 && (
+        <div className="section-spacing">
+          <div className="section-header-row">
+            <h3 className="section-title">Support Team</h3>
+            <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('team')}>Manage Team</button>
+          </div>
+          <div className="agent-grid">
+            {agents.map(agent => {
+              const statusLabel = agent.status === 'in_conversation' ? 'Busy' :
+                agent.status === 'online' ? 'Online' :
+                agent.status === 'away' ? 'Away' : 'Offline';
+              const statusColor = agent.status === 'online' ? '#10b981' :
+                agent.status === 'in_conversation' ? '#f59e0b' :
+                agent.status === 'away' ? '#f59e0b' : '#94a3b8';
+              return (
+                <div key={agent._id} className="agent-status-card">
+                  <div className="agent-avatar-wrap">
+                    {agent.profilePhoto
+                      ? <img src={agent.profilePhoto} alt={agent.displayName} className="agent-photo" />
+                      : <div className="agent-initials" style={{background: `${statusColor}22`, color: statusColor}}>
+                          {(agent.displayName || agent.name || 'A').charAt(0).toUpperCase()}
+                        </div>
+                    }
+                    <span className="agent-status-dot" style={{background: statusColor}} />
+                  </div>
+                  <div className="agent-info">
+                    <div className="agent-name">{agent.displayName || agent.name}</div>
+                    <div className="agent-role">{agent.roleTitle || 'Support Agent'}</div>
+                  </div>
+                  <span className="agent-badge" style={{color: statusColor, background: `${statusColor}15`, border: `1px solid ${statusColor}33`}}>
+                    {statusLabel}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <style>{`
         .live-status-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
         .live-pulse { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 2s infinite; }
@@ -352,6 +409,30 @@ export default function Overview({ business, conversations = [], setActiveTab, s
 
         .action-button { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; border: 1px solid var(--outline-variant); background: white; color: var(--on-surface); font-weight: 600; font-size: 13px; cursor: pointer; transition: var(--transition-fast); text-align: left; width: 100%; min-height: 44px; }
         .action-button:hover { border-color: var(--primary); background: var(--surface-container-low); color: var(--primary); }
+
+        .unassigned-alert { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 16px; padding: 16px 20px; }
+        .ua-left { display: flex; align-items: center; gap: 14px; }
+        .ua-icon { font-size: 1.5rem; }
+        .ua-title { font-weight: 700; color: #c2410c; font-size: 0.95rem; }
+        .ua-sub { font-size: 0.78rem; color: #9a3412; margin-top: 2px; }
+
+        .section-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .section-title { font-size: 1rem; font-weight: 700; color: var(--on-surface); }
+
+        .agent-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media (min-width: 640px) { .agent-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1024px) { .agent-grid { grid-template-columns: repeat(3, 1fr); } }
+
+        .agent-status-card { display: flex; align-items: center; gap: 14px; background: white; border: 1px solid var(--outline-variant); border-radius: 14px; padding: 14px 16px; transition: 0.2s; }
+        .agent-status-card:hover { box-shadow: var(--shadow-raised); transform: translateY(-2px); }
+        .agent-avatar-wrap { position: relative; flex-shrink: 0; }
+        .agent-photo { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--outline-variant); }
+        .agent-initials { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; }
+        .agent-status-dot { position: absolute; bottom: 1px; right: 1px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; }
+        .agent-info { flex: 1; min-width: 0; }
+        .agent-name { font-weight: 700; font-size: 0.9rem; color: var(--on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .agent-role { font-size: 0.75rem; color: var(--on-surface-variant); margin-top: 2px; }
+        .agent-badge { font-size: 0.65rem; font-weight: 800; padding: 3px 10px; border-radius: 20px; white-space: nowrap; text-transform: uppercase; }
       `}</style>
     </div>
   );

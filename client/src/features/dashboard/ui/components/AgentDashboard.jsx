@@ -24,6 +24,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import NotificationBell from "./NotificationBell";
 import Notifications from "./Notifications";
+import AgentProfileSetup from "./AgentProfileSetup";
 
 export default function AgentDashboard({ user }) {
   const dispatch = useDispatch();
@@ -31,6 +32,15 @@ export default function AgentDashboard({ user }) {
   const [conversations, setConversations] = useState([]);
   const [business, setBusiness] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const profileDoneKey = `profile_setup_done_${user?._id}`;
+  const [showProfileSetup, setShowProfileSetup] = useState(
+    !user?.displayName && !localStorage.getItem(profileDoneKey)
+  );
+
+  const dismissProfileSetup = () => {
+    localStorage.setItem(profileDoneKey, '1');
+    setShowProfileSetup(false);
+  };
   const { conversations: reduxConversations } = useSelector((state) => state.conversations);
 
   useEffect(() => {
@@ -53,14 +63,32 @@ export default function AgentDashboard({ user }) {
     }
   };
 
+  const [agentStatus, setAgentStatus] = useState('online');
+
   useEffect(() => {
     if (!user?._id) return;
 
     socket.connect();
-    socket.emit("join_room", { ownerId: user.ownerId, role: "agent", agentId: user._id });
+    // Use userId key so server joins agent_${userId} room correctly
+    socket.emit("join_room", { ownerId: user.ownerId, role: "agent", userId: user._id });
+    // Announce online status
+    socket.emit("agent_status_change", { agentId: user._id, status: 'online', ownerId: user.ownerId });
+
+    // Heartbeat every 30s to keep status alive
+    const heartbeat = setInterval(() => {
+      socket.emit("agent_heartbeat", { agentId: user._id });
+    }, 30000);
+
+    socket.on("agent_assigned", (conv) => {
+      toast.success(`🎯 Ticket assigned to you from ${conv.userName || 'Anonymous'}`);
+      setConversations(prev => {
+        const exists = prev.find(c => c._id === conv._id);
+        if (exists) return prev.map(c => c._id === conv._id ? conv : c);
+        return [conv, ...prev];
+      });
+    });
 
     socket.on("new_ticket", (newConv) => {
-      toast.success(`🎫 New ticket from ${newConv.userName || "Anonymous"}`);
       setConversations(prev => {
         const exists = prev.find(c => c._id === newConv._id);
         if (exists) return prev.map(c => c._id === newConv._id ? newConv : c);
@@ -76,7 +104,8 @@ export default function AgentDashboard({ user }) {
           content: data.content,
           timestamp: data.timestamp || new Date(),
           senderType: data.senderType,
-          senderName: data.senderName
+          senderName: data.senderName,
+          senderAvatar: data.senderAvatar,
         };
         const last = conv.messages[conv.messages.length - 1];
         if (last && last.content === data.content) return conv;
@@ -84,21 +113,46 @@ export default function AgentDashboard({ user }) {
       }));
     });
 
+    socket.on("agent_joined", (data) => {
+      setConversations(prev => prev.map(conv => {
+        if (conv._id !== data.conversationId) return conv;
+        return { ...conv, status: 'in_progress', isAiActive: false, agent: data.agent,
+          messages: data.messages || conv.messages };
+      }));
+    });
+
     socket.on("ticket_resolved", (data) => {
       setConversations(prev => prev.map(conv => {
         if (conv._id !== data.conversationId) return conv;
-        return { ...conv, status: 'human_resolved', updatedAt: new Date() };
+        return { ...conv, status: 'human_resolved', updatedAt: new Date(),
+          messages: data.messages || conv.messages };
       }));
       toast.success(`✅ Ticket resolved`);
     });
 
+    socket.on("conversation_claimed", (data) => {
+      setConversations(prev => prev.map(conv =>
+        conv._id === data.conversationId ? { ...conv, routingStatus: 'assigned', assignedAgentId: data.agentId } : conv
+      ));
+    });
+
     return () => {
+      clearInterval(heartbeat);
+      socket.emit("agent_status_change", { agentId: user._id, status: 'offline', ownerId: user.ownerId });
+      socket.off("agent_assigned");
       socket.off("new_ticket");
       socket.off("new_message");
+      socket.off("agent_joined");
       socket.off("ticket_resolved");
+      socket.off("conversation_claimed");
       socket.disconnect();
     };
   }, [user?._id]);
+
+  const handleStatusChange = (newStatus) => {
+    setAgentStatus(newStatus);
+    socket.emit("agent_status_change", { agentId: user._id, status: newStatus, ownerId: user.ownerId });
+  };
 
   const onLogout = () => {
     dispatch(logout());
@@ -224,6 +278,13 @@ export default function AgentDashboard({ user }) {
 
   return (
     <div className="dashboard-root ag-layout">
+      {showProfileSetup && (
+        <AgentProfileSetup
+          user={user}
+          onComplete={() => dismissProfileSetup()}
+          onDismiss={() => dismissProfileSetup()}
+        />
+      )}
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {isSidebarOpen && (
@@ -298,9 +359,14 @@ export default function AgentDashboard({ user }) {
           </div>
           
           <div className="ag-top-actions">
-            <div className="ag-status-pill online">
-              <span className="dot" />
-              ONLINE
+            <div className="ag-status-select">
+              <span className={`ag-status-dot-sm ${agentStatus}`} />
+              <select value={agentStatus} onChange={e => handleStatusChange(e.target.value)}
+                className="ag-status-dd">
+                <option value="online">Online</option>
+                <option value="away">Away</option>
+                <option value="offline">Offline</option>
+              </select>
             </div>
             <div className="ag-notification-wrap">
               <NotificationBell onViewAll={() => switchTab('notifications')} />
@@ -434,9 +500,12 @@ export default function AgentDashboard({ user }) {
         .ag-current { color: var(--on-surface); }
         
         .ag-top-actions { display: flex; align-items: center; gap: 16px; }
-        .ag-status-pill { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; }
-        .ag-status-pill.online { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
-        .ag-status-pill .dot { width: 6px; height: 6px; background: currentColor; border-radius: 50%; }
+        .ag-status-select { display: flex; align-items: center; gap: 8px; background: #f0fdf4; border: 1px solid #d1fae5; border-radius: 20px; padding: 4px 12px; }
+        .ag-status-dot-sm { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .ag-status-dot-sm.online { background: #10b981; }
+        .ag-status-dot-sm.away { background: #f59e0b; }
+        .ag-status-dot-sm.offline { background: #94a3b8; }
+        .ag-status-dd { border: none; background: transparent; font-size: 0.75rem; font-weight: 700; color: #065f46; cursor: pointer; outline: none; }
 
         .ag-profile { display: flex; align-items: center; gap: 12px; }
         .profile-text { text-align: right; }

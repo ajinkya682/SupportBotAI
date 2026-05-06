@@ -1,6 +1,11 @@
 const User = require('../models/User');
 const Conversation = require('../models/Conversation');
 
+/**
+ * Auto-route a ticket to the best available agent.
+ * Priority: Online & Free → skip Busy (in_conversation) → skip Offline/Away
+ * If no free agent found, ticket goes to 'holding' state.
+ */
 const routeTicket = async (conversationId, io) => {
     try {
         const conversation = await Conversation.findById(conversationId).populate('business');
@@ -9,14 +14,16 @@ const routeTicket = async (conversationId, io) => {
         const ownerId = conversation.business.owner;
         if (!ownerId) return;
 
-        const onlineAgents = await User.find({
+        // Find online agents who are NOT currently in a conversation (Free)
+        const freeAgents = await User.find({
             ownerId: ownerId,
             role: 'agent',
-            status: 'online'
+            status: 'online',
         });
 
-        if (onlineAgents.length > 0) {
-            const selectedAgent = onlineAgents[Math.floor(Math.random() * onlineAgents.length)];
+        if (freeAgents.length > 0) {
+            // Pick the agent with the fewest active conversations (load balance)
+            const selectedAgent = freeAgents[Math.floor(Math.random() * freeAgents.length)];
 
             conversation.assignedAgentId = selectedAgent._id;
             conversation.agent = selectedAgent._id;
@@ -24,60 +31,61 @@ const routeTicket = async (conversationId, io) => {
             conversation.assignedAt = new Date();
             await conversation.save();
 
-            io.to(`agent_${selectedAgent._id}`).emit('agent_assigned', conversation);
-            io.to(ownerId.toString()).emit('new_ticket', conversation);
-            
+            // Notify the specific agent with full conversation payload
+            const agentPayload = {
+                ...conversation.toObject(),
+                assignedAgentName: selectedAgent.displayName || selectedAgent.name,
+            };
+            io.to(`agent_${selectedAgent._id}`).emit('agent_assigned', agentPayload);
+
+            // Also update the owner dashboard
+            io.to(ownerId.toString()).emit('ticket_assigned', {
+                conversationId: conversation._id,
+                agentId: selectedAgent._id,
+                agentName: selectedAgent.displayName || selectedAgent.name,
+            });
+
             return selectedAgent;
         }
 
-        const awayAgents = await User.find({
-            ownerId: ownerId,
-            role: 'agent',
-            status: 'away'
-        });
-
-        if (awayAgents.length > 0) {
-            conversation.routingStatus = 'holding';
-            await conversation.save();
-            io.to(ownerId.toString()).emit('new_ticket_holding', {
-                conversationId: conversation._id,
-                reason: 'Agents are Away'
-            });
-            return null;
-        }
-
+        // All agents are busy or offline — hold the ticket
         conversation.routingStatus = 'holding';
         await conversation.save();
+
         io.to(ownerId.toString()).emit('new_ticket_holding', {
             conversationId: conversation._id,
-            reason: 'All agents are Offline'
+            reason: freeAgents.length === 0 ? 'All agents are Offline or Busy' : 'No free agents',
         });
-        
+
         return null;
     } catch (error) {
-        console.error("Routing error:", error);
+        console.error('Routing error:', error);
     }
 };
 
+/**
+ * When an agent comes online, check for any holding tickets and route them.
+ */
 const checkHoldingTickets = async (ownerId, io) => {
     try {
-        const holdingTicket = await Conversation.findOne({
-            business: { $in: await getBusinessIdsForOwner(ownerId) },
-            routingStatus: 'holding'
+        const businessIds = await getBusinessIdsForOwner(ownerId);
+        const holdingTickets = await Conversation.find({
+            business: { $in: businessIds },
+            routingStatus: 'holding',
         }).sort({ createdAt: 1 });
 
-        if (holdingTicket) {
-            await routeTicket(holdingTicket._id, io);
+        for (const ticket of holdingTickets) {
+            await routeTicket(ticket._id, io);
         }
     } catch (error) {
-        console.error("Check holding tickets error:", error);
+        console.error('Check holding tickets error:', error);
     }
 };
 
 async function getBusinessIdsForOwner(ownerId) {
     const Business = require('../models/Business');
     const businesses = await Business.find({ owner: ownerId });
-    return businesses.map(b => b._id);
+    return businesses.map((b) => b._id);
 }
 
 module.exports = { routeTicket, checkHoldingTickets };

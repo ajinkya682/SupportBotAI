@@ -102,29 +102,36 @@ exports.updateProfile = (req, res) => {
         }
 
         const { displayName, roleTitle } = req.body;
-        
+
         try {
             const agent = await User.findById(req.user._id);
             if (!agent) return res.status(404).json({ message: 'Agent not found' });
 
             if (req.file) {
-                const base64File = req.file.buffer.toString('base64');
-                const result = await imagekit.files.upload({
-                    file: base64File,
-                    fileName: `agent-${agent._id}-${Date.now()}`,
-                    folder: "/agent-profiles"
-                });
-                agent.profilePhoto = result.url;
+                const hasImageKit =
+                    process.env.IMAGEKIT_PRIVATE_KEY &&
+                    process.env.IMAGEKIT_PRIVATE_KEY !== 'your_private_api_key' &&
+                    process.env.IMAGEKIT_PRIVATE_KEY.length > 10;
+
+                if (hasImageKit) {
+                    // v7 SDK: imagekit.files.upload(body)
+                    const base64File = req.file.buffer.toString('base64');
+                    const result = await imagekit.files.upload({
+                        file: base64File,
+                        fileName: `agent-${agent._id}-${Date.now()}`,
+                        folder: '/agent-profiles',
+                    });
+                    agent.profilePhoto = result.url;
+                } else {
+                    // Local dev fallback: store as base64 data URL
+                    const mimeType = req.file.mimetype;
+                    const base64 = req.file.buffer.toString('base64');
+                    agent.profilePhoto = `data:${mimeType};base64,${base64}`;
+                }
             }
 
             if (displayName) agent.displayName = displayName;
             if (roleTitle) agent.roleTitle = roleTitle;
-            
-            // Activate profile if all required fields are present
-            if (agent.displayName && agent.roleTitle && agent.profilePhoto) {
-                agent.status = 'active';
-                if (!agent.availability) agent.availability = 'online';
-            }
 
             await agent.save();
 
@@ -136,10 +143,10 @@ exports.updateProfile = (req, res) => {
                     roleTitle: agent.roleTitle,
                     profilePhoto: agent.profilePhoto,
                     status: agent.status,
-                    availability: agent.availability
-                }
+                },
             });
         } catch (error) {
+            console.error('updateProfile error:', error.message);
             res.status(500).json({ message: error.message });
         }
     });
@@ -240,17 +247,19 @@ exports.joinConversation = async (req, res) => {
             }
         }
 
-        // Build the system join message
+        // Build the agent join message per spec
+        const agentDisplayName = req.user.displayName || req.user.name;
+        const agentRoleTitle = req.user.roleTitle || 'Support Agent';
         const joinMessage = {
             role: 'assistant',
-            content: `You are now connected with ${req.user.displayName || req.user.name}, ${req.user.roleTitle || 'Support Agent'}.`,
+            content: `✅ AI has disconnected. You are now talking with ${agentDisplayName} — Real Human 🟢`,
             timestamp: new Date(),
             senderType: 'agent',
-            senderName: req.user.displayName || req.user.name,
+            senderName: agentDisplayName,
             senderAvatar: req.user.profilePhoto || null,
-            senderRole: req.user.roleTitle || 'Support Agent',
+            senderRole: agentRoleTitle,
             sender: {
-                name: req.user.displayName || req.user.name,
+                name: agentDisplayName,
                 profilePhoto: req.user.profilePhoto || null,
                 userType: 'agent'
             }
@@ -259,24 +268,30 @@ exports.joinConversation = async (req, res) => {
         conversation.messages.push(joinMessage);
         await conversation.save();
 
-        // Emit agent_joined to the entire room — all three parties receive it
+        // Emit agent_joined to all parties: widget session + owner room (covers agent dashboard too)
         if (req.io) {
             const agentDetails = {
                 _id: req.user._id,
-                displayName: req.user.displayName || req.user.name,
-                roleTitle: req.user.roleTitle || 'Support Agent',
+                displayName: agentDisplayName,
+                roleTitle: agentRoleTitle,
                 profilePhoto: req.user.profilePhoto || null
             };
-            req.io.to(ownerId.toString()).emit('agent_joined', {
+
+            const joinPayload = {
                 conversationId: conversation._id.toString(),
                 agent: agentDetails,
-                joinMessage
-            });
-            // Also emit new_message so chatbot widget shows the join message
-            req.io.to(ownerId.toString()).emit('new_message', {
-                conversationId: conversation._id.toString(),
-                ...joinMessage
-            });
+                joinMessage,
+            };
+
+            // agent_joined → both widget and dashboard (to update header/status)
+            req.io.to(`session_${conversation._id.toString()}`).emit('agent_joined', joinPayload);
+            req.io.to(ownerId.toString()).emit('agent_joined', { ...joinPayload, messages: conversation.messages });
+
+            // new_message → delivers the join message bubble to the widget chat
+            const newMsgPayload = { conversationId: conversation._id.toString(), ...joinMessage };
+            req.io.to(`session_${conversation._id.toString()}`).emit('new_message', newMsgPayload);
+            // Also to dashboard so the message appears in Conversations panel
+            req.io.to(ownerId.toString()).emit('new_message', newMsgPayload);
         }
 
         res.json({ message: 'Joined conversation', conversation });

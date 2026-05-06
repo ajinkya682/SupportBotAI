@@ -6,22 +6,30 @@ module.exports = (io) => {
     io.on('connection', (socket) => {
         console.log('New client connected:', socket.id);
 
+        // ── Join Rooms ──────────────────────────────────────────────────────────
         socket.on('join_room', (data) => {
             if (typeof data === 'string') {
                 socket.join(data);
                 console.log(`Socket ${socket.id} joined shared room ${data}`);
             } else if (data && data.ownerId) {
+                // Always join the shared owner room (owner ID = primary room key)
                 socket.join(data.ownerId.toString());
-                
+
                 if (data.role === 'owner') {
                     socket.join(`owner_${data.ownerId}`);
-                } else if (data.role === 'agent' && data.userId) {
-                    socket.join(`agent_${data.userId}`);
+                } else if (data.role === 'agent') {
+                    // Support both 'userId' and 'agentId' keys for backward compat
+                    const agentId = data.userId || data.agentId;
+                    if (agentId) {
+                        socket.join(`agent_${agentId}`);
+                        console.log(`Agent ${agentId} joined agent room agent_${agentId}`);
+                    }
                 }
                 console.log(`Socket ${socket.id} joined rooms for owner ${data.ownerId}`);
             }
         });
 
+        // ── Widget joins its conversation-specific room ─────────────────────────
         socket.on('join_session', (sessionId) => {
             if (sessionId) {
                 socket.join(`session_${sessionId}`);
@@ -29,6 +37,7 @@ module.exports = (io) => {
             }
         });
 
+        // ── Agent Status Change ─────────────────────────────────────────────────
         socket.on('agent_status_change', async ({ agentId, status, ownerId }) => {
             try {
                 if (agentId) {
@@ -46,37 +55,79 @@ module.exports = (io) => {
                     }
                 }
             } catch (error) {
-                console.error("Error updating agent status:", error);
+                console.error('Error updating agent status:', error);
             }
         });
 
+        // ── Agent Heartbeat ─────────────────────────────────────────────────────
         socket.on('agent_heartbeat', async ({ agentId }) => {
             try {
                 if (agentId) {
                     await User.findByIdAndUpdate(agentId, { lastHeartbeat: new Date() });
                 }
             } catch (error) {
-                console.error("Heartbeat error:", error);
+                console.error('Heartbeat error:', error);
             }
         });
 
+        // ── Send Message (Agent/Owner → User) — Persist + Broadcast ────────────
         socket.on('send_message', async (data) => {
-            const { conversationId, ownerId, content, senderType, senderName, senderAvatar, senderRole } = data;
-            
-            const messagePayload = {
+            const {
                 conversationId,
+                ownerId,
                 content,
                 senderType,
                 senderName,
                 senderAvatar,
                 senderRole,
-                timestamp: new Date()
+            } = data;
+
+            const messagePayload = {
+                conversationId,
+                content,
+                senderType,
+                senderName,
+                senderAvatar: senderAvatar || null,
+                senderRole: senderRole || null,
+                timestamp: new Date(),
             };
 
+            // Persist to DB
+            try {
+                const conversation = await Conversation.findById(conversationId);
+                if (conversation) {
+                    conversation.messages.push({
+                        role: 'assistant',
+                        content,
+                        timestamp: messagePayload.timestamp,
+                        senderType,
+                        senderName,
+                        senderAvatar: senderAvatar || null,
+                        senderRole: senderRole || null,
+                        sender: {
+                            name: senderName,
+                            profilePhoto: senderAvatar || null,
+                            userType: senderType,
+                        },
+                    });
+                    // Keep conversation in_progress
+                    if (conversation.status !== 'in_progress') {
+                        conversation.status = 'in_progress';
+                    }
+                    await conversation.save();
+                }
+            } catch (err) {
+                console.error('send_message DB persist error:', err);
+            }
+
+            // Broadcast to all parties:
+            // 1. Widget user (joined session room)
             io.to(`session_${conversationId}`).emit('new_message', messagePayload);
+            // 2. Owner dashboard + all agents in owner room
             if (ownerId) io.to(ownerId.toString()).emit('new_message', messagePayload);
         });
 
+        // ── Join Conversation via Socket (Legacy — prefer REST PUT /agents/join/:id) ──
         socket.on('join_conversation', async ({ conversationId, agentId, ownerId }) => {
             try {
                 const conversation = await Conversation.findById(conversationId);
@@ -94,33 +145,53 @@ module.exports = (io) => {
                     agent.currentConversationId = conversationId;
                     await agent.save();
 
-                    const systemMsg = {
+                    const joinMessage = {
                         role: 'assistant',
-                        content: `👤 Support Agent ${agent.displayName || agent.name} has joined the conversation.`,
+                        content: `✅ AI has disconnected. You are now talking with ${agent.displayName || agent.name} — Real Human 🟢`,
                         timestamp: new Date(),
-                        senderType: 'ai',
-                        senderName: 'System',
+                        senderType: 'agent',
+                        senderName: agent.displayName || agent.name,
+                        senderAvatar: agent.profilePhoto || null,
+                        senderRole: agent.roleTitle || 'Support Agent',
+                        sender: {
+                            name: agent.displayName || agent.name,
+                            profilePhoto: agent.profilePhoto || null,
+                            userType: 'agent',
+                        },
                     };
-                    conversation.messages.push(systemMsg);
+                    conversation.messages.push(joinMessage);
                     await conversation.save();
 
-                    const payload = { 
-                        conversationId, 
-                        agent: { _id: agent._id, displayName: agent.displayName, profilePhoto: agent.profilePhoto }, 
-                        status: 'in_progress',
-                        messages: conversation.messages
+                    const agentDetails = {
+                        _id: agent._id,
+                        displayName: agent.displayName || agent.name,
+                        roleTitle: agent.roleTitle || 'Support Agent',
+                        profilePhoto: agent.profilePhoto || null,
                     };
-                    
+
+                    const payload = {
+                        conversationId,
+                        agent: agentDetails,
+                        status: 'in_progress',
+                        messages: conversation.messages,
+                        joinMessage,
+                    };
+
+                    // Emit to widget session room
                     io.to(`session_${conversationId}`).emit('agent_joined', payload);
-                    if (ownerId) io.to(ownerId.toString()).emit('agent_joined', payload);
-                    if (ownerId) io.to(ownerId.toString()).emit('agent_status_changed', { agentId, status: 'in_conversation' });
-                    if (ownerId) io.to(ownerId.toString()).emit('conversation_claimed', { conversationId, agentId });
+                    // Emit to owner dashboard + all agents
+                    if (ownerId) {
+                        io.to(ownerId.toString()).emit('agent_joined', payload);
+                        io.to(ownerId.toString()).emit('agent_status_changed', { agentId, status: 'in_conversation' });
+                        io.to(ownerId.toString()).emit('conversation_claimed', { conversationId, agentId });
+                    }
                 }
             } catch (error) {
-                console.error("Join conversation error:", error);
+                console.error('Join conversation error:', error);
             }
         });
 
+        // ── Resolve Ticket ──────────────────────────────────────────────────────
         socket.on('resolve_ticket', async (data) => {
             const { conversationId, ownerId, resolvedBy, resolvedByName, resolvedByType } = data;
             try {
@@ -141,15 +212,17 @@ module.exports = (io) => {
                             agent.status = 'online';
                             agent.currentConversationId = null;
                             await agent.save();
-                            if (ownerId) io.to(ownerId.toString()).emit('agent_status_changed', { agentId: resolvedBy, status: 'online' });
-                            if (ownerId) await checkHoldingTickets(ownerId, io);
+                            if (ownerId) {
+                                io.to(ownerId.toString()).emit('agent_status_changed', { agentId: resolvedBy, status: 'online' });
+                                await checkHoldingTickets(ownerId, io);
+                            }
                         }
                     }
 
                     const resolverName = resolvedByName || 'Support';
                     const systemMsg = {
                         role: 'assistant',
-                        content: `✅ Conversation marked as solved by ${resolvedByType === 'agent' ? `Agent ${resolverName}` : 'Business Owner'}.`,
+                        content: `✅ Conversation marked as solved by ${resolvedByType === 'agent' ? `Agent ${resolverName}` : 'Business Owner'}. Feel free to ask anything else.`,
                         timestamp: new Date(),
                         senderType: 'ai',
                         senderName: 'System',
@@ -157,24 +230,28 @@ module.exports = (io) => {
                     conversation.messages.push(systemMsg);
                     await conversation.save();
 
-                    const payload = { 
-                        conversationId, 
-                        resolvedBy, 
-                        resolvedByName: resolverName, 
-                        resolvedByType, 
+                    const payload = {
+                        conversationId,
+                        resolvedBy,
+                        resolvedByName: resolverName,
+                        resolvedByType,
                         resolvedAt: conversation.resolvedAt,
                         updatedAt: conversation.updatedAt,
                         status: 'human_resolved',
-                        messages: conversation.messages
+                        messages: conversation.messages,
                     };
+
+                    // Emit to widget
                     io.to(`session_${conversationId}`).emit('ticket_resolved', payload);
+                    // Emit to dashboard
                     if (ownerId) io.to(ownerId.toString()).emit('ticket_resolved', payload);
                 }
             } catch (error) {
-                console.error("Resolve ticket error:", error);
+                console.error('Resolve ticket error:', error);
             }
         });
 
+        // ── Toggle AI ───────────────────────────────────────────────────────────
         socket.on('toggle_ai', async ({ conversationId, isAiActive, ownerId }) => {
             try {
                 const conversation = await Conversation.findById(conversationId);
@@ -190,10 +267,11 @@ module.exports = (io) => {
                     if (ownerId) io.to(ownerId.toString()).emit('ai_toggled', payload);
                 }
             } catch (error) {
-                console.error("Toggle AI error:", error);
+                console.error('Toggle AI error:', error);
             }
         });
 
+        // ── Disconnect ──────────────────────────────────────────────────────────
         socket.on('disconnect', () => {
             console.log('Client disconnected:', socket.id);
         });
