@@ -56,16 +56,18 @@
       box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
       z-index: 999999;
       overflow: hidden;
-      display: none;
+      visibility: hidden;
       opacity: 0;
       transform: translateY(20px) scale(0.95);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       border: 1px solid rgba(0,0,0,0.05);
+      pointer-events: none;
     }
     #supportbot-container.visible {
-      display: block;
+      visibility: visible;
       opacity: 1;
       transform: translateY(0) scale(1);
+      pointer-events: auto;
     }
     #supportbot-iframe {
       width: 100%;
@@ -83,7 +85,8 @@
         max-width: 100vw;
       }
       #supportbot-container.visible {
-        display: block;
+        visibility: visible;
+        opacity: 1;
       }
       #supportbot-bubble.hidden {
         display: none;
@@ -146,13 +149,17 @@
     const data = event.data;
     const isCloseAction = data === 'close-chat' || 
                          data === 'close-supportbot' || 
-                         (data && typeof data === 'object' && (data.type === 'close-chat' || data.type === 'close-supportbot'));
+                         (data && data.type === 'close-chat') || 
+                         (data && data.type === 'close-supportbot');
     
     if (isCloseAction) {
+      console.log('SupportBotAI: Closing widget');
       isOpen = false;
       container.classList.remove('visible');
       bubble.classList.remove('hidden');
-      bubble.style.display = 'flex'; // Ensure bubble is visible
+      bubble.style.display = 'flex';
+      bubble.style.visibility = 'visible';
+      bubble.style.opacity = '1';
     }
   });
 })();
