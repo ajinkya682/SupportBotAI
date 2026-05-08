@@ -8,6 +8,7 @@ const REQUIRED_VARS = [
   { key: 'SERVER_BASE_URL', hint: 'Set SERVER_BASE_URL to the full URL of this backend server.' },
   { key: 'VAPID_PUBLIC_KEY', hint: 'Generate using: npx web-push generate-vapid-keys' },
   { key: 'VAPID_PRIVATE_KEY', hint: 'Generate using: npx web-push generate-vapid-keys' },
+  { key: 'RESEND_API_KEY', hint: 'Get your API key from resend.com' },
 ];
 
 const validateEnv = () => {
