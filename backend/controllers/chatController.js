@@ -104,13 +104,23 @@ const generateConversationTitle = async (lastUserMessage, intent) => {
 const emitConversationUpdate = (io, ownerId, conversation, aiMsg) => {
   if (!io || !ownerId) return;
   const room = ownerId.toString();
+  const conversationId = conversation._id.toString();
+  
+  // 1. Notify Owner/Agents
   io.to(room).emit('update_conversation', conversation);
   if (aiMsg) {
     io.to(room).emit('new_message', {
-      conversationId: conversation._id.toString(),
+      conversationId,
       ...aiMsg,
     });
   }
+
+  // 2. Notify Widget (if AI is active and it's an AI reply)
+  // This ensures multiple widget tabs stay in sync
+  io.to(`session_${conversationId}`).emit('new_message', {
+    conversationId,
+    ...aiMsg,
+  });
 };
 
 // ── Handle Chat ───────────────────────────────────────────────────────────────

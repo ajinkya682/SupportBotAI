@@ -46,15 +46,19 @@ export default function Conversations({
     if (selectedConv) {
       const updated = conversations.find((c) => c._id === selectedConv._id);
       if (updated) {
-        const changed =
-          updated.messages.length !== selectedConv.messages.length ||
-          updated.status !== selectedConv.status ||
-          updated.isAiActive !== selectedConv.isAiActive ||
-          updated.agent?._id !== selectedConv.agent?._id;
-        if (changed) setSelectedConv(updated);
+        // Deep compare check to avoid infinite loops but catch message updates
+        const currentCount = selectedConv.messages.length;
+        const updatedCount = updated.messages.length;
+        
+        if (updatedCount !== currentCount || 
+            updated.status !== selectedConv.status || 
+            updated.isAiActive !== selectedConv.isAiActive ||
+            updated.agent?._id !== selectedConv.agent?._id) {
+          setSelectedConv(updated);
+        }
       }
     }
-  }, [conversations]);
+  }, [conversations, selectedConv?._id]);
 
   useEffect(() => {
     if (initialSelectedId) {
@@ -67,9 +71,13 @@ export default function Conversations({
   }, [initialSelectedId]);
 
   useEffect(() => {
-    if (chatEndRef.current)
-      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
-  }, [selectedConv?.messages]);
+    if (chatEndRef.current) {
+      const timer = setTimeout(() => {
+        chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedConv?.messages?.length]);
 
   const handleJoin = async () => {
     if (!selectedConv || !user) return;
@@ -92,8 +100,8 @@ export default function Conversations({
       if (typeof playSound === 'function') playSound('whoosh');
 
       // Optimistically update local state
-      setSelectedConv(prev => ({
-        ...prev,
+      const updatedConv = {
+        ...selectedConv,
         status: "in_progress",
         isAiActive: false,
         agent: {
@@ -101,8 +109,14 @@ export default function Conversations({
           displayName: user.displayName || user.name,
           profilePhoto: user.profilePhoto,
         },
-        messages: data.conversation?.messages || prev.messages,
-      }));
+        messages: data.conversation?.messages || selectedConv.messages,
+      };
+      
+      setSelectedConv(updatedConv);
+      if (onConversationsUpdate) {
+        onConversationsUpdate(prev => prev.map(c => c._id === updatedConv._id ? updatedConv : c));
+      }
+      
       toast.success('Joined conversation successfully');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to join conversation');
@@ -130,7 +144,11 @@ export default function Conversations({
     
     if (typeof playSound === 'function') playSound('success');
 
-    setSelectedConv((prev) => ({ ...prev, status: "human_resolved" }));
+    const updatedConv = { ...selectedConv, status: "human_resolved" };
+    setSelectedConv(updatedConv);
+    if (onConversationsUpdate) {
+      onConversationsUpdate(prev => prev.map(c => c._id === updatedConv._id ? updatedConv : c));
+    }
   };
 
   const handleToggleAi = async () => {
@@ -145,7 +163,11 @@ export default function Conversations({
         isAiActive: true,
         ownerId,
       });
-      setSelectedConv((prev) => ({ ...prev, isAiActive: true }));
+      const updatedConv = { ...selectedConv, isAiActive: true };
+      setSelectedConv(updatedConv);
+      if (onConversationsUpdate) {
+        onConversationsUpdate(prev => prev.map(c => c._id === updatedConv._id ? updatedConv : c));
+      }
       toast.success("AI Assistant resumed");
     }
   };
@@ -177,25 +199,51 @@ export default function Conversations({
   const handleSendReply = async (e) => {
     if (e) e.preventDefault();
     if (!replyText.trim() || isSending || !selectedConv || !user) return;
+    
+    const textToSend = replyText;
+    setReplyText(""); // Optimistically clear input
     setIsSending(true);
+
     try {
       const ownerId = user.role === "owner" ? user._id : user.ownerId;
       const payload = {
         conversationId: selectedConv._id,
         ownerId,
-        content: replyText,
+        content: textToSend,
         senderType: user.role === "owner" ? "owner" : "agent",
         senderName: user.role === "owner" ? `Admin (${user.name})` : user.displayName || user.name,
         senderAvatar: user.role === "owner" ? ownerInfo?.businessLogo || user.profilePhoto : user.profilePhoto,
         senderRole: user.role === "owner" ? "Business Owner" : user.roleTitle,
       };
 
+      // Optimistic update of the local chat UI
+      const optimisticMsg = {
+        role: "assistant",
+        content: textToSend,
+        timestamp: new Date(),
+        senderType: payload.senderType,
+        senderName: payload.senderName,
+        senderAvatar: payload.senderAvatar,
+        senderRole: payload.senderRole,
+      };
+
+      const updatedConv = {
+        ...selectedConv,
+        messages: [...selectedConv.messages, optimisticMsg],
+        updatedAt: new Date()
+      };
+
+      setSelectedConv(updatedConv);
+      if (onConversationsUpdate) {
+        onConversationsUpdate(prev => prev.map(c => c._id === updatedConv._id ? updatedConv : c));
+      }
+
       // socket.js persists to DB AND emits to session room (widget) + owner room (dashboard)
       socket.emit("send_message", payload);
 
-      setReplyText("");
     } catch (err) {
-      toast.error("Failed to send reply: " + err);
+      toast.error("Failed to send reply");
+      setReplyText(textToSend); // Restore text on failure
     } finally {
       setIsSending(false);
     }
