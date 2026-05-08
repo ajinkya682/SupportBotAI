@@ -28,7 +28,6 @@ export default function Conversations({
   socket,
   onConversationsUpdate,
   ownerInfo = null,
-  showResolved = false,
 }) {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -262,11 +261,6 @@ export default function Conversations({
   };
 
   const filteredConversations = conversations.filter((conv) => {
-    // If we're not showing resolved, filter them out
-    if (!showResolved && (conv.status === 'human_resolved' || conv.status === 'ai_resolved')) {
-      return false;
-    }
-
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -361,11 +355,6 @@ export default function Conversations({
                     <h3>{selectedConv.userName || "Visitor"}</h3>
                     <div className="identity-status">
                       <span className="live-pulse-container"><div className="pulse-dot"></div> LIVE</span>
-                      {selectedConv.agent && (
-                        <span className="agent-assigned-badge">
-                          Assigned to: <strong>{selectedConv.agent.name || selectedConv.agent.displayName}</strong>
-                        </span>
-                      )}
                       <span className="id-node desktop-only">ID: {selectedConv._id.slice(-6).toUpperCase()}</span>
                     </div>
                   </div>
@@ -448,7 +437,7 @@ export default function Conversations({
               </div>
             </div>
 
-            {selectedConv.status !== "human_resolved" && selectedConv.status !== "ai_resolved" ? (
+            {selectedConv.status !== "human_resolved" ? (
               <footer className="interface-footer">
                 <div className="input-cluster" style={{ opacity: !canSend ? 0.5 : 1 }}>
                   <button 
@@ -473,9 +462,9 @@ export default function Conversations({
                 </div>
               </footer>
             ) : (
-              <div className="resolved-archive-banner">
-                <CheckCircle2 size={18} />
-                <span>This conversation is resolved and moved to archives.</span>
+              <div className="resolved-status">
+                <CheckCircle2 size={16} />
+                <span>Session terminated</span>
               </div>
             )}
           </>
@@ -637,8 +626,6 @@ export default function Conversations({
         .chip-mine { background: #ede9fe; color: #7c3aed; }
         .real-human-badge { margin-left: 6px; font-size: 10px; background: #dcfce7; color: #16a34a; padding: 1px 6px; border-radius: 8px; font-weight: 700; }
         .source-avatar.agent-photo { width: 28px; height: 28px; overflow: hidden; border-radius: 50%; }
-        .agent-assigned-badge { font-size: 10px; background: var(--primary-container); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-weight: 600; }
-        .resolved-archive-banner { padding: 20px; background: var(--surface-container-low); border-top: 1px solid var(--outline-variant); display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--on-surface-variant); font-size: 13px; font-weight: 600; }
       `}</style>
     </div>
   );
