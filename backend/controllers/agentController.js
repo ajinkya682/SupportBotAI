@@ -19,6 +19,8 @@ const upload = multer({
     }
 }).single('photo');
 
+const sendEmail = require('../utils/email');
+
 // Business Owner: Add a new agent
 exports.addAgent = async (req, res) => {
     const { name, email, password } = req.body;
@@ -37,6 +39,23 @@ exports.addAgent = async (req, res) => {
             ownerId: req.user._id,
             status: 'online'
         });
+
+        // ── SEND WELCOME EMAIL TO AGENT ───────────────────────────────────────
+        try {
+            const business = await Business.findOne({ owner: req.user._id });
+            await sendEmail({
+                email: agent.email,
+                type: 'welcomeAgent',
+                data: { 
+                    name: agent.name, 
+                    ownerName: req.user.name, 
+                    businessName: business?.name || 'the company',
+                    password: password // Temporary password sent for first login
+                }
+            });
+        } catch (err) {
+            console.error('Failed to send agent welcome email:', err.message);
+        }
 
         res.status(201).json({
             message: 'Agent created successfully',

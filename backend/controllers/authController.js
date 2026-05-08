@@ -127,6 +127,18 @@ exports.registerUser = async (req, res, next) => {
       conversationLimit: selectedPlan === 'pro' ? proLimit : freeLimit
     });
 
+    // ── SEND WELCOME EMAIL ───────────────────────────────────────────────────
+    try {
+      await sendEmail({
+        email: user.email,
+        type: 'welcomeOwner',
+        data: { name: user.name }
+      });
+    } catch (err) {
+      console.error('Failed to send welcome email:', err.message);
+      // Don't fail registration if welcome email fails
+    }
+
     res.status(201).json({
       _id: user._id,
       name: user.name,
@@ -225,14 +237,16 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + OTP_EXPIRY_MS;
     await user.save();
 
-    const html = buildOtpEmail(user.name, otp);
-    
     // Log OTP to console in development for easier testing if email fails
     if (process.env.NODE_ENV !== 'production') {
       console.log(`\n🔑 [DEV ONLY] Password Reset OTP for ${user.email}: ${otp}\n`);
     }
 
-    await sendEmail({ email: user.email, subject: 'Password Reset OTP - SupportBotAI', html });
+    await sendEmail({ 
+      email: user.email, 
+      type: 'otp', 
+      data: { name: user.name, otp } 
+    });
 
     res.json({ 
       message: 'OTP sent to email',
@@ -244,20 +258,7 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-const buildOtpEmail = (name, otp) => `
-  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-    <h2 style="color: #6366f1; text-align: center;">Reset Your Password</h2>
-    <p>Hello ${name},</p>
-    <p>We received a request to reset your password. Use the OTP below to proceed:</p>
-    <div style="text-align: center; margin: 30px 0;">
-      <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1e293b; background: #f1f5f9; padding: 10px 20px; border-radius: 8px;">${otp}</span>
-    </div>
-    <p>This code will expire in 10 minutes.</p>
-    <p>If you didn't request this, you can safely ignore this email.</p>
-    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-    <p style="font-size: 12px; color: #64748b; text-align: center;">Powered by SupportBotAI</p>
-  </div>
-`;
+
 
 exports.verifyOTP = async (req, res) => {
   const { email, otp } = req.body;
