@@ -116,6 +116,7 @@ export default function AgentDashboard({ user }) {
     });
 
     socket.on("new_ticket", (newConv) => {
+      playSound('new_ticket');
       setConversations(prev => {
         const exists = prev.find(c => c._id === newConv._id);
         if (exists) return prev.map(c => c._id === newConv._id ? newConv : c);
@@ -161,10 +162,24 @@ export default function AgentDashboard({ user }) {
     socket.on("ticket_resolved", (data) => {
       setConversations(prev => prev.map(conv => {
         if (conv._id !== data.conversationId) return conv;
-        return { ...conv, status: 'human_resolved', updatedAt: new Date(),
-          messages: data.messages || conv.messages };
+        return { 
+          ...conv, 
+          status: 'human_resolved', 
+          updatedAt: new Date(),
+          messages: data.messages || conv.messages 
+        };
       }));
       toast.success(`✅ Ticket resolved`);
+    });
+    
+    socket.on("update_conversation", (updatedConv) => {
+      setConversations((prev) => {
+        const exists = prev.find((c) => c._id === updatedConv._id);
+        if (exists) {
+          return prev.map((c) => (c._id === updatedConv._id ? updatedConv : c));
+        }
+        return [updatedConv, ...prev];
+      });
     });
 
     socket.on("conversation_claimed", (data) => {
@@ -220,6 +235,7 @@ export default function AgentDashboard({ user }) {
               socket={socket}
               onConversationsUpdate={setConversations}
               playSound={playSound}
+              showResolved={false}
               ownerInfo={business ? {
                 businessLogo: business.appearance?.companyLogo,
               } : null}
@@ -320,15 +336,23 @@ export default function AgentDashboard({ user }) {
         );
       case 'notifications':
         return <Notifications />;
-      default: return (
-        <div className="empty-workload">
-          <div className="empty-icon-wrap">
-            <History size={48} />
+      case 'history':
+        return (
+          <div className="agent-chat-wrapper">
+            <Conversations 
+              conversations={conversations} 
+              isAgentView={true} 
+              socket={socket}
+              onConversationsUpdate={setConversations}
+              playSound={playSound}
+              showResolved={true}
+              ownerInfo={business ? {
+                businessLogo: business.appearance?.companyLogo,
+              } : null}
+            />
           </div>
-          <h3>Session Archive</h3>
-          <p>This feature is coming soon. You'll be able to review all past customer interactions here.</p>
-        </div>
-      );
+        );
+      default: return null;
     }
   };
 
