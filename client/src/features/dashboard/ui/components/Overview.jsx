@@ -117,28 +117,16 @@ export default function Overview({ business, conversations = [], agents = [], se
         </div>
       )}
 
-      {/* No Agents Online Banner */}
-      {agents.length > 0 && agents.filter(a => a.status === 'online' || a.status === 'in_conversation').length === 0 && (
-        <div className="no-agents-banner animate-fade-in">
-          <div className="nab-icon">🔴</div>
-          <div className="nab-content">
-             <h4>All Support Agents are Offline</h4>
-             <p>New tickets will sit in your unassigned queue until an agent comes online.</p>
-          </div>
-          <div className="nab-actions">
-            <button className="nab-refresh" onClick={() => window.location.reload()} title="Check status">
-              <Activity size={16} />
-            </button>
-            <button className="nab-btn" onClick={() => setActiveTab('team')}>Manage Team</button>
-          </div>
-        </div>
-      )}
-
       {pendingTickets.length > 0 && (
         <div className="pending-queue-section animate-fade-in section-spacing">
           <div className="pq-header">
             <h3><Ticket size={22} color="var(--primary)" /> Smart Routing Queue</h3>
-            <span className="pq-badge">{pendingTickets.length} Customer{pendingTickets.length > 1 ? 's' : ''} Waiting</span>
+            <div className="pq-header-right">
+              <span className="pq-badge">{pendingTickets.length} Customer{pendingTickets.length > 1 ? 's' : ''} Waiting</span>
+              {agents.filter(a => a.status === 'online' || a.status === 'in_conversation').length === 0 && (
+                <span className="pq-offline-warning">⚠️ No Agents Online</span>
+              )}
+            </div>
           </div>
           <p className="pq-desc">These requests are currently queued because agents are either offline or busy. As an owner, you can intercept these tickets to provide instant support.</p>
           
@@ -150,6 +138,23 @@ export default function Overview({ business, conversations = [], agents = [], se
                 onTakeOver={handleTakeOver} 
               />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* No Agents Online Banner - Only show if queue is empty to avoid clutter */}
+      {pendingTickets.length === 0 && agents.length > 0 && agents.filter(a => a.status === 'online' || a.status === 'in_conversation').length === 0 && (
+        <div className="no-agents-banner animate-fade-in">
+          <div className="nab-icon">🔴</div>
+          <div className="nab-content">
+             <h4>All Support Agents are Offline</h4>
+             <p>Your team is currently offline. New customer escalations will appear in your queue here.</p>
+          </div>
+          <div className="nab-actions">
+            <button className="nab-refresh" onClick={() => dispatch(getConversations())} title="Check status">
+              <Activity size={16} />
+            </button>
+            <button className="nab-btn" onClick={() => setActiveTab('team')}>Manage Team</button>
           </div>
         </div>
       )}
@@ -502,10 +507,13 @@ export default function Overview({ business, conversations = [], agents = [], se
 
         .pq-header {
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          gap: 12px;
-          margin-bottom: 8px;
+          margin-bottom: 12px;
         }
+        .pq-header-right { display: flex; align-items: center; gap: 12px; }
+        .pq-offline-warning { font-size: 0.7rem; font-weight: 800; color: #ef4444; background: #fee2e2; padding: 4px 10px; border-radius: 8px; animation: pq-blink 2s infinite; text-transform: uppercase; letter-spacing: 0.05em; }
+        @keyframes pq-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
         .pq-header h3 {
           font-size: 1.25rem;

@@ -50,6 +50,15 @@ export default function TicketCard({ ticket, onTakeOver }) {
     }
   };
 
+  const getSLAStatus = (date) => {
+    const minutes = Math.floor((new Date() - new Date(date)) / 60000);
+    if (minutes < 5) return { label: 'ON TRACK', color: '#10b981' };
+    if (minutes < 15) return { label: 'DUE SOON', color: '#f59e0b' };
+    return { label: 'OVERDUE', color: '#ef4444' };
+  };
+
+  const sla = getSLAStatus(createdAt);
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -57,28 +66,31 @@ export default function TicketCard({ ticket, onTakeOver }) {
       className="physical-ticket"
     >
       <div className="ticket-header">
-        <div className="ticket-id">#TIC-{ticket._id.substring(18).toUpperCase()}</div>
-        <div className="ticket-priority" data-priority={priority}>{priority.toUpperCase()}</div>
+        <div className="ticket-id">LOG-{ticket._id.substring(18).toUpperCase()}</div>
+        <div className="sla-tag" style={{ background: `${sla.color}15`, color: sla.color }}>
+          <AlertCircle size={10} /> {sla.label}
+        </div>
+        <div className="ticket-priority" data-priority={priority || 'medium'}>{priority?.toUpperCase() || 'MEDIUM'}</div>
       </div>
 
       <div className="ticket-body">
         <div className="ticket-main">
           <div className="user-info">
             <div className="avatar-sm">
-              {userName.charAt(0).toUpperCase()}
+              {userName?.charAt(0).toUpperCase() || 'V'}
             </div>
             <div className="user-details">
-              <div className="name">{userName}</div>
+              <div className="name">{userName || 'Visitor'}</div>
               <div className="meta">
-                <Clock size={10} /> {getTimeAgo(createdAt)}
+                <Clock size={10} /> Queued {getTimeAgo(createdAt)}
                 {intent && <span className="intent-tag"> • {intent.replace('_', ' ')}</span>}
               </div>
             </div>
           </div>
 
           <div className="issue-section">
-             <h4>{title || 'Support Request'}</h4>
-             <p className="summary">{issueSummary || 'No summary available. Customer is waiting for assistance.'}</p>
+             <h4>{title || 'Customer Escalation'}</h4>
+             <p className="summary">{issueSummary || 'Customer is awaiting response from a live agent. Initializing support protocol...'}</p>
           </div>
         </div>
 
@@ -89,10 +101,10 @@ export default function TicketCard({ ticket, onTakeOver }) {
             </div>
             <div className="stub-meta">
               <span>CREATED: {new Date(createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-              <span>MODE: HUMAN_NEEDED</span>
+              <span>REF: 0X-{ticket._id.slice(-4).toUpperCase()}</span>
             </div>
             <button className="take-over-btn" onClick={() => onTakeOver(ticket)}>
-              Take Over <ArrowRight size={14} />
+              Intercept <ArrowRight size={14} />
             </button>
           </div>
         </div>
@@ -136,6 +148,16 @@ export default function TicketCard({ ticket, onTakeOver }) {
           font-weight: 800;
           color: #a3a3a3;
           letter-spacing: 0.05em;
+        }
+        
+        .sla-tag {
+          font-size: 0.6rem;
+          font-weight: 800;
+          padding: 2px 8px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          gap: 4px;
         }
 
         .ticket-priority {
