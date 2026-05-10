@@ -65,6 +65,10 @@ export default function Dashboard() {
       }
     });
     loadAgents();
+
+    // Background refresh for agents status to complement socket events
+    const agentRefresh = setInterval(loadAgents, 60000);
+    return () => clearInterval(agentRefresh);
   }, [dispatch, user?.role]);
 
   useEffect(() => {

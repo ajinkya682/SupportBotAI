@@ -124,7 +124,12 @@ export default function Overview({ business, conversations = [], agents = [], se
              <h4>All Support Agents are Offline</h4>
              <p>New tickets will sit in your unassigned queue until an agent comes online.</p>
           </div>
-          <button className="nab-btn" onClick={() => setActiveTab('team')}>Manage Team</button>
+          <div className="nab-actions">
+            <button className="nab-refresh" onClick={() => window.location.reload()} title="Check status">
+              <Activity size={16} />
+            </button>
+            <button className="nab-btn" onClick={() => setActiveTab('team')}>Manage Team</button>
+          </div>
         </div>
       )}
 
@@ -463,6 +468,10 @@ export default function Overview({ business, conversations = [], agents = [], se
         .nab-content p { margin: 0; font-size: 0.88rem; color: #c53030; font-weight: 500; }
         .nab-btn { background: #c53030; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
         .nab-btn:hover { background: #9b2c2c; }
+        
+        .nab-actions { display: flex; align-items: center; gap: 8px; }
+        .nab-refresh { background: white; border: none; color: #c53030; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        .nab-refresh:hover { background: #fee2e2; transform: rotate(30deg); }
 
         .sf-left { display: flex; align-items: center; gap: 8px; }
         .session-agent-tag { display: flex; align-items: center; gap: 6px; background: #f0fdf4; border: 1px solid #d1fae5; padding: 2px 8px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; color: #065f46; }

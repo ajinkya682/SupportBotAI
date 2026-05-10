@@ -57,12 +57,11 @@ export default function AgentDashboard({ user }) {
   useEffect(() => {
     dispatch(getConversations());
     fetchBusinessData();
-  }, [dispatch]);
+  }, [dispatch, activeTab]); // Re-fetch on tab change to ensure fresh data
 
   useEffect(() => {
-    if (reduxConversations.length > 0) {
-      setConversations(reduxConversations);
-    }
+    // Sync local state with Redux, allowing for empty arrays from server
+    setConversations(reduxConversations || []);
   }, [reduxConversations]);
 
   const fetchBusinessData = async () => {
@@ -80,14 +79,19 @@ export default function AgentDashboard({ user }) {
     if (!user?._id) return;
 
     const joinRooms = () => {
-      socket.emit("join_room", { ownerId: user.ownerId, role: "agent", userId: user._id });
-      // Announce online status
-      socket.emit("agent_status_change", { agentId: user._id, status: 'online', ownerId: user.ownerId });
-      console.log("Agent Dashboard joined room:", user.ownerId);
+      if (socket.connected) {
+        socket.emit("join_room", { ownerId: user.ownerId, role: "agent", userId: user._id });
+        // Announce online status explicitly
+        socket.emit("agent_status_change", { agentId: user._id, status: agentStatus, ownerId: user.ownerId });
+        console.log("Agent Dashboard joined room:", user.ownerId, "Status:", agentStatus);
+      }
     };
 
     socket.connect();
-    joinRooms();
+    
+    if (socket.connected) {
+      joinRooms();
+    }
 
     // Rejoin rooms on reconnection (Critical for production stability)
     socket.on("connect", joinRooms);
@@ -189,7 +193,8 @@ export default function AgentDashboard({ user }) {
 
     return () => {
       clearInterval(heartbeat);
-      socket.emit("agent_status_change", { agentId: user._id, status: 'offline', ownerId: user.ownerId });
+      // Only set offline if they actually close or logout, not on every re-render
+      // socket.emit("agent_status_change", { agentId: user._id, status: 'offline', ownerId: user.ownerId });
       socket.off("connect", joinRooms);
       socket.off("agent_assigned");
       socket.off("new_ticket");
@@ -197,9 +202,8 @@ export default function AgentDashboard({ user }) {
       socket.off("agent_joined");
       socket.off("ticket_resolved");
       socket.off("conversation_claimed");
-      socket.disconnect();
     };
-  }, [user?._id]);
+  }, [user?._id, agentStatus]);
 
   const handleStatusChange = (newStatus) => {
     setAgentStatus(newStatus);
@@ -240,11 +244,22 @@ export default function AgentDashboard({ user }) {
             />
           </div>
         );
-      case 'overview':
-        const myTickets = conversations.filter(c => c.agent?._id === user._id || c.assignedAgentId === user._id);
+    case 'overview':
+        const myTickets = conversations.filter(c => 
+          (c.agent?._id === user._id || c.assignedAgentId === user._id) && 
+          c.status !== 'human_resolved' && 
+          c.status !== 'ai_resolved'
+        );
+        const unassignedTickets = conversations.filter(c => 
+          (c.status === 'human_needed' || c.routingStatus === 'holding') && 
+          !c.agent && 
+          !c.assignedAgentId
+        );
+        const displayTickets = [...myTickets, ...unassignedTickets];
+        
         const stats = [
           { label: 'My Assigned', value: myTickets.length, icon: MessageSquare, color: 'var(--primary)' },
-          { label: 'Waiting for You', value: myTickets.filter(c => c.routingStatus === 'holding').length, icon: Clock, color: '#f59e0b' },
+          { label: 'Unassigned', value: unassignedTickets.length, icon: Clock, color: '#ef4444' },
           { label: 'In Progress', value: myTickets.filter(c => c.status === 'in_progress').length, icon: Activity, color: '#8b5cf6' },
           { label: 'Resolved Today', value: myTickets.filter(c => c.status === 'human_resolved' && new Date(c.updatedAt).toDateString() === new Date().toDateString()).length, icon: CheckCircle2, color: '#10b981' }
         ];
@@ -271,16 +286,23 @@ export default function AgentDashboard({ user }) {
 
             <div className="ag-ticket-section">
               <div className="section-header">
-                <h3><Zap size={18} color="#f59e0b" /> Active Tickets</h3>
-                <span className="count-pill">{myTickets.filter(c => c.status !== 'human_resolved').length} Assigned</span>
+                <h3><Zap size={18} color="#f59e0b" /> Active Workload</h3>
+                <div className="sh-right">
+                  <span className="count-pill">{displayTickets.length} Total Needs Attention</span>
+                  <button className="refresh-btn-sm" onClick={() => dispatch(getConversations())}>
+                    <Activity size={14} /> Refresh
+                  </button>
+                </div>
               </div>
               
               <div className="ticket-grid">
                 <AnimatePresence mode="popLayout">
-                  {myTickets.filter(c => c.status !== 'human_resolved').sort((a,b) => (b.priority === 'high' ? 1 : 0) - (a.priority === 'high' ? 1 : 0) || new Date(b.updatedAt) - new Date(a.updatedAt)).map((conv) => (
+                  {displayTickets.sort((a,b) => (b.priority === 'high' ? 1 : 0) - (a.priority === 'high' ? 1 : 0) || new Date(b.updatedAt) - new Date(a.updatedAt)).map((conv) => {
+                    const isUnassigned = !conv.agent && !conv.assignedAgentId;
+                    return (
                     <motion.div 
                       key={conv._id} 
-                      className={`ticket-card ${conv.priority === 'high' ? 'high-priority' : ''}`}
+                      className={`ticket-card ${conv.priority === 'high' ? 'high-priority' : ''} ${isUnassigned ? 'unassigned-card' : ''}`}
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
@@ -298,6 +320,7 @@ export default function AgentDashboard({ user }) {
                           </div>
                         </div>
                         <div className="tc-badges">
+                          {isUnassigned && <span className="badge-unassigned">UNASSIGNED</span>}
                           {conv.priority === 'high' && <span className="badge-high">HIGH INTENT</span>}
                           {conv.routingStatus === 'holding' && <span className="badge-waiting">WAITING FOR YOU</span>}
                         </div>
@@ -311,21 +334,24 @@ export default function AgentDashboard({ user }) {
                       
                       <div className="tc-footer">
                         <div className={`tc-status-tag ${conv.status}`}>
-                          {conv.status.replace('_', ' ')}
+                          {isUnassigned ? 'NEW TICKET' : conv.status.replace('_', ' ')}
                         </div>
                         <button className="tc-view-btn" onClick={() => switchTab('conversations')}>
-                          View Ticket <ChevronRight size={14} />
+                          {isUnassigned ? 'Claim & View' : 'View Ticket'} <ChevronRight size={14} />
                         </button>
                       </div>
                     </motion.div>
-                  ))}
+                  );})}
                 </AnimatePresence>
                 
-                {myTickets.filter(c => c.status !== 'human_resolved').length === 0 && (
+                {displayTickets.length === 0 && (
                   <div className="empty-state-console">
                     <div className="empty-icon"><Bot size={32} /></div>
                     <h4>No active tickets</h4>
                     <p>You're all caught up! New tickets will appear here automatically.</p>
+                    <button className="btn btn-secondary btn-sm" onClick={() => dispatch(getConversations())} style={{marginTop: '16px'}}>
+                      Check for new tickets
+                    </button>
                   </div>
                 )}
               </div>
@@ -429,7 +455,7 @@ export default function AgentDashboard({ user }) {
           </div>
           
           <div className="ag-top-actions">
-            <div className="ag-status-select">
+            <div className={`ag-status-select ${agentStatus}`}>
               <span className={`ag-status-dot-sm ${agentStatus}`} />
               <select value={agentStatus} onChange={e => handleStatusChange(e.target.value)}
                 className="ag-status-dd">
@@ -580,19 +606,26 @@ export default function AgentDashboard({ user }) {
         .ag-sep { color: var(--outline); }
         .ag-current { color: var(--on-surface); }
         
-        .ag-top-actions { display: flex; align-items: center; gap: 16px; }
-        .ag-status-select { display: flex; align-items: center; gap: 8px; background: #f0fdf4; border: 1px solid #d1fae5; border-radius: 20px; padding: 4px 12px; }
+        .ag-top-actions { display: flex; align-items: center; gap: 12px; }
+        @media (min-width: 768px) { .ag-top-actions { gap: 16px; } }
+        
+        .ag-status-select { display: flex; align-items: center; gap: 8px; border-radius: 20px; padding: 4px 10px; transition: 0.2s; border: 1px solid var(--outline-variant); }
+        .ag-status-select.online { background: #f0fdf4; border-color: #d1fae5; }
+        .ag-status-select.away { background: #fffbeb; border-color: #fef3c7; }
+        .ag-status-select.offline { background: #f8fafc; border-color: #e2e8f0; }
+
         .ag-status-dot-sm { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-        .ag-status-dot-sm.online { background: #10b981; }
+        .ag-status-dot-sm.online { background: #10b981; box-shadow: 0 0 6px #10b98166; }
         .ag-status-dot-sm.away { background: #f59e0b; }
         .ag-status-dot-sm.offline { background: #94a3b8; }
-        .ag-status-dd { border: none; background: transparent; font-size: 0.75rem; font-weight: 700; color: #065f46; cursor: pointer; outline: none; }
+        
+        .ag-status-dd { border: none; background: transparent; font-size: 0.7rem; font-weight: 700; color: inherit; cursor: pointer; outline: none; padding-right: 4px; }
+        .online .ag-status-dd { color: #065f46; }
+        .away .ag-status-dd { color: #92400e; }
+        .offline .ag-status-dd { color: #475569; }
 
-        .ag-profile { display: flex; align-items: center; gap: 12px; }
-        .profile-text { text-align: right; }
-        .profile-text .name { display: block; font-weight: 700; color: var(--on-surface); font-size: 0.85rem; }
-        .profile-text .role { display: block; font-size: 0.7rem; color: var(--on-surface-variant); font-weight: 600; }
-        .avatar { width: 36px; height: 36px; border-radius: 10px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; overflow: hidden; border: 1px solid var(--outline-variant); }
+        .avatar { width: 32px; height: 32px; border-radius: 8px; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; overflow: hidden; border: 1px solid var(--outline-variant); }
+        @media (min-width: 768px) { .avatar { width: 36px; height: 36px; border-radius: 10px; font-size: 0.9rem; } }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
         
         .ag-viewport { flex: 1; padding: 16px; overflow-y: auto; background: var(--surface-container-low); }
@@ -661,9 +694,12 @@ export default function AgentDashboard({ user }) {
         .agent-console { max-width: 1200px; margin: 0 auto; }
         
         .ag-ticket-section { margin-top: 32px; }
-        .ag-ticket-section .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .ag-ticket-section .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 12px; }
         .ag-ticket-section h3 { font-size: 1.1rem; font-weight: 800; color: var(--on-surface); display: flex; align-items: center; gap: 10px; margin: 0; }
+        .sh-right { display: flex; align-items: center; gap: 12px; }
         .count-pill { font-size: 0.75rem; font-weight: 700; color: var(--on-surface-variant); background: var(--surface-container); padding: 4px 12px; border-radius: 20px; }
+        .refresh-btn-sm { background: white; border: 1px solid var(--outline-variant); padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s; color: var(--on-surface-variant); }
+        .refresh-btn-sm:hover { background: var(--surface-container-low); border-color: var(--primary); color: var(--primary); }
 
         .ticket-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 16px; }
         @media (min-width: 768px) { .ticket-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -691,6 +727,9 @@ export default function AgentDashboard({ user }) {
         .tc-status-tag.human_needed { background: #e0e7ff; color: #4338ca; }
         .tc-status-tag.in_progress { background: #f3e8ff; color: #7e22ce; }
         
+        .unassigned-card { border: 1px dashed var(--error); background: #fff8f8; }
+        .badge-unassigned { font-size: 0.6rem; font-weight: 900; background: #fee2e2; color: #ef4444; padding: 4px 8px; border-radius: 6px; letter-spacing: 0.05em; margin-bottom: 4px; }
+
         .tc-view-btn { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 4px; cursor: pointer; transition: 0.2s; }
         .tc-view-btn:hover { background: var(--on-primary-container); transform: translateX(2px); }
 
