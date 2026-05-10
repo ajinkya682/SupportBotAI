@@ -109,13 +109,21 @@ exports.getMyNotifications = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Business not found' });
         }
 
-        // Get targeted and broadcast notifications
-        const notifications = await Notification.find({
+        // Get notifications based on role
+        // Owners get targeted + broadcasts
+        // Agents only get broadcasts (unless we add specific agent targeting later)
+        const query = {
             $or: [
-                { recipientBusinessId: business._id },
-                { recipientBusinessId: null }
+                { recipientBusinessId: null } // Everyone gets broadcasts
             ]
-        }).sort({ createdAt: -1 });
+        };
+
+        if (req.user.role === 'owner') {
+            query.$or.push({ recipientBusinessId: business._id });
+        }
+        // If agent, they only have { recipientBusinessId: null } from the initial query
+
+        const notifications = await Notification.find(query).sort({ createdAt: -1 });
 
         const formatted = notifications.map(n => ({
             id: n._id,
@@ -161,13 +169,18 @@ exports.markAllAsRead = async (req, res) => {
         const business = await Business.findOne({ owner: ownerId });
         if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
 
-        const notifications = await Notification.find({
+        const query = {
             $or: [
-                { recipientBusinessId: business._id },
                 { recipientBusinessId: null }
             ],
             readBy: { $ne: business._id }
-        });
+        };
+
+        if (req.user.role === 'owner') {
+            query.$or.push({ recipientBusinessId: business._id });
+        }
+        
+        const notifications = await Notification.find(query);
 
         for (let n of notifications) {
             n.readBy.push(business._id);
