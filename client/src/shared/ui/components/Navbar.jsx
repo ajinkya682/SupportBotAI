@@ -12,6 +12,13 @@ export default function Navbar() {
   const { user } = useSelector((state) => state.auth);
 
   const onLogout = () => {
+    if (user && user.role === 'agent') {
+      socket.emit("agent_status_change", { 
+        agentId: user._id, 
+        status: 'offline', 
+        ownerId: user.ownerId 
+      });
+    }
     dispatch(logout());
     dispatch(reset());
     setIsMobileMenuOpen(false);

@@ -212,6 +212,11 @@ export default function AgentDashboard({ user }) {
   };
 
   const onLogout = () => {
+    socket.emit("agent_status_change", { 
+      agentId: user._id, 
+      status: 'offline', 
+      ownerId: user.ownerId 
+    });
     dispatch(logout());
     dispatch(reset());
   };
