@@ -12,6 +12,7 @@ router.use(protect);
 router.get('/', notificationController.getMyNotifications);
 router.patch('/read-all', notificationController.markAllAsRead);
 router.patch('/:id/read', notificationController.markAsRead);
+router.post('/send-to-agents', notificationController.sendToAgents);
 
 // Protected Push Routes
 router.post('/unsubscribe', notificationController.unsubscribe);

@@ -143,7 +143,9 @@ export default function Overview({ business, conversations = [], agents = [], se
       )}
 
       {/* No Agents Online Banner - Only show if queue is empty to avoid clutter */}
-      {pendingTickets.length === 0 && agents.length > 0 && agents.filter(a => a.status === 'online' || a.status === 'in_conversation').length === 0 && (
+      {pendingTickets.length === 0 && agents.length > 0 && 
+        agents.filter(a => a.status === 'online' || a.status === 'in_conversation').length === 0 && 
+        conversations.some(c => c.status === 'in_progress' || c.status === 'human_needed') && (
         <div className="no-agents-banner animate-fade-in">
           <div className="nab-icon">🔴</div>
           <div className="nab-content">

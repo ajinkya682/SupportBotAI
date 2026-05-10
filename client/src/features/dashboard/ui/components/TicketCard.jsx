@@ -114,126 +114,151 @@ export default function TicketCard({ ticket, onTakeOver, actionLabel, onAction }
         </div>
       </div>
 
+      <div className="ticket-serration"></div>
+
       <style>{`
         .physical-ticket {
-          background: #fdfbf7;
-          border: 1px solid #e5e1d8;
-          border-radius: 12px;
-          overflow: hidden;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px 16px 4px 4px;
+          overflow: visible;
+          box-shadow: var(--shadow-2);
           position: relative;
           display: flex;
           flex-direction: column;
           font-family: 'Inter', sans-serif;
-          margin-bottom: 16px;
+          margin-bottom: 24px;
+          transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .physical-ticket:hover {
+          transform: translateY(-4px) scale(1.01);
+          box-shadow: var(--shadow-4);
+          border-color: var(--primary-low);
         }
 
         .physical-ticket::before {
           content: '';
           position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 4px;
-          background: repeating-linear-gradient(90deg, #e5e1d8, #e5e1d8 10px, transparent 10px, transparent 20px);
+          top: -1px;
+          left: -1px;
+          right: -1px;
+          height: 6px;
+          background: var(--primary);
+          border-radius: 16px 16px 0 0;
         }
 
         .ticket-header {
-          padding: 12px 16px;
+          padding: 16px 20px;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          border-bottom: 1px dashed #e5e1d8;
-          background: rgba(0,0,0,0.02);
+          border-bottom: 2px dashed #edf2f7;
+          background: #fafafa;
+          border-radius: 16px 16px 0 0;
         }
 
         .ticket-id {
-          font-size: 0.65rem;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.7rem;
           font-weight: 800;
-          color: #a3a3a3;
-          letter-spacing: 0.05em;
+          color: #64748b;
+          letter-spacing: 0.1em;
+          background: #f1f5f9;
+          padding: 2px 8px;
+          border-radius: 4px;
         }
         
         .sla-tag {
-          font-size: 0.6rem;
+          font-size: 0.65rem;
           font-weight: 800;
-          padding: 2px 8px;
-          border-radius: 4px;
+          padding: 4px 10px;
+          border-radius: 20px;
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 6px;
+          letter-spacing: 0.02em;
         }
 
         .ticket-priority {
           font-size: 0.6rem;
           font-weight: 900;
-          padding: 2px 8px;
-          border-radius: 4px;
+          padding: 4px 10px;
+          border-radius: 6px;
           letter-spacing: 0.05em;
+          box-shadow: inset 0 0 0 1px currentColor;
         }
-        .ticket-priority[data-priority="high"] { background: #fee2e2; color: #ef4444; }
-        .ticket-priority[data-priority="medium"] { background: #fef3c7; color: #f59e0b; }
-        .ticket-priority[data-priority="low"] { background: #f1f5f9; color: #64748b; }
+        .ticket-priority[data-priority="high"] { background: #fff1f2; color: #e11d48; }
+        .ticket-priority[data-priority="medium"] { background: #fffbeb; color: #d97706; }
+        .ticket-priority[data-priority="low"] { background: #f0fdf4; color: #16a34a; }
 
         .ticket-body {
           display: flex;
-          min-height: 140px;
+          min-height: 160px;
         }
 
         .ticket-main {
           flex: 1;
-          padding: 16px;
-          border-right: 1px dashed #e5e1d8;
+          padding: 24px;
+          border-right: 2px dashed #edf2f7;
         }
 
         .user-info {
           display: flex;
           align-items: center;
-          gap: 10px;
-          margin-bottom: 12px;
+          gap: 14px;
+          margin-bottom: 20px;
         }
 
         .avatar-sm {
-          width: 28px;
-          height: 28px;
-          background: #3b82f6;
+          width: 36px;
+          height: 36px;
+          background: linear-gradient(135deg, var(--primary), var(--primary-low));
           color: white;
-          border-radius: 50%;
+          border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 0.75rem;
-          font-weight: 700;
+          font-size: 0.9rem;
+          font-weight: 800;
+          box-shadow: 0 4px 6px -1px rgba(var(--primary-rgb), 0.2);
         }
 
         .user-details .name {
-          font-size: 0.85rem;
-          font-weight: 700;
+          font-size: 1rem;
+          font-weight: 800;
           color: #1e293b;
+          letter-spacing: -0.01em;
         }
 
         .user-details .meta {
-          font-size: 0.65rem;
-          color: #64748b;
+          font-size: 0.75rem;
+          color: #94a3b8;
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 6px;
+          margin-top: 2px;
+          font-weight: 500;
         }
 
         .intent-tag {
-          text-transform: capitalize;
+          color: var(--primary);
+          font-weight: 700;
+          text-transform: uppercase;
+          font-size: 0.65rem;
         }
 
         .issue-section h4 {
-          font-size: 0.95rem;
+          font-size: 1.1rem;
           font-weight: 800;
           color: #0f172a;
-          margin: 0 0 4px 0;
+          margin: 0 0 8px 0;
+          line-height: 1.3;
         }
 
         .issue-section .summary {
-          font-size: 0.8rem;
-          line-height: 1.4;
+          font-size: 0.9rem;
+          line-height: 1.6;
           color: #475569;
           margin: 0;
           display: -webkit-box;
@@ -243,12 +268,12 @@ export default function TicketCard({ ticket, onTakeOver, actionLabel, onAction }
         }
 
         .ticket-stub {
-          width: 120px;
-          background: #f8f9fa;
-          padding: 12px;
+          width: 140px;
+          background: #fafafa;
+          padding: 20px;
           display: flex;
           flex-direction: column;
-          justify-content: center;
+          justify-content: space-between;
           align-items: center;
           position: relative;
         }
@@ -256,37 +281,41 @@ export default function TicketCard({ ticket, onTakeOver, actionLabel, onAction }
         .ticket-stub::before, .ticket-stub::after {
           content: '';
           position: absolute;
-          left: -6px;
-          width: 12px;
-          height: 12px;
-          background: #fdfbf7;
+          left: -10px;
+          width: 20px;
+          height: 20px;
+          background: var(--surface);
           border-radius: 50%;
-          border: 1px solid #e5e1d8;
+          border: 1px solid #e2e8f0;
+          z-index: 2;
         }
-        .ticket-stub::before { top: -7px; }
-        .ticket-stub::after { bottom: -7px; }
+        .ticket-stub::before { top: -11px; }
+        .ticket-stub::after { bottom: -11px; }
 
         .status-stamp {
-          border: 2px solid;
-          padding: 4px 6px;
-          font-size: 0.6rem;
+          border: 3px solid;
+          padding: 6px 10px;
+          font-size: 0.7rem;
           font-weight: 900;
           border-radius: 4px;
-          transform: rotate(-12deg);
-          margin-bottom: 12px;
+          transform: rotate(-15deg);
           text-align: center;
-          letter-spacing: 0.02em;
+          letter-spacing: 0.05em;
+          box-shadow: 2px 2px 0 rgba(0,0,0,0.05);
+          opacity: 0.8;
+          margin-top: 10px;
         }
 
         .stub-meta {
           display: flex;
           flex-direction: column;
-          gap: 2px;
-          margin-bottom: 16px;
+          gap: 4px;
+          margin: 20px 0;
         }
 
         .stub-meta span {
-          font-size: 0.5rem;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.6rem;
           font-weight: 700;
           color: #94a3b8;
           text-align: center;
@@ -297,21 +326,33 @@ export default function TicketCard({ ticket, onTakeOver, actionLabel, onAction }
           background: #1e293b;
           color: white;
           border: none;
-          padding: 6px;
-          border-radius: 6px;
-          font-size: 0.7rem;
+          padding: 10px;
+          border-radius: 10px;
+          font-size: 0.8rem;
           font-weight: 700;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 4px;
+          gap: 8px;
           transition: 0.2s;
         }
 
         .take-over-btn:hover {
-          background: #0f172a;
-          transform: translateY(-1px);
+          background: #000;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .ticket-serration {
+          height: 12px;
+          background: radial-gradient(circle, transparent, transparent 6px, #ffffff 6px, #ffffff) 0 -6px;
+          background-size: 12px 12px;
+          width: 100%;
+          position: absolute;
+          bottom: -6px;
+          left: 0;
+          filter: drop-shadow(0 4px 2px rgba(0,0,0,0.05));
         }
       `}</style>
     </motion.div>

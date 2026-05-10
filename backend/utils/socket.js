@@ -11,23 +11,34 @@ module.exports = (io) => {
             if (typeof data === 'string') {
                 socket.join(data);
                 console.log(`Socket ${socket.id} joined shared room ${data}`);
-            } else if (data && data.ownerId) {
-                // Always join the shared owner room (owner ID = primary room key)
-                socket.join(data.ownerId.toString());
+            } else if (data && data.role) {
+                const userId = data.userId || data.agentId;
+                
+                // 1. Private room for this specific user
+                if (userId) {
+                    socket.join(`user_${userId}`);
+                    console.log(`User ${userId} joined private room user_${userId}`);
+                }
 
-                if (data.role === 'owner') {
-                    socket.join(`owner_${data.ownerId}`);
+                // 2. Role-based rooms for broadcasts
+                if (data.role === 'superadmin') {
+                    socket.join('role_superadmin');
+                } else if (data.role === 'owner') {
+                    socket.join('role_owner'); // All business owners
+                    if (data.ownerId) {
+                        socket.join(`owner_${data.ownerId}`);
+                    }
                 } else if (data.role === 'agent') {
-                    // Support both 'userId' and 'agentId' keys for backward compat
-                    const agentId = data.userId || data.agentId;
-                    if (agentId) {
-                        socket.agentId = agentId;
+                    if (data.ownerId) {
+                        socket.join(`business_${data.ownerId}_agents`); // All agents of this business
+                        socket.join(`owner_${data.ownerId}`); // Shared business room
+                        socket.agentId = userId;
                         socket.ownerId = data.ownerId;
-                        socket.join(`agent_${agentId}`);
-                        console.log(`Agent ${agentId} joined agent room agent_${agentId}`);
+                    }
+                    if (userId) {
+                        socket.join(`agent_${userId}`);
                     }
                 }
-                console.log(`Socket ${socket.id} joined rooms for owner ${data.ownerId}`);
             }
         });
 
@@ -64,8 +75,8 @@ module.exports = (io) => {
                         await agent.save();
                     }
 
-                    // Notify owner dashboard
-                    io.to(ownerId.toString()).emit('agent_status_changed', { agentId, status });
+                    // Notify owner dashboard & all agents of this business
+                    io.to(`owner_${ownerId}`).emit('agent_status_changed', { agentId, status });
                     
                     // If agent is in a conversation, notify that specific session room too
                     if (agent.currentConversationId) {
@@ -178,7 +189,7 @@ module.exports = (io) => {
 
             // 2. Owner dashboard + all agents in owner room
             if (ownerId) {
-                const room = ownerId.toString();
+                const room = `owner_${ownerId}`;
                 io.to(room).emit('new_message', messagePayload);
                 console.log(`[send_message] Broadcasted to room ${room}`);
             }
@@ -250,9 +261,9 @@ module.exports = (io) => {
 
                     // Emit to owner dashboard + all agents
                     if (ownerId) {
-                        io.to(ownerId.toString()).emit('agent_joined', payload);
-                        io.to(ownerId.toString()).emit('agent_status_changed', { agentId, status: 'in_conversation' });
-                        io.to(ownerId.toString()).emit('conversation_claimed', { conversationId, agentId });
+                        io.to(`owner_${ownerId}`).emit('agent_joined', payload);
+                        io.to(`owner_${ownerId}`).emit('agent_status_changed', { agentId, status: 'in_conversation' });
+                        io.to(`owner_${ownerId}`).emit('conversation_claimed', { conversationId, agentId });
                     }
                 }
             } catch (error) {
@@ -288,7 +299,7 @@ module.exports = (io) => {
                             agent.currentConversationId = null;
                             await agent.save();
                             if (ownerId) {
-                                io.to(ownerId.toString()).emit('agent_status_changed', { agentId: resolvedBy, status: 'online' });
+                                io.to(`owner_${ownerId}`).emit('agent_status_changed', { agentId: resolvedBy, status: 'online' });
                                 await checkHoldingTickets(ownerId, io);
                             }
                         }
@@ -322,7 +333,7 @@ module.exports = (io) => {
                     
                     // 2. Notify Dashboard (Owner/Agents)
                     if (ownerId) {
-                        const room = ownerId.toString();
+                        const room = `owner_${ownerId}`;
                         io.to(room).emit('ticket_resolved', payload);
                         // Standardize on update_conversation for list updates
                         io.to(room).emit('update_conversation', conversation);
@@ -348,7 +359,7 @@ module.exports = (io) => {
 
                     const payload = { conversationId, isAiActive, status: conversation.status };
                     io.to(`session_${conversationId}`).emit('ai_toggled', payload);
-                    if (ownerId) io.to(ownerId.toString()).emit('ai_toggled', payload);
+                    if (ownerId) io.to(`owner_${ownerId}`).emit('ai_toggled', payload);
                 }
             } catch (error) {
                 console.error('Toggle AI error:', error);
@@ -369,7 +380,7 @@ module.exports = (io) => {
                     agent.status = 'offline';
                     await agent.save();
                     if (agent.ownerId) {
-                        io.to(agent.ownerId.toString()).emit('agent_status_changed', { 
+                        io.to(`owner_${agent.ownerId}`).emit('agent_status_changed', { 
                             agentId: agent._id, 
                             status: 'offline' 
                         });
@@ -407,7 +418,7 @@ module.exports = (io) => {
                                 await agent.save();
                                 
                                 // Notify owner dashboard
-                                io.to(ownerId.toString()).emit('agent_status_changed', { 
+                                io.to(`owner_${ownerId}`).emit('agent_status_changed', { 
                                     agentId, 
                                     status: 'offline' 
                                 });

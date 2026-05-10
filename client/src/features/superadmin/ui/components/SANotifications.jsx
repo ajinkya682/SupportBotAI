@@ -118,7 +118,7 @@ const SANotifications = () => {
                     onChange={() => setFormData({...formData, type: 'broadcast', businessId: ''})} 
                   />
                   <Users size={16} />
-                  <span>All Businesses</span>
+                  <span>All Business Owners</span>
                 </label>
                 <label className={`sa-radio-label ${formData.type === 'targeted' ? 'active' : ''}`}>
                   <input 
@@ -129,22 +129,22 @@ const SANotifications = () => {
                     onChange={() => setFormData({...formData, type: 'targeted'})} 
                   />
                   <Building2 size={16} />
-                  <span>Single Client</span>
+                  <span>Specific Client</span>
                 </label>
               </div>
             </div>
 
             {formData.type === 'targeted' && (
               <div className="form-group animate-slide-down">
-                <label>Select Business</label>
+                <label>Select Client Account</label>
                 <select 
                   value={formData.businessId} 
                   onChange={(e) => setFormData({...formData, businessId: e.target.value})}
                   required
                 >
-                  <option value="">Choose a client...</option>
+                  <option value="">Choose an owner account...</option>
                   {businesses.map(b => (
-                    <option key={b.id} value={b.id}>{b.name} ({b.ownerEmail})</option>
+                    <option key={b.id} value={b.id}>{b.name} — Owner: {b.ownerName || b.ownerEmail}</option>
                   ))}
                 </select>
               </div>

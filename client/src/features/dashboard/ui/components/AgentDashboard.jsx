@@ -314,7 +314,7 @@ export default function AgentDashboard({ user }) {
                 <div className="sh-right">
                   <span className="count-pill">{displayTickets.length} Total Needs Attention</span>
                   <button className="refresh-btn-sm" onClick={() => {
-                    dispatch(getConversations());
+                    fetchInitialData();
                     toast.success("Syncing tickets...");
                   }}>
                     <Activity size={14} /> Refresh
@@ -326,23 +326,21 @@ export default function AgentDashboard({ user }) {
                 <AnimatePresence mode="popLayout">
                   {displayTickets.sort((a,b) => (b.priority === 'high' ? 1 : 0) - (a.priority === 'high' ? 1 : 0) || new Date(b.updatedAt) - new Date(a.updatedAt)).map((conv) => {
                     const isUnassigned = !conv.agent && !conv.assignedAgentId;
-                    const actionLabel = conv.routingStatus === 'assigned' ? 'Accept & Join' : isUnassigned ? 'Claim & View' : 'View Ticket';
+                    let actionLabel = 'View Ticket';
+                    if (conv.status === 'human_resolved' || conv.status === 'ai_resolved') {
+                      actionLabel = 'View Details';
+                    } else if (conv.routingStatus === 'assigned') {
+                      actionLabel = 'Accept & Join';
+                    } else if (isUnassigned) {
+                      actionLabel = 'Claim & View';
+                    }
                     
                     return (
                       <TicketCard 
                         key={conv._id} 
                         ticket={conv} 
                         actionLabel={actionLabel}
-                        onAction={(t) => {
-                          if (t.routingStatus === 'assigned' || isUnassigned) {
-                            socket.emit('join_conversation', {
-                              conversationId: t._id,
-                              agentId: user._id,
-                              ownerId: user.ownerId
-                            });
-                          }
-                          switchTab('conversations', t._id);
-                        }}
+                        onAction={(t) => handleJoinConversation(t)}
                       />
                     );
                   })}
@@ -353,9 +351,17 @@ export default function AgentDashboard({ user }) {
                     <div className="empty-icon"><Bot size={32} /></div>
                     <h4>No active tickets</h4>
                     <p>You're all caught up! New tickets will appear here automatically.</p>
-                    <button className="btn btn-secondary btn-sm" onClick={() => dispatch(getConversations())} style={{marginTop: '16px'}}>
-                      Check for new tickets
-                    </button>
+                    <div className="empty-actions" style={{display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '16px'}}>
+                      <button className="nav-action-btn" onClick={() => {
+                        fetchInitialData();
+                        toast.success("Syncing tickets...");
+                      }} title="Refresh Workload">
+                        <Activity size={14} /> Sync Tickets
+                      </button>
+                      <button className="btn btn-outline btn-sm" onClick={() => setActiveTab('history')}>
+                        <History size={14} /> View History
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

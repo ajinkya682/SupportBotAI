@@ -40,7 +40,7 @@ const routeTicket = async (conversationId, io) => {
             // No agents online -> Pending (Owner dashboard)
             conversation.routingStatus = 'pending';
             await conversation.save();
-            io.to(ownerId.toString()).emit('new_ticket_pending', conversation);
+            io.to(`owner_${ownerId}`).emit('new_ticket_pending', conversation);
             return null;
         }
 
@@ -66,7 +66,7 @@ const routeTicket = async (conversationId, io) => {
             // All online agents are busy -> Holding (Owner dashboard)
             conversation.routingStatus = 'holding';
             await conversation.save();
-            io.to(ownerId.toString()).emit('new_ticket_holding', conversation);
+            io.to(`owner_${ownerId}`).emit('new_ticket_holding', conversation);
             return null;
         }
     } catch (error) {
@@ -109,7 +109,7 @@ async function assignToAgent(conversation, agent, routingStatus, io) {
     });
 
     // Update the owner dashboard
-    io.to(ownerId.toString()).emit('ticket_assigned', {
+    io.to(`owner_${ownerId}`).emit('ticket_assigned', {
         conversationId: conversation._id,
         agentId: agent._id,
         agentName: agent.displayName || agent.name,
