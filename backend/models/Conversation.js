@@ -42,6 +42,7 @@ const ConversationSchema = new mongoose.Schema({
     title: { type: String, default: 'New Conversation' },
     origin: { type: String }, // The URL of the site where chat started
     metadata: { type: Map, of: String },
+    issueSummary: { type: String }, // AI-generated summary of the problem
     routingStatus: { 
         type: String, 
         enum: ['pending', 'assigned', 'holding', 'in_progress', 'resolved'], 

@@ -245,23 +245,29 @@ export default function AgentDashboard({ user }) {
           </div>
         );
     case 'overview':
-        const myTickets = conversations.filter(c => 
-          (c.agent?._id === user._id || c.assignedAgentId === user._id) && 
-          c.status !== 'human_resolved' && 
-          c.status !== 'ai_resolved'
-        );
         const unassignedTickets = conversations.filter(c => 
           (c.status === 'human_needed' || c.routingStatus === 'holding') && 
           !c.agent && 
           !c.assignedAgentId
         );
-        const displayTickets = [...myTickets, ...unassignedTickets];
+        
+        const assignedToMe = conversations.filter(c => 
+          c.assignedAgentId === user._id && 
+          c.routingStatus === 'assigned'
+        );
+
+        const myActive = conversations.filter(c => 
+          (c.agent?._id === user._id || c.assignedAgentId === user._id) && 
+          c.status === 'in_progress'
+        );
+
+        const displayTickets = [...assignedToMe, ...myActive, ...unassignedTickets];
         
         const stats = [
-          { label: 'My Assigned', value: myTickets.length, icon: MessageSquare, color: 'var(--primary)' },
-          { label: 'Unassigned', value: unassignedTickets.length, icon: Clock, color: '#ef4444' },
-          { label: 'In Progress', value: myTickets.filter(c => c.status === 'in_progress').length, icon: Activity, color: '#8b5cf6' },
-          { label: 'Resolved Today', value: myTickets.filter(c => c.status === 'human_resolved' && new Date(c.updatedAt).toDateString() === new Date().toDateString()).length, icon: CheckCircle2, color: '#10b981' }
+          { label: 'Assigned to Me', value: assignedToMe.length, icon: Bell, color: '#3b82f6' },
+          { label: 'Active Chats', value: myActive.length, icon: MessageSquare, color: '#10b981' },
+          { label: 'System Queue', value: unassignedTickets.length, icon: Clock, color: '#f59e0b' },
+          { label: 'Resolved Today', value: conversations.filter(c => c.status === 'human_resolved' && c.agent?._id === user._id && new Date(c.updatedAt).toDateString() === new Date().toDateString()).length, icon: CheckCircle2, color: '#64748b' }
         ];
 
         return (
@@ -328,7 +334,7 @@ export default function AgentDashboard({ user }) {
                       
                       <div className="tc-body">
                         <p className="tc-preview">
-                          {conv.messages[conv.messages.length - 1]?.content.substring(0, 80)}...
+                          <strong>SUMMARY:</strong> {conv.issueSummary || conv.messages[conv.messages.length - 1]?.content.substring(0, 80) + '...'}
                         </p>
                       </div>
                       
@@ -336,8 +342,20 @@ export default function AgentDashboard({ user }) {
                         <div className={`tc-status-tag ${conv.status}`}>
                           {isUnassigned ? 'NEW TICKET' : conv.status.replace('_', ' ')}
                         </div>
-                        <button className="tc-view-btn" onClick={() => switchTab('conversations')}>
-                          {isUnassigned ? 'Claim & View' : 'View Ticket'} <ChevronRight size={14} />
+                        <button 
+                          className={`tc-view-btn ${conv.routingStatus === 'assigned' ? 'accept-pulse' : ''}`} 
+                          onClick={() => {
+                            if (conv.routingStatus === 'assigned' || isUnassigned) {
+                              socket.emit('join_conversation', {
+                                conversationId: conv._id,
+                                agentId: user._id,
+                                ownerId: user.ownerId
+                              });
+                            }
+                            switchTab('conversations');
+                          }}
+                        >
+                          {conv.routingStatus === 'assigned' ? 'Accept & Join' : isUnassigned ? 'Claim & View' : 'View Ticket'} <ChevronRight size={14} />
                         </button>
                       </div>
                     </motion.div>
@@ -732,6 +750,8 @@ export default function AgentDashboard({ user }) {
 
         .tc-view-btn { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 4px; cursor: pointer; transition: 0.2s; }
         .tc-view-btn:hover { background: var(--on-primary-container); transform: translateX(2px); }
+        .accept-pulse { animation: tc-pulse 2s infinite; background: #10b981; }
+        @keyframes tc-pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
         .empty-state-console { text-align: center; padding: 64px 24px; background: white; border: 1px dashed var(--outline); border-radius: 20px; grid-column: 1 / -1; }
         .empty-icon { width: 64px; height: 64px; background: var(--surface-container); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: var(--outline); }
