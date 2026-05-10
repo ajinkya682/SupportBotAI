@@ -16,14 +16,17 @@ import {
   Volume2,
   VolumeX,
   Zap,
-  ArrowUpRight
+  ArrowUpRight,
+  Ticket,
+  ArrowRight
 } from "lucide-react";
-import useSound from "../../../../shared/services/useSound"; // Note: I saved it in shared/hooks, let me check the path
+import useSound from "../../../../shared/services/useSound"; 
 import { useDispatch, useSelector } from "react-redux";
 import { logout, reset } from "../../../auth/state/authSlice";
 import { getBusiness } from "../../state/businessSlice";
 import { getConversations } from "../../../conversations/state/conversationSlice";
 import Conversations from "./Conversations";
+import TicketCard from "./TicketCard";
 import socket from "../../../../shared/services/socket";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
@@ -323,61 +326,26 @@ export default function AgentDashboard({ user }) {
                 <AnimatePresence mode="popLayout">
                   {displayTickets.sort((a,b) => (b.priority === 'high' ? 1 : 0) - (a.priority === 'high' ? 1 : 0) || new Date(b.updatedAt) - new Date(a.updatedAt)).map((conv) => {
                     const isUnassigned = !conv.agent && !conv.assignedAgentId;
+                    const actionLabel = conv.routingStatus === 'assigned' ? 'Accept & Join' : isUnassigned ? 'Claim & View' : 'View Ticket';
+                    
                     return (
-                    <motion.div 
-                      key={conv._id} 
-                      className={`ticket-card ${conv.priority === 'high' ? 'high-priority' : ''} ${isUnassigned ? 'unassigned-card' : ''}`}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      layout
-                    >
-                      <div className="tc-header">
-                        <div className="tc-user">
-                          <div className="tc-avatar">{conv.userName?.charAt(0) || 'G'}</div>
-                          <div className="tc-name-wrap">
-                            <span className="tc-name">{conv.userName || 'Guest User'}</span>
-                            <span className="tc-time">{(() => {
-                              const diff = Math.floor((new Date() - new Date(conv.updatedAt)) / 60000);
-                              return diff < 1 ? 'Just now' : `${diff}m ago`;
-                            })()}</span>
-                          </div>
-                        </div>
-                        <div className="tc-badges">
-                          {isUnassigned && <span className="badge-unassigned">UNASSIGNED</span>}
-                          {conv.priority === 'high' && <span className="badge-high">HIGH INTENT</span>}
-                          {conv.routingStatus === 'holding' && <span className="badge-waiting">WAITING FOR YOU</span>}
-                        </div>
-                      </div>
-                      
-                      <div className="tc-body">
-                        <p className="tc-preview">
-                          <strong>SUMMARY:</strong> {conv.issueSummary || conv.messages[conv.messages.length - 1]?.content.substring(0, 80) + '...'}
-                        </p>
-                      </div>
-                      
-                      <div className="tc-footer">
-                        <div className={`tc-status-tag ${conv.status}`}>
-                          {isUnassigned ? 'NEW TICKET' : conv.status.replace('_', ' ')}
-                        </div>
-                        <button 
-                          className={`tc-view-btn ${conv.routingStatus === 'assigned' ? 'accept-pulse' : ''}`} 
-                          onClick={() => {
-                            if (conv.routingStatus === 'assigned' || isUnassigned) {
-                              socket.emit('join_conversation', {
-                                conversationId: conv._id,
-                                agentId: user._id,
-                                ownerId: user.ownerId
-                              });
-                            }
-                            switchTab('conversations', conv._id);
-                          }}
-                        >
-                          {conv.routingStatus === 'assigned' ? 'Accept & Join' : isUnassigned ? 'Claim & View' : 'View Ticket'} <ChevronRight size={14} />
-                        </button>
-                      </div>
-                    </motion.div>
-                  );})}
+                      <TicketCard 
+                        key={conv._id} 
+                        ticket={conv} 
+                        actionLabel={actionLabel}
+                        onAction={(t) => {
+                          if (t.routingStatus === 'assigned' || isUnassigned) {
+                            socket.emit('join_conversation', {
+                              conversationId: t._id,
+                              agentId: user._id,
+                              ownerId: user.ownerId
+                            });
+                          }
+                          switchTab('conversations', t._id);
+                        }}
+                      />
+                    );
+                  })}
                 </AnimatePresence>
                 
                 {displayTickets.length === 0 && (
