@@ -140,8 +140,13 @@ export default function Product() {
       </section>
 
       <style>{`
-        .product-page { padding-bottom: 80px; }
-        @media (min-width: 768px) { .product-page { padding-bottom: 120px; } }
+        .product-page { 
+          padding-top: 64px;
+          padding-bottom: 0; 
+        }
+        @media (min-width: 1024px) { 
+          .product-page { padding-top: 80px; padding-bottom: 0; } 
+        }
 
         .product-hero { padding: 60px 0 40px; }
         @media (min-width: 768px) { .product-hero { padding: 120px 0 80px; } }

@@ -78,14 +78,6 @@ export default function Login() {
         className="auth-card"
       >
         <div className="auth-header">
-          <Link to="/" className="auth-brand">
-            <div className="brand-icon" style={{ background: 'transparent', padding: 0, width: '72px', height: '72px' }}>
-              <img src="/logo.png" alt="SupportBot AI" style={{ width: '72px', height: '72px', objectFit: 'contain' }} />
-            </div>
-            <span className="brand-text">
-              SUPPORTBOT <span className="highlight">AI</span>
-            </span>
-          </Link>
           <h2>{step === 1 ? "Neural Access" : "Authenticate"}</h2>
           <p>
             {step === 1
@@ -191,7 +183,7 @@ export default function Login() {
         .auth-page {
           min-height: 100vh;
           display: flex;
-          align-items: flex-start; /* Mobile: top aligned */
+          align-items: flex-start;
           justify-content: center;
           background: var(--surface-container-lowest);
           padding: 0;
@@ -200,24 +192,26 @@ export default function Login() {
         .auth-card {
           width: 100%;
           min-height: 100vh;
-          padding: 48px 24px 32px;
+          padding: 24px;
           background: white;
           border-radius: 0;
           display: flex;
           flex-direction: column;
-          padding-top: calc(48px + env(safe-area-inset-top));
+          padding-top: calc(64px + 24px + env(safe-area-inset-top));
         }
 
-        @media (min-width: 640px) {
+      @media (min-width: 640px) {
           .auth-page {
             align-items: center;
             background: var(--surface);
-            padding: 24px;
+            padding: 80px 24px 24px;
           }
           .auth-card {
-            max-width: 440px;
+            max-width: 480px;
             min-height: auto;
-            padding: 48px;
+            padding: 32px 40px;
+            margin-top: 20px;
+            margin-bottom: 20px;
             border-radius: 24px;
             box-shadow: var(--shadow-overlay);
             border: 1px solid var(--outline-variant);

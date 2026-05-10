@@ -319,12 +319,14 @@ export default function Docs() {
         .docs-page { background: #ffffff; min-height: 100vh; color: #1e293b; }
         
         .docs-hero { 
-          padding: 60px 0 40px; 
+          padding-top: calc(64px + 60px);
+          padding-bottom: 40px; 
           background: #f8fafc; 
           border-bottom: 1px solid #f1f5f9; 
         }
-
-        @media (min-width: 768px) { .docs-hero { padding: 80px 0 60px; } }
+        @media (min-width: 1024px) { 
+          .docs-hero { padding-top: calc(80px + 80px); padding-bottom: 60px; } 
+        }
 
         .title-tag { font-size: 10px; font-weight: 800; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 auto 16px; background: #f5f3ff; width: fit-content; padding: 4px 12px; border-radius: 20px; }
 

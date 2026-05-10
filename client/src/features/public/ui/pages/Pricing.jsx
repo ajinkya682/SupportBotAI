@@ -73,8 +73,14 @@ export default function Pricing() {
       </div>
 
       <style>{`
-        .pricing-page-wrapper { padding-bottom: 64px; background: var(--surface); }
-        @media (min-width: 768px) { .pricing-page-wrapper { padding-bottom: 120px; } }
+        .pricing-page-wrapper { 
+          padding-top: 64px;
+          padding-bottom: 0; 
+          background: var(--surface); 
+        }
+        @media (min-width: 1024px) { 
+          .pricing-page-wrapper { padding-top: 80px; padding-bottom: 0; } 
+        }
 
         .pricing-hero { padding: 40px 0 0; }
         @media (min-width: 768px) { .pricing-hero { padding: 80px 0 0; } }

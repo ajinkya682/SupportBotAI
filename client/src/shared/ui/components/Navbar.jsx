@@ -173,8 +173,10 @@ export default function Navbar() {
           background: rgba(252, 248, 255, 0.8);
           backdrop-filter: blur(20px);
           border-bottom: 1px solid var(--outline-variant);
-          position: sticky;
+          position: fixed;
           top: 0;
+          left: 0;
+          right: 0;
           z-index: 1000;
           padding-top: env(safe-area-inset-top);
         }
@@ -288,8 +290,6 @@ export default function Navbar() {
         .drawer-backdrop {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.4);
-          backdrop-filter: blur(4px);
           z-index: 1100;
         }
 
@@ -298,13 +298,17 @@ export default function Navbar() {
           top: 0;
           right: 0;
           height: 100vh;
-          width: min(320px, 85vw);
+          height: 100dvh;
+          width: 85%;
           background: var(--surface-container-lowest);
           z-index: 1200;
           padding: 24px;
           display: flex;
           flex-direction: column;
           box-shadow: -8px 0 32px rgba(0, 0, 0, 0.1);
+        }
+        @media (min-width: 640px) {
+          .mobile-drawer { width: 320px; box-shadow: -8px 0 32px rgba(0, 0, 0, 0.1); }
         }
 
         .drawer-header {
